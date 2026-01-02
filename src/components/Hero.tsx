@@ -25,11 +25,6 @@ const Hero = () => {
           >
             <Mail className="w-5 h-5 text-foreground" />
           </a>
-          <Button asChild className="ml-2">
-            <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
-              Express Interest
-            </a>
-          </Button>
         </div>
       </nav>
 
