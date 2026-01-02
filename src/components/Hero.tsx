@@ -48,7 +48,7 @@ const Hero = () => {
             className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}
           >
-            Next Step connects ambitious students with local businesses to tackle real-world projects.
+            Next Step connects ambitious students with local businesses and organizations to tackle real-world projects.
             Fresh perspectives for you; invaluable experience for them.
           </p>
         </div>

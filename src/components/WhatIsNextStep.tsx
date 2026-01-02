@@ -5,19 +5,19 @@ const features = [
     icon: Target,
     title: "Real-World Execution",
     description:
-      "We bridge the gap between classroom theory and professional results by placing students directly into local business projects.",
+      "We bridge the gap between classroom theory and professional results by placing students directly into projects with local organizations and businesses.",
   },
   {
     icon: BookOpen,
     title: "The Educational Framework",
     description:
-      "Unlike traditional internships, our students are backed by the Next Step Learning Hub. We provide \"how-to\" guides for every deliverable, ensuring your business receives high-quality, professional work.",
+      "Unlike traditional internships, our students are backed by the Next Step Learning Hub. We provide \"how-to\" guides for every deliverable, ensuring your organization receives high-quality, professional work.",
   },
   {
     icon: Rocket,
     title: "The Goal",
     description:
-      "We help students build resumes they are proud of while providing local businesses with the extra hands and fresh ideas they need to thrive.",
+      "We help students build resumes they are proud of while providing local organizations and businesses with the extra hands and fresh ideas they need to thrive.",
   },
 ];
 

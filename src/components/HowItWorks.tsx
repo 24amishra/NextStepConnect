@@ -44,15 +44,15 @@ const HowItWorks = () => {
         {/* Phase Cards */}
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {phases.map((phase, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="relative bg-secondary/50 p-8 rounded-2xl border border-border hover:bg-secondary transition-colors duration-300"
             >
               {/* Phase Number Badge */}
               <div className="absolute -top-4 left-8 bg-primary text-primary-foreground text-sm font-bold px-4 py-1.5 rounded-full">
                 Phase {phase.number}
               </div>
-              
+
               <div className="mt-4">
                 <div className="w-12 h-12 bg-foreground rounded-xl flex items-center justify-center mb-5">
                   <phase.icon className="w-6 h-6 text-background" />
@@ -66,6 +66,20 @@ const HowItWorks = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Payment Flexibility Note */}
+        <div className="mt-16 max-w-3xl mx-auto text-center">
+          <div className="bg-secondary/30 border border-border rounded-2xl p-8">
+            <h3 className="text-xl font-bold font-heading text-foreground mb-3">
+              Flexible Compensation
+            </h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Compensation is entirely up to you. Many organizations work with students on a volunteer basis,
+              while others choose to offer payment or stipends. Students join Next Step to gain real-world
+              experience and build their portfolios, so both paid and unpaid opportunities are welcome.
+            </p>
+          </div>
         </div>
       </div>
     </section>
