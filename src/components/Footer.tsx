@@ -28,22 +28,12 @@ const Footer = () => {
                 Express Interest
               </a>
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              asChild 
-              className="text-base px-8 py-6 h-auto border-background/30 text-background hover:bg-background/10"
-            >
-              <a href="mailto:nextstep.connects@gmail.com">
-                Email Us
-              </a>
-            </Button>
           </div>
         </div>
 
         {/* Footer Bottom */}
         <div className="mt-20 pt-8 border-t border-background/20 flex flex-col md:flex-row items-center justify-between gap-6">
-          <img src={logo} alt="Next Step Logo" className="h-10 w-auto brightness-0 invert" />
+          <div className="text-2xl font-bold font-heading text-background">Next Step</div>
           
           <div className="flex items-center gap-4">
             <a 
