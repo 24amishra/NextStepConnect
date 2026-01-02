@@ -27,7 +27,7 @@ const Hero = () => {
           </a>
           <Button asChild className="ml-2">
             <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
-              Interest Form
+              Express Interest
             </a>
           </Button>
         </div>
@@ -64,7 +64,7 @@ const Hero = () => {
           >
             <Button size="lg" asChild className="text-base px-8 py-6 h-auto">
               <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
-                View Interest Form
+                Express Interest
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild className="text-base px-8 py-6 h-auto">
@@ -73,6 +73,12 @@ const Hero = () => {
               </a>
             </Button>
           </div>
+          <p 
+            className="text-sm text-muted-foreground mt-4 opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.6s" }}
+          >
+            We'll notify you when NextStep is ready in your area. Submitting does not guarantee immediate access.
+          </p>
         </div>
       </div>
     </section>

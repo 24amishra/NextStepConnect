@@ -25,7 +25,7 @@ const Footer = () => {
               className="text-base px-8 py-6 h-auto bg-primary hover:bg-primary/90"
             >
               <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
-                Interest Form
+                Express Interest
               </a>
             </Button>
             <Button 
