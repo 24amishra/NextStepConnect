@@ -23,30 +23,35 @@ const features = [
 
 const WhatIsNextStep = () => {
   return (
-    <section className="py-24 bg-secondary">
+    <section className="py-28 bg-secondary/50">
       <div className="container">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-6">
+        {/* Section Header */}
+        <div className="text-center mb-20">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/10 px-4 py-2 rounded-full">
+            About Us
+          </span>
+          <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
             What is Next Step?
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto italic">
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             "We aren't just a matching service; we are a launchpad."
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+        {/* Card Grid */}
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-background p-8 rounded-lg border border-border hover:shadow-lg transition-shadow duration-300"
+              className="group bg-background p-8 rounded-2xl border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300"
             >
-              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                <feature.icon className="w-7 h-7 text-primary" />
+              <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <feature.icon className="w-7 h-7 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-semibold font-heading text-foreground mb-4">
+              <h3 className="text-xl font-bold font-heading text-foreground mb-3">
                 {feature.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed text-[15px]">
                 {feature.description}
               </p>
             </div>

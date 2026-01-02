@@ -1,33 +1,69 @@
 import { Button } from "@/components/ui/button";
+import { Linkedin, Mail } from "lucide-react";
 import logo from "@/assets/NextStepLogo.png";
 
 const Footer = () => {
   return (
-    <footer className="py-24 bg-foreground text-background">
+    <footer className="py-28 bg-foreground text-background">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold font-heading mb-6">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/20 px-4 py-2 rounded-full">
+            Join Us
+          </span>
+          <h2 className="text-4xl md:text-5xl font-extrabold font-heading mb-6">
             Ready to mentor the next generation?
           </h2>
-          <p className="text-lg text-background/80 mb-10 leading-relaxed">
+          <p className="text-lg text-background/70 mb-10 leading-relaxed">
             We are currently building our network of local partners. If you're interested 
             in working with a student or learning more about our upcoming projects, 
             let us know through our quick interest form.
           </p>
-          <Button 
-            size="lg" 
-            asChild 
-            className="text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90"
-          >
-            <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
-              Interest Form
-            </a>
-          </Button>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button 
+              size="lg" 
+              asChild 
+              className="text-base px-8 py-6 h-auto bg-primary hover:bg-primary/90"
+            >
+              <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
+                Interest Form
+              </a>
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              asChild 
+              className="text-base px-8 py-6 h-auto border-background/30 text-background hover:bg-background/10"
+            >
+              <a href="mailto:nextstep.connects@gmail.com">
+                Email Us
+              </a>
+            </Button>
+          </div>
         </div>
 
         {/* Footer Bottom */}
-        <div className="mt-20 pt-8 border-t border-background/20 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mt-20 pt-8 border-t border-background/20 flex flex-col md:flex-row items-center justify-between gap-6">
           <img src={logo} alt="Next Step Logo" className="h-10 w-auto brightness-0 invert" />
+          
+          <div className="flex items-center gap-4">
+            <a 
+              href="https://www.linkedin.com/company/nextstepconnects/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2.5 rounded-full border border-background/30 hover:bg-background/10 transition-colors"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="w-5 h-5 text-background" />
+            </a>
+            <a 
+              href="mailto:nextstep.connects@gmail.com"
+              className="p-2.5 rounded-full border border-background/30 hover:bg-background/10 transition-colors"
+              aria-label="Email"
+            >
+              <Mail className="w-5 h-5 text-background" />
+            </a>
+          </div>
+          
           <p className="text-sm text-background/60">
             © {new Date().getFullYear()} Next Step. All rights reserved.
           </p>
