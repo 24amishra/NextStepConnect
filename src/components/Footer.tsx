@@ -32,20 +32,20 @@ const Footer = () => {
         </div>
 
         {/* Footer Bottom */}
-        <div className="mt-20 pt-8 border-t border-background/20 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-2xl font-bold font-heading text-background">Next Step</div>
-          
+        <div className="mt-20 pt-8 border-t border-background/20 flex flex-col items-center justify-center gap-6">
+          <img src={logo} alt="Next Step Logo" className="h-12 w-auto" />
+
           <div className="flex items-center gap-4">
-            <a 
-              href="https://www.linkedin.com/company/nextstepconnects/" 
-              target="_blank" 
+            <a
+              href="https://www.linkedin.com/company/nextstepconnects/"
+              target="_blank"
               rel="noopener noreferrer"
               className="p-2.5 rounded-full border border-background/30 hover:bg-background/10 transition-colors"
               aria-label="LinkedIn"
             >
               <Linkedin className="w-5 h-5 text-background" />
             </a>
-            <a 
+            <a
               href="mailto:nextstep.connects@gmail.com"
               className="p-2.5 rounded-full border border-background/30 hover:bg-background/10 transition-colors"
               aria-label="Email"
@@ -53,7 +53,7 @@ const Footer = () => {
               <Mail className="w-5 h-5 text-background" />
             </a>
           </div>
-          
+
           <p className="text-sm text-background/60">
             © {new Date().getFullYear()} Next Step. All rights reserved.
           </p>
