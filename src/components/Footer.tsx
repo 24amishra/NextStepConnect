@@ -19,12 +19,12 @@ const Footer = () => {
             let us know through our quick interest form.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button 
-              size="lg" 
-              asChild 
+            <Button
+              size="lg"
+              asChild
               className="text-base px-8 py-6 h-auto bg-primary hover:bg-primary/90"
             >
-              <a href="https://tally.so" target="_blank" rel="noopener noreferrer">
+              <a href="https://tally.so/r/rja6gR" target="_blank" rel="noopener noreferrer">
                 Express Interest
               </a>
             </Button>
