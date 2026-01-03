@@ -11,7 +11,7 @@ const features = [
     icon: BookOpen,
     title: "The Educational Framework",
     description:
-      "Unlike traditional internships, our students are backed by the Next Step Learning Hub. We provide \"how-to\" guides for every deliverable, ensuring your organization receives high-quality, professional work.",
+      "Unlike traditional internships, our students are backed by the NextStep Learning Hub. We provide \"how-to\" guides for every deliverable, ensuring your organization receives high-quality, professional work.",
   },
   {
     icon: Rocket,
@@ -31,7 +31,7 @@ const WhatIsNextStep = () => {
             About Us
           </span>
           <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
-            What is Next Step?
+            What is NextStep?
           </h2>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             "We aren't just a matching service; we are a launchpad."

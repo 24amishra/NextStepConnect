@@ -76,7 +76,7 @@ const HowItWorks = () => {
             </h3>
             <p className="text-muted-foreground leading-relaxed">
               Compensation is entirely up to you. Many organizations work with students on a volunteer basis,
-              while others choose to offer payment or stipends. Students join Next Step to gain real-world
+              while others choose to offer payment or stipends. Students join NextStep to gain real-world
               experience and build their portfolios, so both paid and unpaid opportunities are welcome.
             </p>
           </div>

@@ -6,7 +6,7 @@ const Hero = () => {
     <section className="min-h-screen flex flex-col">
       {/* Navigation */}
       <nav className="container py-6 flex items-center justify-between">
-        <img src={logo} alt="Next Step Logo" className="h-12 w-auto" />
+        <img src={logo} alt="NextStep Logo" className="h-12 w-auto" />
         <div className="flex items-center gap-3">
           <a 
             href="https://www.linkedin.com/company/nextstepconnects/" 
@@ -48,7 +48,7 @@ const Hero = () => {
             className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}
           >
-            Next Step connects ambitious students with local businesses and organizations to tackle real-world projects.
+            NextStep connects ambitious students with local businesses and organizations to tackle real-world projects.
             Fresh perspectives for you; invaluable experience for them.
           </p>
         </div>

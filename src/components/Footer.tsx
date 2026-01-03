@@ -33,7 +33,7 @@ const Footer = () => {
 
         {/* Footer Bottom */}
         <div className="mt-20 pt-8 border-t border-background/20 flex flex-col items-center justify-center gap-6">
-          <img src={logo} alt="Next Step Logo" className="h-12 w-auto" />
+          <img src={logo} alt="NextStep Logo" className="h-12 w-auto" />
 
           <div className="flex items-center gap-4">
             <a
@@ -55,7 +55,7 @@ const Footer = () => {
           </div>
 
           <p className="text-sm text-background/60">
-            © {new Date().getFullYear()} Next Step. All rights reserved.
+            © {new Date().getFullYear()} NextStep. All rights reserved.
           </p>
         </div>
       </div>
