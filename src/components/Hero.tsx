@@ -45,11 +45,10 @@ const Hero = () => {
           </h1>
           
           <p
-            className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-10 max-w-2xl opacity-0 animate-fade-in-up"
+            className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl opacity-0 animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}
           >
-            NextStep connects ambitious students with local businesses and organizations to tackle real-world projects.
-            Fresh perspectives for you; invaluable experience for them.
+            It's a win-win: fresh ideas and capabilities for your business or organization, meaningful professional growth for ambitious learners.
           </p>
         </div>
       </div>
