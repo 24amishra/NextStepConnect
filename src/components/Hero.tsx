@@ -58,10 +58,20 @@ const Hero = () => {
             It's a win-win: fresh ideas and capabilities for your business or organization, meaningful professional growth for ambitious learners.
           </p>
 
+          {/* Launch Announcement */}
+          <div
+            className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-6 py-3 mb-4 opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "0.4s" }}
+          >
+            <span className="text-sm font-medium text-primary">
+              🚀 Launching February 2026
+            </span>
+          </div>
+
           {/* Interest Form Notification */}
           <div
             className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-6 py-3 mb-8 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.4s" }}
+            style={{ animationDelay: "0.5s" }}
           >
             <span className="text-sm font-medium text-primary">
               📝 Interest form available below
@@ -71,7 +81,7 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="container pb-8 flex justify-center opacity-0 animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
+      <div className="container pb-8 flex justify-center opacity-0 animate-fade-in-up" style={{ animationDelay: "0.6s" }}>
         <button
           onClick={scrollToForm}
           className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer group"

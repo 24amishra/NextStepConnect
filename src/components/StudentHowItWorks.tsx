@@ -13,7 +13,7 @@ const steps = [
     title: "Get Matched",
     icon: Lightbulb,
     description:
-      "We'll connect you with a local business or organization that aligns with your goals and interests.",
+      "Meet like-minded students and collaborate on group projects for local businesses of your choice. Choose who you work with and what projects excite you most.",
   },
   {
     number: "03",
