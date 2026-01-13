@@ -1,3 +1,4 @@
+import React from "react";
 import { ClipboardCheck, Lightbulb, Rocket, TrendingUp } from "lucide-react";
 
 const steps = [
@@ -56,13 +57,13 @@ const StudentHowItWorks = () => {
               className="relative bg-background p-7 rounded-2xl border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 group"
             >
               {/* Step Number Badge */}
-              <div className="absolute -top-3 -right-3 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+              <div className="absolute -top-3 -right-3 bg-gradient-to-br from-primary to-primary/80 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                 Step {step.number}
               </div>
 
               <div className="mt-2">
-                <div className="w-14 h-14 bg-gradient-to-br from-foreground to-foreground/80 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                  <step.icon className="w-7 h-7 text-background" />
+                <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                  {React.createElement(step.icon, { className: "w-7 h-7 text-white", strokeWidth: 2.5 })}
                 </div>
                 <h3 className="text-xl font-bold font-heading text-foreground mb-3">
                   {step.title}

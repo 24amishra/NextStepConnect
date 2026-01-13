@@ -1,3 +1,4 @@
+import React from "react";
 import { Briefcase, GraduationCap, Award, Heart } from "lucide-react";
 
 const benefits = [
@@ -53,7 +54,7 @@ const StudentWhatIsNextStep = () => {
               className="group bg-background p-8 rounded-3xl border-2 border-border hover:border-primary/40 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
             >
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <benefit.icon className="w-8 h-8 text-primary-foreground" />
+                {React.createElement(benefit.icon, { className: "w-8 h-8 text-white", strokeWidth: 2.5 })}
               </div>
               <h3 className="text-2xl font-bold font-heading text-foreground mb-4">
                 {benefit.title}
