@@ -1,36 +1,42 @@
-import React from "react";
 import { ClipboardCheck, Lightbulb, Rocket, TrendingUp } from "lucide-react";
 
 const steps = [
   {
     number: "01",
     title: "Apply",
-    icon: ClipboardCheck,
+    icon: "clipboard-check",
     description:
       "Fill out our quick interest form. Tell us about your major, skills, and what kind of projects excite you.",
   },
   {
     number: "02",
     title: "Get Matched",
-    icon: Lightbulb,
+    icon: "lightbulb",
     description:
       "Meet like-minded students and collaborate on group projects for local businesses of your choice. Choose who you work with and what projects excite you most.",
   },
   {
     number: "03",
     title: "Learn & Execute",
-    icon: Rocket,
+    icon: "rocket",
     description:
       "Access our Learning Hub with professional frameworks and guides. Work on real projects with real clients.",
   },
   {
     number: "04",
     title: "Grow",
-    icon: TrendingUp,
+    icon: "trending-up",
     description:
       "Build your resume with tangible accomplishments. Network with professionals. Stand out to future employers.",
   },
 ];
+
+const iconMap = {
+  "clipboard-check": ClipboardCheck,
+  "lightbulb": Lightbulb,
+  "rocket": Rocket,
+  "trending-up": TrendingUp,
+};
 
 const StudentHowItWorks = () => {
   return (
@@ -63,7 +69,10 @@ const StudentHowItWorks = () => {
 
               <div className="mt-2">
                 <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                  {React.createElement(step.icon, { className: "w-7 h-7 text-white", strokeWidth: 2.5 })}
+                  {(() => {
+                    const Icon = iconMap[step.icon as keyof typeof iconMap];
+                    return <Icon className="w-7 h-7 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
+                  })()}
                 </div>
                 <h3 className="text-xl font-bold font-heading text-foreground mb-3">
                   {step.title}

@@ -1,32 +1,38 @@
-import React from "react";
 import { Briefcase, GraduationCap, Award, Heart } from "lucide-react";
 
 const benefits = [
   {
-    icon: Briefcase,
+    icon: "briefcase",
     title: "Real-World Experience",
     description:
       "Go beyond theory. Work on actual projects for local businesses and organizations, gaining hands-on experience that sets you apart in today's competitive job market.",
   },
   {
-    icon: GraduationCap,
+    icon: "graduation-cap",
     title: "All Majors Welcome",
     description:
       "Whether you're studying business, computer science, design, communications, or any other field—we have opportunities that match your skills and interests.",
   },
   {
-    icon: Award,
+    icon: "award",
     title: "Resume & Portfolio Builder",
     description:
       "Build a portfolio of real client work you can showcase. Gain tangible results and accomplishments to discuss in interviews and future career opportunities.",
   },
   {
-    icon: Heart,
+    icon: "heart",
     title: "Community Impact",
     description:
       "Use what you're learning to help local businesses succeed. Make a meaningful difference while developing professional skills and building lasting connections.",
   },
 ];
+
+const iconMap = {
+  "briefcase": Briefcase,
+  "graduation-cap": GraduationCap,
+  "award": Award,
+  "heart": Heart,
+};
 
 const StudentWhatIsNextStep = () => {
   return (
@@ -54,7 +60,10 @@ const StudentWhatIsNextStep = () => {
               className="group bg-background p-8 rounded-3xl border-2 border-border hover:border-primary/40 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
             >
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                {React.createElement(benefit.icon, { className: "w-8 h-8 text-white", strokeWidth: 2.5 })}
+                {(() => {
+                  const Icon = iconMap[benefit.icon as keyof typeof iconMap];
+                  return <Icon className="w-8 h-8 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
+                })()}
               </div>
               <h3 className="text-2xl font-bold font-heading text-foreground mb-4">
                 {benefit.title}
