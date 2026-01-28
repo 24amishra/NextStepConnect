@@ -1,4 +1,6 @@
 import { Linkedin, Mail, ChevronDown, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/NextStepLogo.png";
 
 const StudentHero = () => {
@@ -15,6 +17,11 @@ const StudentHero = () => {
       <nav className="container py-6 flex items-center justify-between">
         <img src={logo} alt="NextStep Logo" className="h-12 w-auto" />
         <div className="flex items-center gap-3">
+          <Link to="/student/login">
+            <Button variant="outline" size="sm">
+              Student Login
+            </Button>
+          </Link>
           <a
             href="https://www.linkedin.com/company/nextstepconnects/"
             target="_blank"
