@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { PublicBusinessData, saveApplication, CustomQuestion } from "@/lib/firestore";
+import { PublicBusinessData, saveApplication, CustomQuestion, getStudentProfile } from "@/lib/firestore";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,19 @@ const ApplicationForm = ({ business, open, onOpenChange, onSuccess }: Applicatio
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [studentName, setStudentName] = useState("");
+
+  useEffect(() => {
+    const fetchStudentName = async () => {
+      if (currentUser?.uid) {
+        const profile = await getStudentProfile(currentUser.uid);
+        if (profile) {
+          setStudentName(profile.name);
+        }
+      }
+    };
+    fetchStudentName();
+  }, [currentUser?.uid]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,12 +62,18 @@ const ApplicationForm = ({ business, open, onOpenChange, onSuccess }: Applicatio
       }
     }
 
+    if (!studentName) {
+      setError("Please complete your student profile before applying");
+      return;
+    }
+
     try {
       setLoading(true);
       await saveApplication({
         studentId: currentUser.uid,
+        studentName: studentName,
         studentEmail: currentUser.email || "",
-        businessId: business.businessId,  // Changed from business.userId
+        businessId: business.businessId,
         businessName: business.companyName,
         answers,
         appliedAt: new Date(),

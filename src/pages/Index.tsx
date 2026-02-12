@@ -7,6 +7,7 @@ import StudentHero from "@/components/StudentHero";
 import StudentWhatIsNextStep from "@/components/StudentWhatIsNextStep";
 import StudentHowItWorks from "@/components/StudentHowItWorks";
 import StudentFooter from "@/components/StudentFooter";
+import Disclaimer from "@/components/Disclaimer";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<"business" | "student">("business");
@@ -39,6 +40,11 @@ const Index = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="container py-4">
+        <Disclaimer />
       </div>
 
       {/* Content based on active tab */}

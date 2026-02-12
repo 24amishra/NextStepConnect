@@ -16,7 +16,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Tags } from "lucide-react";
+import CategorySelector from "@/components/CategorySelector";
 
 const BusinessSignup = () => {
   const [step, setStep] = useState<"account" | "details">("account");
@@ -33,7 +34,8 @@ const BusinessSignup = () => {
   const [phone, setPhone] = useState("");
   const [preferredContactMethod, setPreferredContactMethod] = useState<"Email" | "Phone">("Email");
   const [potentialProblems, setPotentialProblems] = useState("");
-  
+  const [categories, setCategories] = useState<string[]>([]);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signup, currentUser, loading: authLoading } = useAuth();
@@ -100,7 +102,9 @@ const BusinessSignup = () => {
         phone,
         preferredContactMethod,
         potentialProblems,
+        categories,
         createdAt: new Date(),
+        businessId: currentUser.uid,
       });
 
       navigate("/business/dashboard");
@@ -334,6 +338,22 @@ const BusinessSignup = () => {
                 rows={5}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>
+                <Tags className="h-4 w-4 inline mr-1 text-primary" />
+                Project Categories
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Select all categories that apply to your project needs (optional)
+              </p>
+              <CategorySelector
+                selectedCategories={categories}
+                onChange={setCategories}
+                disabled={loading}
+              />
+            </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Saving..." : "Complete Sign Up"}
             </Button>

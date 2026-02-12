@@ -2,8 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, User, Mail, Calendar, Briefcase, BookOpen, Star } from "lucide-react";
 import JobPostingsList from "@/components/JobPostingsList";
+import EducationalResources from "@/components/EducationalResources";
+import Disclaimer from "@/components/Disclaimer";
+import StudentRatings from "@/components/StudentRatings";
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -36,65 +40,100 @@ const StudentDashboard = () => {
 
       {/* Main Content */}
       <main className="container py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Card className="border-primary/20">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <User className="h-5 w-5 text-primary" />
-                Account Information
-              </CardTitle>
-              <CardDescription>Your student profile details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Mail className="h-4 w-4 text-primary" />
-                  Email
-                </div>
-                <p className="text-lg font-semibold text-foreground">{currentUser?.email}</p>
-              </div>
+        <div className="mb-6">
+          <Disclaimer />
+        </div>
 
-              {currentUser?.metadata.creationTime && (
+        <Tabs defaultValue="opportunities" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+            <TabsTrigger value="opportunities" className="gap-2">
+              <Briefcase className="h-4 w-4" />
+              <span className="hidden sm:inline">Opportunities</span>
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Resources</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile & Ratings</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Opportunities Tab */}
+          <TabsContent value="opportunities" className="space-y-6">
+            <JobPostingsList />
+          </TabsContent>
+
+          {/* Resources Tab */}
+          <TabsContent value="resources">
+            <EducationalResources />
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card className="border-primary/20">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <User className="h-5 w-5 text-primary" />
+                  Account Information
+                </CardTitle>
+                <CardDescription>Your student profile details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    Account Created
+                    <Mail className="h-4 w-4 text-primary" />
+                    Email
                   </div>
-                  <p className="text-base text-foreground">
-                    {new Date(currentUser.metadata.creationTime).toLocaleDateString()}
+                  <p className="text-lg font-semibold text-foreground">{currentUser?.email}</p>
+                </div>
+
+                {currentUser?.metadata.creationTime && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      Account Created
+                    </div>
+                    <p className="text-base text-foreground">
+                      {new Date(currentUser.metadata.creationTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <User className="h-4 w-4 text-primary" />
+                    User ID
+                  </div>
+                  <p className="text-sm font-mono text-muted-foreground break-all">
+                    {currentUser?.uid}
                   </p>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <User className="h-4 w-4 text-primary" />
-                  User ID
-                </div>
-                <p className="text-sm font-mono text-muted-foreground break-all">
-                  {currentUser?.uid}
+            {/* Ratings */}
+            <StudentRatings />
+
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <CardTitle>Profile Tips</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  <strong>LinkedIn:</strong> Keep your profile updated with your latest projects and skills
                 </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Job Postings List */}
-          <JobPostingsList />
-
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle>Welcome to NextStep!</CardTitle>
-              <CardDescription>
-                Your student account is set up and ready to go.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Browse available opportunities above and apply to positions that match your interests and skills.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+                <p>
+                  <strong>Portfolio:</strong> Create a portfolio website to showcase your best work
+                </p>
+                <p>
+                  <strong>Headshot:</strong> Use a professional photo on all your profiles
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

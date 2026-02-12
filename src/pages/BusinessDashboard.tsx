@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBusinessData, updateBusinessData, BusinessData } from "@/lib/firestore";
+import { getBusinessData, updateBusinessData, BusinessData, getBadgeStatus, BadgeStatus } from "@/lib/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,20 +10,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  Loader2, 
-  LogOut, 
-  Building2, 
-  MapPin, 
-  Briefcase, 
-  User, 
-  Mail, 
-  Phone, 
-  AlertCircle, 
-  Edit2, 
-  Save, 
+import { Badge } from "@/components/ui/badge";
+import CategorySelector from "@/components/CategorySelector";
+import Disclaimer from "@/components/Disclaimer";
+import {
+  Loader2,
+  LogOut,
+  Building2,
+  MapPin,
+  Briefcase,
+  User,
+  Mail,
+  Phone,
+  AlertCircle,
+  Edit2,
+  Save,
   X,
-  FileText
+  FileText,
+  Award,
+  Tags
 } from "lucide-react";
 
 const BusinessDashboard = () => {
@@ -35,6 +40,7 @@ const BusinessDashboard = () => {
   const [fetchedUserId, setFetchedUserId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [badgeStatus, setBadgeStatus] = useState<BadgeStatus>({ completedProjects: 0, badge: "none" });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -46,6 +52,7 @@ const BusinessDashboard = () => {
     phone: "",
     preferredContactMethod: "Email" as "Email" | "Phone",
     potentialProblems: "",
+    categories: [] as string[],
   });
 
   useEffect(() => {
@@ -75,7 +82,12 @@ const BusinessDashboard = () => {
             phone: data.phone || "",
             preferredContactMethod: data.preferredContactMethod || "Email",
             potentialProblems: data.potentialProblems || "",
+            categories: data.categories || [],
           });
+
+          // Fetch badge status
+          const badge = await getBadgeStatus(currentUser.uid);
+          setBadgeStatus(badge);
         } else {
           navigate("/business/signup");
         }
@@ -106,6 +118,7 @@ const BusinessDashboard = () => {
         phone: businessData.phone || "",
         preferredContactMethod: businessData.preferredContactMethod || "Email",
         potentialProblems: businessData.potentialProblems || "",
+        categories: businessData.categories || [],
       });
     }
     setIsEditing(false);
@@ -186,6 +199,10 @@ const BusinessDashboard = () => {
 
       {/* Main Content */}
       <main className="container py-8">
+        <div className="max-w-4xl mx-auto mb-6">
+          <Disclaimer />
+        </div>
+
         {error && (
           <Alert variant="destructive" className="mb-6 max-w-4xl mx-auto">
             <AlertCircle className="h-4 w-4" />
@@ -350,6 +367,21 @@ const BusinessDashboard = () => {
                         rows={5}
                       />
                     </div>
+
+                    <div className="space-y-2">
+                      <Label>
+                        <Tags className="h-4 w-4 inline mr-1 text-primary" />
+                        Project Categories
+                      </Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Select all categories that apply to your project needs
+                      </p>
+                      <CategorySelector
+                        selectedCategories={formData.categories}
+                        onChange={(categories) => setFormData({ ...formData, categories })}
+                        disabled={saving}
+                      />
+                    </div>
                   </form>
                 ) : (
                   <>
@@ -427,8 +459,80 @@ const BusinessDashboard = () => {
                       </div>
                       <p className="text-base whitespace-pre-wrap text-foreground">{businessData.potentialProblems}</p>
                     </div>
+
+                    {businessData.categories && businessData.categories.length > 0 && (
+                      <>
+                        <Separator className="bg-primary/20" />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Tags className="h-4 w-4 text-primary" />
+                            Project Categories
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {businessData.categories.map((category) => (
+                              <Badge
+                                key={category}
+                                variant="secondary"
+                                className="bg-primary/10 text-primary border-primary/20"
+                              >
+                                {category}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Badge Status Card */}
+            <Card className="border-primary/20">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Award className="h-5 w-5 text-primary" />
+                  Badge Status
+                </CardTitle>
+                <CardDescription>Your NextStep achievement level</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Completed Projects
+                  </div>
+                  <p className="text-2xl font-bold text-foreground">{badgeStatus.completedProjects}</p>
+                </div>
+
+                <Separator className="bg-primary/20" />
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Current Badge
+                  </div>
+                  {badgeStatus.badge === "frequent" && (
+                    <Badge className="bg-primary text-primary-foreground">
+                      <Award className="h-3 w-3 mr-1" />
+                      Frequent Partner
+                    </Badge>
+                  )}
+                  {badgeStatus.badge === "returning" && (
+                    <Badge variant="secondary" className="bg-primary/20 text-primary">
+                      <Award className="h-3 w-3 mr-1" />
+                      Returning Member
+                    </Badge>
+                  )}
+                  {badgeStatus.badge === "none" && (
+                    <p className="text-sm text-muted-foreground">
+                      Complete your first project to earn a badge!
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-xs text-muted-foreground pt-2 border-t border-primary/20">
+                  <p>• 1+ projects: Returning Member</p>
+                  <p>• 5+ projects: Frequent Partner</p>
+                </div>
               </CardContent>
             </Card>
 
