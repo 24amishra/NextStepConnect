@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Building2, MapPin, Briefcase, User, Mail, Phone, Loader2 } from "lucide-react";
+import { AlertCircle, Building2, MapPin, Briefcase, User, Mail, Phone, Loader2, Lock } from "lucide-react";
 
 const BusinessLogin = () => {
   const [email, setEmail] = useState("");
@@ -220,66 +220,76 @@ const BusinessLogin = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Business Login</CardTitle>
-          <CardDescription className="text-center">
-            Sign in to your business account
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md shadow-warm-lg border-0 rounded-3xl overflow-hidden">
+        <CardHeader className="space-y-2 pb-6 pt-8 px-8">
+          <CardTitle className="text-3xl font-bold text-center font-heading">
+            Let's Start Learning
+          </CardTitle>
+          <CardDescription className="text-center text-base text-muted-foreground">
+            Please login or sign up to continue
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-8 pb-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="rounded-xl">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="business@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
+              <Label htmlFor="email" className="sr-only">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Your Email"
+                  className="pl-14"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
+              <Label htmlFor="password" className="sr-only">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Your Password"
+                  className="pl-14"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full mt-6" size="lg" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-3 px-8 pb-8">
           <div className="text-sm text-center text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/business/signup" className="text-primary hover:underline">
-              Sign up
+            Already Have An Account?{" "}
+            <Link to="/business/signup" className="text-primary font-semibold hover:text-primary-hover transition-colors">
+              Sign Up
             </Link>
           </div>
           <div className="text-sm text-center text-muted-foreground">
-            <Link to="/business/forgot-password" className="text-primary hover:underline">
+            <Link to="/business/forgot-password" className="text-primary hover:text-primary-hover transition-colors">
               Forgot password?
             </Link>
           </div>
-          <div className="text-sm text-center text-muted-foreground">
-            <Link to="/" className="text-primary hover:underline">
-              Back to home
+          <div className="text-sm text-center text-muted-foreground pt-2 border-t border-border/50">
+            <Link to="/" className="text-foreground/70 hover:text-foreground transition-colors">
+              ← Back to home
             </Link>
           </div>
         </CardFooter>

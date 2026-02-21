@@ -26,6 +26,7 @@ interface PrivateBusinessData {
   phone: string;
   createdAt: Date | any;
   updatedAt?: Date | any;
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 
 // Full business data (used internally and for business owner)
@@ -34,11 +35,12 @@ export interface BusinessData extends PublicBusinessData {
   phone: string;
   createdAt: Date | any;
   updatedAt?: Date | any;
+  approvalStatus?: "pending" | "approved" | "rejected";
 }
 
 export const saveBusinessData = async (businessData: BusinessData): Promise<void> => {
   try {
-    const { userId, phone, createdAt, updatedAt, ...publicData } = businessData;
+    const { userId, phone, createdAt, updatedAt, approvalStatus, ...publicData } = businessData;
 
     // Ensure businessId is set to userId
     const publicDataWithId = {
@@ -55,6 +57,7 @@ export const saveBusinessData = async (businessData: BusinessData): Promise<void
       phone,
       createdAt: createdAt || new Date(),
       updatedAt: updatedAt || new Date(),
+      approvalStatus: approvalStatus || "pending", // Default to pending for new businesses
     });
   } catch (error) {
     console.error("Error saving business data:", error);
@@ -77,6 +80,7 @@ export const getBusinessData = async (userId: string): Promise<BusinessData | nu
         userId,
         phone: "",
         createdAt: new Date(),
+        approvalStatus: "pending" as const,
       };
       
       return {
@@ -94,7 +98,7 @@ export const getBusinessData = async (userId: string): Promise<BusinessData | nu
 
 export const updateBusinessData = async (userId: string, businessData: Partial<BusinessData>): Promise<void> => {
   try {
-    const { phone, createdAt, updatedAt, ...publicData } = businessData;
+    const { phone, createdAt, updatedAt, approvalStatus, ...publicData } = businessData;
 
     // Update public data
     if (Object.keys(publicData).length > 0) {
@@ -109,6 +113,7 @@ export const updateBusinessData = async (userId: string, businessData: Partial<B
     const privateUpdates: any = { updatedAt: new Date() };
     if (phone !== undefined) privateUpdates.phone = phone;
     if (createdAt !== undefined) privateUpdates.createdAt = createdAt;
+    if (approvalStatus !== undefined) privateUpdates.approvalStatus = approvalStatus;
 
     await setDoc(doc(db, "businesses", userId, "private", "details"), privateUpdates, { merge: true });
   } catch (error) {
@@ -127,9 +132,9 @@ export interface StudentProfile {
   skills: string[]; // Array of skills
   desiredRoles: string[]; // Array of desired roles/positions
   bio?: string; // Strengths, characteristics, about me
-  resumeUrl?: string; // Optional resume link
   portfolioUrl?: string; // Optional portfolio link
   linkedinUrl?: string; // Optional LinkedIn
+  openToMatching?: boolean; // Whether student wants to be matched to opportunities
   createdAt: Date | any;
   updatedAt?: Date | any;
 }
@@ -170,6 +175,15 @@ export const updateStudentProfile = async (userId: string, profile: Partial<Stud
     }, { merge: true });
   } catch (error) {
     console.error("Error updating student profile:", error);
+    throw error;
+  }
+};
+
+export const updateMatchingPreference = async (userId: string, openToMatching: boolean): Promise<void> => {
+  try {
+    await updateStudentProfile(userId, { openToMatching });
+  } catch (error) {
+    console.error("Error updating matching preference:", error);
     throw error;
   }
 };
@@ -403,6 +417,68 @@ export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData 
     return businessesWithBadges;
   } catch (error) {
     console.error("Error fetching businesses with badges:", error);
+    throw error;
+  }
+};
+
+// ============================================
+// ADMIN APPROVAL FUNCTIONS
+// ============================================
+export interface BusinessWithApprovalStatus extends BusinessData {
+  approvalStatus: "pending" | "approved" | "rejected";
+}
+
+// Get all businesses pending approval
+export const getPendingBusinesses = async (): Promise<BusinessWithApprovalStatus[]> => {
+  try {
+    const businessesRef = collection(db, "businesses");
+    const querySnapshot = await getDocs(businessesRef);
+    const pendingBusinesses: BusinessWithApprovalStatus[] = [];
+
+    for (const businessDoc of querySnapshot.docs) {
+      const publicData = businessDoc.data() as PublicBusinessData;
+
+      // Get private data including approval status
+      const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
+      const privateDocSnap = await getDoc(privateDocRef);
+
+      if (privateDocSnap.exists()) {
+        const privateData = privateDocSnap.data() as PrivateBusinessData;
+
+        // Only include pending businesses
+        if (privateData.approvalStatus === "pending") {
+          pendingBusinesses.push({
+            ...publicData,
+            ...privateData,
+            approvalStatus: "pending",
+          } as BusinessWithApprovalStatus);
+        }
+      }
+    }
+
+    return pendingBusinesses;
+  } catch (error) {
+    console.error("Error fetching pending businesses:", error);
+    throw error;
+  }
+};
+
+// Approve a business account
+export const approveBusiness = async (userId: string): Promise<void> => {
+  try {
+    await updateBusinessData(userId, { approvalStatus: "approved" });
+  } catch (error) {
+    console.error("Error approving business:", error);
+    throw error;
+  }
+};
+
+// Reject a business account
+export const rejectBusiness = async (userId: string): Promise<void> => {
+  try {
+    await updateBusinessData(userId, { approvalStatus: "rejected" });
+  } catch (error) {
+    console.error("Error rejecting business:", error);
     throw error;
   }
 };

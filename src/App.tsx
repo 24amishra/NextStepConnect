@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { BusinessProtectedRoute } from "@/components/BusinessProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BusinessLogin from "./pages/BusinessLogin";
@@ -14,6 +15,7 @@ import StudentSignup from "./pages/StudentSignup";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -31,17 +33,17 @@ const App = () => (
             <Route
               path="/business/dashboard"
               element={
-                <ProtectedRoute>
+                <BusinessProtectedRoute>
                   <BusinessDashboard />
-                </ProtectedRoute>
+                </BusinessProtectedRoute>
               }
             />
             <Route
               path="/business/applications"
               element={
-                <ProtectedRoute>
+                <BusinessProtectedRoute>
                   <BusinessApplications />
-                </ProtectedRoute>
+                </BusinessProtectedRoute>
               }
             />
             <Route path="/student/login" element={<StudentLogin />} />
@@ -51,6 +53,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

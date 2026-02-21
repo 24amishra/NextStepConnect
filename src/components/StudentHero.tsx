@@ -1,126 +1,185 @@
-import { Linkedin, Mail, ChevronDown, Sparkles } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, Sparkles, Award, Briefcase, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/NextStepLogo.png";
 
 const StudentHero = () => {
-  const scrollToForm = () => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth'
-    });
-  };
-
   return (
-    <section className="min-h-screen flex flex-col relative bg-gradient-to-br from-primary/5 via-background to-secondary/30">
-      {/* Navigation */}
-      <nav className="container py-6 flex items-center justify-between">
-        <img src={logo} alt="NextStep Logo" className="h-12 w-auto" />
-        <div className="flex items-center gap-3">
-          <Link to="/student/login">
-            <Button variant="outline" size="sm">
-              Student Login
-            </Button>
-          </Link>
-          <a
-            href="https://www.linkedin.com/company/nextstepconnects/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2.5 rounded-full border border-border hover:bg-secondary transition-colors"
-            aria-label="LinkedIn"
-          >
-            <Linkedin className="w-5 h-5 text-foreground" />
-          </a>
-          <a
-            href="mailto:nextstep.connects@gmail.com"
-            className="p-2.5 rounded-full border border-border hover:bg-secondary transition-colors"
-            aria-label="Email"
-          >
-            <Mail className="w-5 h-5 text-foreground" />
-          </a>
+    <>
+      {/* Navigation - Dark Header */}
+      <nav className="bg-nextstep-brick text-background py-4 sticky top-0 z-50 shadow-warm-md">
+        <div className="container flex items-center justify-between">
+          <img src={logo} alt="NextStep Logo" className="h-10 w-auto" />
+          <div className="flex items-center gap-3">
+            <Link to="/student/login">
+              <Button variant="ghost" size="sm" className="text-background hover:bg-background/10">
+                Login
+              </Button>
+            </Link>
+            <a
+              href="https://www.linkedin.com/company/nextstepconnects/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-background/10 transition-colors"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="w-5 h-5 text-background" />
+            </a>
+            <a
+              href="mailto:nextstep.connects@gmail.com"
+              className="p-2 rounded-full hover:bg-background/10 transition-colors"
+              aria-label="Email"
+            >
+              <Mail className="w-5 h-5 text-background" />
+            </a>
+          </div>
         </div>
       </nav>
 
-      {/* Hero Content */}
-      <div className="flex-1 container flex flex-col justify-center pb-4">
-        <div className="max-w-4xl">
-          <div
-            className="inline-flex items-center gap-2 bg-primary/15 border border-primary/30 rounded-full px-5 py-2 mb-4 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0s" }}
-          >
-            <Sparkles className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold text-primary">
-              All Majors Welcome
-            </p>
-          </div>
+      {/* Hero Section - Large, Impactful */}
+      <section className="relative bg-background overflow-hidden">
+        <div className="container py-20 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: Text Content */}
+            <div className="space-y-8">
+              <div
+                className="inline-flex items-center gap-2 bg-nextstep-clay border border-primary/20 rounded-full px-5 py-2 shadow-warm-sm opacity-0 animate-fade-in-up"
+                style={{ animationDelay: "0s" }}
+              >
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  All Majors Welcome
+                </span>
+              </div>
 
-          <h1
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold font-heading text-foreground leading-[1.1] mb-6 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.1s" }}
-          >
-            Build Your Resume.{" "}
-            <span className="text-primary">Make Real Impact.</span>
-          </h1>
+              <h1
+                className="text-5xl md:text-6xl lg:text-7xl font-extrabold font-heading text-foreground leading-[1.1] opacity-0 animate-fade-in-up"
+                style={{ animationDelay: "0.1s" }}
+              >
+                Build Your Resume.{" "}
+                <span className="text-primary">Make Real Impact.</span>
+              </h1>
 
-          <p
-            className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.3s" }}
-          >
-            Transform classroom knowledge into real-world experience. Work with actual clients,
-            build your portfolio, and contribute to your community—all while developing skills
-            that matter.
-          </p>
+              <p
+                className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl opacity-0 animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                Transform classroom knowledge into real-world experience. Work with actual clients, build your portfolio, and contribute to your community.
+              </p>
 
-          {/* Key Benefits Pills */}
-          <div
-            className="flex flex-wrap gap-3 mb-8 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <div className="bg-secondary border border-border rounded-full px-4 py-2">
-              <span className="text-sm font-medium">Portfolio Builder</span>
+              <div
+                className="flex flex-wrap gap-4 opacity-0 animate-fade-in-up"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <Button size="lg" className="h-14 px-8 text-base shadow-warm-md" asChild>
+                  <a href="https://tally.so/r/LZKD4z" target="_blank" rel="noopener noreferrer">
+                    Join NextStep
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </a>
+                </Button>
+                <Button variant="outline" size="lg" className="h-14 px-8 text-base shadow-warm-sm">
+                  Learn More
+                </Button>
+              </div>
+
+              {/* Key Benefits */}
+              <div
+                className="flex flex-wrap gap-6 pt-4 opacity-0 animate-fade-in-up"
+                style={{ animationDelay: "0.4s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Real Projects</p>
+                    <p className="text-xs text-muted-foreground">Hands-on Work</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Award className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Build Portfolio</p>
+                    <p className="text-xs text-muted-foreground">Stand Out</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="bg-secondary border border-border rounded-full px-4 py-2">
-              <span className="text-sm font-medium">Real Client Work</span>
-            </div>
-            <div className="bg-secondary border border-border rounded-full px-4 py-2">
-              <span className="text-sm font-medium">Community Impact</span>
-            </div>
-          </div>
 
-          {/* Launch Announcement */}
-          <div
-            className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-6 py-3 mb-4 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <span className="text-sm font-medium text-primary">
-              🚀 Launching February 2026
-            </span>
-          </div>
+            {/* Right: Visual Element */}
+            <div
+              className="relative opacity-0 animate-fade-in-up"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <div className="relative">
+                {/* Geometric shapes background */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+                </div>
 
-          {/* Interest Form Notification */}
-          <div
-            className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-6 py-3 mb-8 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: "0.6s" }}
-          >
-            <span className="text-sm font-medium text-primary">
-              📝 Student interest form available below
-            </span>
+                {/* Main visual card */}
+                <div className="relative bg-card rounded-3xl p-8 shadow-warm-lg border-0">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-warm-md">
+                      <GraduationCap className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold font-heading mb-2">Launch Your Career</h3>
+                      <p className="text-muted-foreground">
+                        Gain experience employers actually want to see. Build connections that matter.
+                      </p>
+                    </div>
+                    <div className="space-y-3 pt-4 border-t border-border/50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <span className="text-primary font-bold text-sm">✓</span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">Portfolio-worthy projects</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <span className="text-primary font-bold text-sm">✓</span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">Professional mentorship</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <span className="text-primary font-bold text-sm">✓</span>
+                        </div>
+                        <p className="text-sm text-foreground font-medium">Community impact</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating accent cards */}
+                <div className="absolute -top-6 -right-6 bg-nextstep-clay rounded-2xl px-4 py-3 shadow-warm-md">
+                  <p className="text-sm font-semibold text-primary">🚀 Launching Feb 2026</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Scroll Indicator */}
-      <div className="container pb-8 flex justify-center opacity-0 animate-fade-in-up" style={{ animationDelay: "0.7s" }}>
-        <button
-          onClick={scrollToForm}
-          className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer group"
-          aria-label="Scroll to interest form"
-        >
-          <span className="text-sm font-medium">Join NextStep</span>
-          <ChevronDown className="w-6 h-6 animate-bounce group-hover:text-primary" />
-        </button>
-      </div>
-    </section>
+        {/* Flowing Divider */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden">
+          <svg
+            className="absolute bottom-0 w-full h-full"
+            viewBox="0 0 1440 120"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0,64 C240,96 480,96 720,64 C960,32 1200,32 1440,64 L1440,120 L0,120 Z"
+              fill="rgb(240, 235, 225)"
+              opacity="0.5"
+            />
+          </svg>
+        </div>
+      </section>
+    </>
   );
 };
 

@@ -40,11 +40,32 @@ const iconMap = {
 
 const StudentHowItWorks = () => {
   return (
-    <section className="py-28 bg-secondary/30">
-      <div className="container">
+    <section className="relative py-28 bg-background">
+      {/* Top Flowing Divider */}
+      <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+        <svg
+          className="absolute top-0 w-full h-full"
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0,32 C360,16 720,16 1080,32 C1200,48 1320,48 1440,32 L1440,0 L0,0 Z"
+            fill="rgb(240, 235, 225)"
+            opacity="0.3"
+          />
+          <path
+            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
+            fill="rgb(215, 100, 90)"
+            opacity="0.1"
+          />
+        </svg>
+      </div>
+
+      <div className="container relative z-10">
         {/* Section Header */}
         <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/10 px-4 py-2 rounded-full">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
             Your Journey
           </span>
           <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
@@ -60,15 +81,15 @@ const StudentHowItWorks = () => {
           {steps.map((step, index) => (
             <div
               key={index}
-              className="relative bg-background p-7 rounded-2xl border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 group"
+              className="relative bg-card p-7 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 group"
             >
               {/* Step Number Badge */}
-              <div className="absolute -top-3 -right-3 bg-gradient-to-br from-primary to-primary/80 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+              <div className="absolute -top-3 -right-3 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-warm-sm">
                 Step {step.number}
               </div>
 
               <div className="mt-2">
-                <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
                   {(() => {
                     const Icon = iconMap[step.icon as keyof typeof iconMap];
                     return <Icon className="w-7 h-7 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;

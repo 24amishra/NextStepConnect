@@ -26,11 +26,32 @@ const phases = [
 
 const HowItWorks = () => {
   return (
-    <section className="py-28">
-      <div className="container">
+    <section className="relative py-28 bg-background">
+      {/* Top Flowing Divider */}
+      <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+        <svg
+          className="absolute top-0 w-full h-full"
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0,32 C360,16 720,16 1080,32 C1200,48 1320,48 1440,32 L1440,0 L0,0 Z"
+            fill="rgb(240, 235, 225)"
+            opacity="0.3"
+          />
+          <path
+            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
+            fill="rgb(215, 100, 90)"
+            opacity="0.1"
+          />
+        </svg>
+      </div>
+
+      <div className="container relative z-10">
         {/* Section Header */}
         <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/10 px-4 py-2 rounded-full">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
             Process
           </span>
           <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
@@ -46,16 +67,16 @@ const HowItWorks = () => {
           {phases.map((phase, index) => (
             <div
               key={index}
-              className="relative bg-secondary/50 p-8 rounded-2xl border border-border hover:bg-secondary transition-colors duration-300"
+              className="relative bg-card p-8 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
             >
               {/* Phase Number Badge */}
-              <div className="absolute -top-4 left-8 bg-primary text-primary-foreground text-sm font-bold px-4 py-1.5 rounded-full">
+              <div className="absolute -top-4 left-8 bg-primary text-primary-foreground text-sm font-bold px-4 py-1.5 rounded-full shadow-warm-sm">
                 Phase {phase.number}
               </div>
 
               <div className="mt-4">
-                <div className="w-12 h-12 bg-foreground rounded-xl flex items-center justify-center mb-5">
-                  <phase.icon className="w-6 h-6 text-background" />
+                <div className="w-12 h-12 bg-nextstep-brick rounded-xl flex items-center justify-center mb-5 shadow-warm-sm">
+                  <phase.icon className="w-6 h-6 text-card" />
                 </div>
                 <h3 className="text-2xl font-bold font-heading text-foreground mb-3">
                   {phase.title}
@@ -70,7 +91,7 @@ const HowItWorks = () => {
 
         {/* Payment Flexibility Note */}
         <div className="mt-16 max-w-3xl mx-auto text-center">
-          <div className="bg-secondary/30 border border-border rounded-2xl p-8">
+          <div className="bg-nextstep-clay/40 border-0 rounded-2xl p-8 shadow-warm-md">
             <h3 className="text-xl font-bold font-heading text-foreground mb-3">
               Flexible Compensation
             </h3>

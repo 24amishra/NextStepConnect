@@ -3,7 +3,7 @@ import { Info } from "lucide-react";
 
 const Disclaimer = () => {
   return (
-    <Alert className="border-primary/30 bg-primary/5">
+    <Alert className="border-0 bg-nextstep-clay/60 shadow-warm-sm">
       <Info className="h-4 w-4 text-primary" />
       <AlertDescription className="text-sm text-foreground/90">
         <strong>Important:</strong> NextStep is a nonprofit service provider connecting students with local businesses.

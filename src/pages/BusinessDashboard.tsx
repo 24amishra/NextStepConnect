@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import CategorySelector from "@/components/CategorySelector";
 import Disclaimer from "@/components/Disclaimer";
 import {
@@ -34,6 +35,7 @@ import {
 const BusinessDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [businessData, setBusinessData] = useState<BusinessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -128,10 +130,15 @@ const BusinessDashboard = () => {
   const handleSave = async () => {
     if (!currentUser?.uid || !businessData) return;
 
-    if (!formData.companyName || !formData.location || !formData.industry || 
-        !formData.contactPersonName || !formData.email || !formData.phone || 
+    if (!formData.companyName || !formData.location || !formData.industry ||
+        !formData.contactPersonName || !formData.email || !formData.phone ||
         !formData.potentialProblems) {
       setError("Please fill in all required fields");
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -142,14 +149,26 @@ const BusinessDashboard = () => {
         ...businessData,
         ...formData,
       });
-      
+
       // Refresh data
       const updatedData = await getBusinessData(currentUser.uid);
       setBusinessData(updatedData);
       setIsEditing(false);
+
+      // Show success notification
+      toast({
+        title: "Profile Updated",
+        description: "Your business information has been successfully updated.",
+        variant: "default",
+      });
     } catch (err) {
       console.error("Error updating business data:", err);
       setError("Failed to update business data");
+      toast({
+        title: "Update Failed",
+        description: "Failed to update your profile. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -243,227 +262,338 @@ const BusinessDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
                 {isEditing ? (
-                  <form className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <form className="space-y-8">
+                    {/* Business Information Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="companyName">
+                            Company Name <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="companyName"
+                              className="pl-10"
+                              value={formData.companyName}
+                              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                              required
+                              disabled={saving}
+                              placeholder="Acme Inc."
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="location">
+                            Location <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="location"
+                              className="pl-10"
+                              value={formData.location}
+                              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                              required
+                              disabled={saving}
+                              placeholder="San Francisco, CA"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
-                        <Label htmlFor="companyName">
-                          Company Name <span className="text-destructive">*</span>
+                        <Label htmlFor="industry">
+                          Industry / What You Do <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          id="companyName"
-                          value={formData.companyName}
-                          onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                        <Textarea
+                          id="industry"
+                          value={formData.industry}
+                          onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
                           required
                           disabled={saving}
+                          rows={4}
+                          placeholder="We're a tech startup building innovative AI solutions..."
                         />
                       </div>
+                    </div>
+
+                    <Separator className="bg-primary/20" />
+
+                    {/* Contact Information Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2">
+                        <User className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Contact Information</h3>
+                      </div>
                       <div className="space-y-2">
-                        <Label htmlFor="location">
-                          Location <span className="text-destructive">*</span>
+                        <Label htmlFor="contactPersonName">
+                          Contact Person Name <span className="text-destructive">*</span>
                         </Label>
-                        <Input
-                          id="location"
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="contactPersonName"
+                            className="pl-10"
+                            value={formData.contactPersonName}
+                            onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
+                            required
+                            disabled={saving}
+                            placeholder="Jane Smith"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">
+                            Contact Email <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="email"
+                              type="email"
+                              className="pl-10"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              required
+                              disabled={saving}
+                              placeholder="contact@example.com"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">
+                            Phone Number <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="phone"
+                              type="tel"
+                              className="pl-10"
+                              value={formData.phone}
+                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                              required
+                              disabled={saving}
+                              placeholder="(555) 123-4567"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label>
+                          Preferred Contact Method <span className="text-destructive">*</span>
+                        </Label>
+                        <RadioGroup
+                          value={formData.preferredContactMethod}
+                          onValueChange={(value: "Email" | "Phone") =>
+                            setFormData({ ...formData, preferredContactMethod: value })
+                          }
+                          disabled={saving}
+                          className="flex gap-6"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Email" id="email-contact" />
+                            <Label htmlFor="email-contact" className="font-normal cursor-pointer">
+                              <Mail className="h-4 w-4 inline mr-1" />
+                              Email
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Phone" id="phone-contact" />
+                            <Label htmlFor="phone-contact" className="font-normal cursor-pointer">
+                              <Phone className="h-4 w-4 inline mr-1" />
+                              Phone
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-primary/20" />
+
+                    {/* Project Needs Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2">
+                        <AlertCircle className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Project Needs</h3>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="potentialProblems">
+                          What do you need help with? <span className="text-destructive">*</span>
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Describe your project needs and challenges
+                        </p>
+                        <Textarea
+                          id="potentialProblems"
+                          value={formData.potentialProblems}
+                          onChange={(e) => setFormData({ ...formData, potentialProblems: e.target.value })}
                           required
+                          disabled={saving}
+                          rows={5}
+                          placeholder="We're looking for help with social media marketing, content creation, and community engagement..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>
+                          <Tags className="h-4 w-4 inline mr-1 text-primary" />
+                          Project Categories
+                        </Label>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Select all categories that apply to your project needs (optional)
+                        </p>
+                        <CategorySelector
+                          selectedCategories={formData.categories}
+                          onChange={(categories) => setFormData({ ...formData, categories })}
                           disabled={saving}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="industry">
-                        Industry / What You Do <span className="text-destructive">*</span>
-                      </Label>
-                      <Textarea
-                        id="industry"
-                        value={formData.industry}
-                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                        required
+                    {/* Save Button at Bottom */}
+                    <div className="flex gap-3 pt-4 border-t border-primary/20">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel}
                         disabled={saving}
-                        rows={4}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contactPersonName">
-                        Contact Person Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="contactPersonName"
-                        value={formData.contactPersonName}
-                        onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
-                        required
-                        disabled={saving}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">
-                          Email <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                          disabled={saving}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">
-                          Phone <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          required
-                          disabled={saving}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>
-                        Preferred Contact Method <span className="text-destructive">*</span>
-                      </Label>
-                      <RadioGroup
-                        value={formData.preferredContactMethod}
-                        onValueChange={(value: "Email" | "Phone") => 
-                          setFormData({ ...formData, preferredContactMethod: value })
-                        }
-                        disabled={saving}
-                        className="flex gap-6"
+                        className="flex-1"
                       >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Email" id="email-contact" />
-                          <Label htmlFor="email-contact" className="font-normal cursor-pointer">
-                            Email
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Phone" id="phone-contact" />
-                          <Label htmlFor="phone-contact" className="font-normal cursor-pointer">
-                            Phone
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="potentialProblems">
-                        Potential Problems / Needs <span className="text-destructive">*</span>
-                      </Label>
-                      <Textarea
-                        id="potentialProblems"
-                        value={formData.potentialProblems}
-                        onChange={(e) => setFormData({ ...formData, potentialProblems: e.target.value })}
-                        required
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        onClick={handleSave}
                         disabled={saving}
-                        rows={5}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>
-                        <Tags className="h-4 w-4 inline mr-1 text-primary" />
-                        Project Categories
-                      </Label>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Select all categories that apply to your project needs
-                      </p>
-                      <CategorySelector
-                        selectedCategories={formData.categories}
-                        onChange={(categories) => setFormData({ ...formData, categories })}
-                        disabled={saving}
-                      />
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Saving Changes...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </form>
                 ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          Company Name
-                        </div>
-                        <p className="text-lg font-semibold text-foreground">{businessData.companyName}</p>
+                  <div className="space-y-8">
+                    {/* Business Information Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Business Information</h3>
                       </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          Location
-                        </div>
-                        <p className="text-lg font-semibold text-foreground">{businessData.location}</p>
-                      </div>
-                    </div>
-
-                    <Separator className="bg-primary/20" />
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Briefcase className="h-4 w-4 text-primary" />
-                        Industry / What You Do
-                      </div>
-                      <p className="text-base whitespace-pre-wrap text-foreground">{businessData.industry}</p>
-                    </div>
-
-                    <Separator className="bg-primary/20" />
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <User className="h-4 w-4 text-primary" />
-                        Contact Person
-                      </div>
-                      <p className="text-lg font-semibold text-foreground">{businessData.contactPersonName}</p>
-                    </div>
-
-                    <Separator className="bg-primary/20" />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <Mail className="h-4 w-4 text-primary" />
-                          Email
-                        </div>
-                        <p className="text-base text-foreground">{businessData.email}</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <Phone className="h-4 w-4 text-primary" />
-                          Phone
-                        </div>
-                        <p className="text-base text-foreground">{businessData.phone}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-muted-foreground">
-                        Preferred Contact Method
-                      </div>
-                      <p className="text-base font-semibold text-foreground">{businessData.preferredContactMethod}</p>
-                    </div>
-
-                    <Separator className="bg-primary/20" />
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <AlertCircle className="h-4 w-4 text-primary" />
-                        Potential Problems / Needs
-                      </div>
-                      <p className="text-base whitespace-pre-wrap text-foreground">{businessData.potentialProblems}</p>
-                    </div>
-
-                    {businessData.categories && businessData.categories.length > 0 && (
-                      <>
-                        <Separator className="bg-primary/20" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            Company Name
+                          </div>
+                          <p className="text-lg font-semibold text-foreground">{businessData.companyName}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            Location
+                          </div>
+                          <p className="text-lg font-semibold text-foreground">{businessData.location}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <Briefcase className="h-4 w-4 text-primary" />
+                          Industry / What You Do
+                        </div>
+                        <p className="text-base whitespace-pre-wrap text-foreground">{businessData.industry}</p>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-primary/20" />
+
+                    {/* Contact Information Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                        <User className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Contact Information</h3>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <User className="h-4 w-4 text-primary" />
+                          Contact Person
+                        </div>
+                        <p className="text-lg font-semibold text-foreground">{businessData.contactPersonName}</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Mail className="h-4 w-4 text-primary" />
+                            Email
+                          </div>
+                          <p className="text-base text-foreground">{businessData.email}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Phone className="h-4 w-4 text-primary" />
+                            Phone
+                          </div>
+                          <p className="text-base text-foreground">{businessData.phone}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Preferred Contact Method
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {businessData.preferredContactMethod === "Email" ? (
+                            <Mail className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Phone className="h-4 w-4 text-primary" />
+                          )}
+                          <p className="text-base font-semibold text-foreground">{businessData.preferredContactMethod}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="bg-primary/20" />
+
+                    {/* Project Needs Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                        <AlertCircle className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold text-foreground">Project Needs</h3>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <AlertCircle className="h-4 w-4 text-primary" />
+                          What You Need Help With
+                        </div>
+                        <p className="text-base whitespace-pre-wrap text-foreground">{businessData.potentialProblems}</p>
+                      </div>
+
+                      {businessData.categories && businessData.categories.length > 0 && (
+                        <div className="space-y-2 pt-2">
                           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                             <Tags className="h-4 w-4 text-primary" />
                             Project Categories
@@ -480,9 +610,9 @@ const BusinessDashboard = () => {
                             ))}
                           </div>
                         </div>
-                      </>
-                    )}
-                  </>
+                      )}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

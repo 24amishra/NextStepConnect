@@ -13,44 +13,14 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<"business" | "student">("business");
 
   return (
-    <main className="bg-background">
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="container py-4">
-          <div className="flex items-center justify-center gap-2 bg-secondary/50 p-1 rounded-lg max-w-md mx-auto">
-            <button
-              onClick={() => setActiveTab("business")}
-              className={`flex-1 px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200 ${
-                activeTab === "business"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              For Businesses
-            </button>
-            <button
-              onClick={() => setActiveTab("student")}
-              className={`flex-1 px-6 py-3 rounded-md text-sm font-semibold transition-all duration-200 ${
-                activeTab === "student"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              For Students
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Disclaimer */}
-      <div className="container py-4">
-        <Disclaimer />
-      </div>
-
+    <main className="bg-background min-h-screen">
       {/* Content based on active tab */}
       {activeTab === "business" ? (
         <>
           <Hero />
+          <div className="container py-6">
+            <Disclaimer />
+          </div>
           <WhatIsNextStep />
           <HowItWorks />
           <Footer />
@@ -58,11 +28,40 @@ const Index = () => {
       ) : (
         <>
           <StudentHero />
+          <div className="container py-6">
+            <Disclaimer />
+          </div>
           <StudentWhatIsNextStep />
           <StudentHowItWorks />
           <StudentFooter />
         </>
       )}
+
+      {/* Floating Tab Switcher */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-2 bg-card p-2 rounded-2xl shadow-warm-lg border border-border/50">
+          <button
+            onClick={() => setActiveTab("business")}
+            className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              activeTab === "business"
+                ? "bg-primary text-primary-foreground shadow-warm-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-nextstep-clay"
+            }`}
+          >
+            For Businesses
+          </button>
+          <button
+            onClick={() => setActiveTab("student")}
+            className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              activeTab === "student"
+                ? "bg-primary text-primary-foreground shadow-warm-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-nextstep-clay"
+            }`}
+          >
+            For Students
+          </button>
+        </div>
+      </div>
     </main>
   );
 };

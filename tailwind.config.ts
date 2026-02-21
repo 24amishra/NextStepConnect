@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Playfair Display', 'serif'],
-        body: ['Inter', 'sans-serif'],
+        heading: ['Sora', 'sans-serif'],
+        body: ['Inter', 'DM Sans', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -23,9 +23,17 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        nextstep: {
+          ember: "hsl(var(--nextstep-ember))",
+          red: "hsl(var(--nextstep-red))",
+          brick: "hsl(var(--nextstep-brick))",
+          clay: "hsl(var(--nextstep-clay))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
+          pressed: "hsl(var(--primary-pressed))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -51,6 +59,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      boxShadow: {
+        'warm': 'var(--shadow-warm)',
+        'warm-sm': 'var(--shadow-sm)',
+        'warm-md': 'var(--shadow-md)',
+        'warm-lg': 'var(--shadow-lg)',
       },
       borderRadius: {
         lg: "var(--radius)",

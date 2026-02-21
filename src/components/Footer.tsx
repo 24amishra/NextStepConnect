@@ -4,13 +4,13 @@ import logo from "@/assets/NextStepLogo.png";
 
 const Footer = () => {
   return (
-    <footer className="py-28 bg-foreground text-background">
+    <footer className="py-28 bg-nextstep-brick text-background">
       <div className="container">
         <div className="text-center max-w-2xl mx-auto">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/20 px-4 py-2 rounded-full">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-nextstep-ember mb-4 bg-nextstep-ember/20 px-4 py-2 rounded-full shadow-warm-sm">
             Join Us
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold font-heading mb-6">
+          <h2 className="text-4xl md:text-5xl text-white font-extrabold font-heading mb-6">
             Ready to mentor the next generation?
           </h2>
           <p className="text-lg text-background/70 mb-10 leading-relaxed">
@@ -22,7 +22,7 @@ const Footer = () => {
             <Button
               size="lg"
               asChild
-              className="text-base px-8 py-6 h-auto bg-primary hover:bg-primary/90"
+              className="text-base px-8 py-6 h-auto bg-nextstep-ember hover:bg-primary shadow-warm-md"
             >
               <a href="https://tally.so/r/rja6gR" target="_blank" rel="noopener noreferrer">
                 Express Interest

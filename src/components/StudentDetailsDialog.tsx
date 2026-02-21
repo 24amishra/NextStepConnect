@@ -168,22 +168,12 @@ const StudentDetailsDialog = ({
                       </>
                     )}
 
-                    {(profile.resumeUrl || profile.portfolioUrl || profile.linkedinUrl) && (
+                    {(profile.portfolioUrl || profile.linkedinUrl) && (
                       <>
                         <Separator className="bg-primary/20" />
                         <div className="space-y-2">
                           <p className="text-sm font-medium text-muted-foreground">Links</p>
                           <div className="flex flex-wrap gap-2">
-                            {profile.resumeUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(profile.resumeUrl, "_blank")}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Resume
-                              </Button>
-                            )}
                             {profile.portfolioUrl && (
                               <Button
                                 size="sm"

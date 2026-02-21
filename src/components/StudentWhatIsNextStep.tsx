@@ -36,11 +36,26 @@ const iconMap = {
 
 const StudentWhatIsNextStep = () => {
   return (
-    <section className="py-28 bg-gradient-to-b from-background to-secondary/20">
-      <div className="container">
+    <section className="relative py-28 bg-nextstep-clay/30">
+      {/* Top Flowing Divider */}
+      <div className="absolute top-0 left-0 right-0 h-24 overflow-hidden">
+        <svg
+          className="absolute top-0 w-full h-full"
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
+            fill="rgb(228, 222, 212)"
+          />
+        </svg>
+      </div>
+
+      <div className="container relative z-10">
         {/* Section Header */}
         <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-primary/10 px-4 py-2 rounded-full">
+          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
             For Students
           </span>
           <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
@@ -57,9 +72,9 @@ const StudentWhatIsNextStep = () => {
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="group bg-background p-8 rounded-3xl border-2 border-border hover:border-primary/40 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+              className="group bg-card p-8 rounded-3xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 transform hover:-translate-y-1"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-warm-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 {(() => {
                   const Icon = iconMap[benefit.icon as keyof typeof iconMap];
                   return <Icon className="w-8 h-8 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
@@ -77,7 +92,7 @@ const StudentWhatIsNextStep = () => {
 
         {/* Compensation Callout */}
         <div className="mt-20 max-w-3xl mx-auto">
-          <div className="bg-gradient-to-r from-secondary/50 to-primary/5 border-2 border-primary/20 rounded-3xl p-10 text-center">
+          <div className="bg-nextstep-clay/60 border-0 shadow-warm-md rounded-3xl p-10 text-center">
             <h3 className="text-2xl font-bold font-heading text-foreground mb-4">
               Paid in Experience
             </h3>
@@ -88,6 +103,26 @@ const StudentWhatIsNextStep = () => {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Bottom Flowing Divider */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
+        <svg
+          className="absolute bottom-0 w-full h-full"
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M0,32 C360,80 720,80 1080,32 C1200,16 1320,16 1440,32 L1440,120 L0,120 Z"
+            fill="rgb(228, 222, 212)"
+          />
+          <path
+            d="M0,64 C240,96 480,96 720,64 C960,32 1200,32 1440,64 L1440,120 L0,120 Z"
+            fill="rgb(215, 100, 90)"
+            opacity="0.15"
+          />
+        </svg>
       </div>
     </section>
   );
