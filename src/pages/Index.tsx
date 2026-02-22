@@ -14,31 +14,8 @@ const Index = () => {
 
   return (
     <main className="bg-background min-h-screen">
-      {/* Content based on active tab */}
-      {activeTab === "business" ? (
-        <>
-          <Hero />
-          <div className="container py-4 sm:py-6 px-4 sm:px-6">
-            <Disclaimer />
-          </div>
-          <WhatIsNextStep />
-          <HowItWorks />
-          <Footer />
-        </>
-      ) : (
-        <>
-          <StudentHero />
-          <div className="container py-4 sm:py-6 px-4 sm:px-6">
-            <Disclaimer />
-          </div>
-          <StudentWhatIsNextStep />
-          <StudentHowItWorks />
-          <StudentFooter />
-        </>
-      )}
-
       {/* Floating Tab Switcher */}
-      <div className="fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto max-w-md">
+      <div className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto max-w-md">
         <div className="flex items-center gap-1 sm:gap-2 bg-card p-1.5 sm:p-2 rounded-2xl shadow-warm-lg border border-border/50">
           <button
             onClick={() => setActiveTab("business")}
@@ -63,6 +40,31 @@ const Index = () => {
             <span className="sm:hidden">Students</span>
           </button>
         </div>
+      </div>
+
+      {/* Content based on active tab */}
+      <div className="pt-20 sm:pt-24">
+        {activeTab === "business" ? (
+          <>
+            <Hero />
+            <div className="container py-4 sm:py-6 px-4 sm:px-6">
+              <Disclaimer />
+            </div>
+            <WhatIsNextStep />
+            <HowItWorks />
+            <Footer />
+          </>
+        ) : (
+          <>
+            <StudentHero />
+            <div className="container py-4 sm:py-6 px-4 sm:px-6">
+              <Disclaimer />
+            </div>
+            <StudentWhatIsNextStep />
+            <StudentHowItWorks />
+            <StudentFooter />
+          </>
+        )}
       </div>
     </main>
   );
