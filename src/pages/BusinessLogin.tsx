@@ -118,9 +118,7 @@ const BusinessLogin = () => {
                   <Building2 className="h-5 w-5" />
                   Your Business Information
                 </CardTitle>
-                <CardDescription>
-                  Data stored in Firestore: <code className="text-xs">businesses/{currentUser.uid}</code>
-                </CardDescription>
+               
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
