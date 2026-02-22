@@ -127,3 +127,28 @@
     @apply bg-secondary text-secondary-foreground rounded-2xl px-8 py-4 font-semibold shadow-sm hover:shadow-md transition-all duration-200;
   }
 }
+
+@layer utilities {
+  /* Mobile optimization utilities */
+  .container {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Prevent horizontal overflow on mobile */
+  body {
+    @apply overflow-x-hidden;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Safe area for mobile devices with notches */
+  @supports (padding: max(0px)) {
+    body {
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+    }
+  }
+}

@@ -36,9 +36,9 @@ const iconMap = {
 
 const StudentWhatIsNextStep = () => {
   return (
-    <section className="relative py-28 bg-nextstep-clay/30">
+    <section className="relative py-16 sm:py-20 md:py-28 bg-nextstep-clay/30">
       {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-24 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 overflow-hidden">
         <svg
           className="absolute top-0 w-full h-full"
           viewBox="0 0 1440 120"
@@ -52,38 +52,38 @@ const StudentWhatIsNextStep = () => {
         </svg>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container relative z-10 px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
+        <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
             For Students
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
             Why Join NextStep?
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
             NextStep bridges the gap between classroom learning and professional success,
             giving you the experience employers actually want to see.
           </p>
         </div>
 
         {/* Card Grid */}
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-10 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 max-w-5xl mx-auto">
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              className="group bg-card p-8 rounded-3xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 transform hover:-translate-y-1"
+              className="group bg-card p-6 sm:p-8 rounded-2xl sm:rounded-3xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 transform hover:-translate-y-1"
             >
-              <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-warm-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-warm-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 {(() => {
                   const Icon = iconMap[benefit.icon as keyof typeof iconMap];
-                  return <Icon className="w-8 h-8 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
+                  return <Icon className="w-6 h-6 sm:w-8 sm:h-8 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
                 })()}
               </div>
-              <h3 className="text-2xl font-bold font-heading text-foreground mb-4">
+              <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-3 sm:mb-4">
                 {benefit.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed text-base">
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                 {benefit.description}
               </p>
             </div>
@@ -91,12 +91,12 @@ const StudentWhatIsNextStep = () => {
         </div>
 
         {/* Compensation Callout */}
-        <div className="mt-20 max-w-3xl mx-auto">
-          <div className="bg-nextstep-clay/60 border-0 shadow-warm-md rounded-3xl p-10 text-center">
-            <h3 className="text-2xl font-bold font-heading text-foreground mb-4">
+        <div className="mt-12 sm:mt-16 md:mt-20 max-w-3xl mx-auto">
+          <div className="bg-nextstep-clay/60 border-0 shadow-warm-md rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 text-center">
+            <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-3 sm:mb-4">
               Paid in Experience
             </h3>
-            <p className="text-muted-foreground leading-relaxed text-lg">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed">
               This is a volunteer service where your compensation comes in the form of invaluable
               professional experience, portfolio pieces, and real-world skills. The connections you
               make and the work you complete will open doors throughout your career.

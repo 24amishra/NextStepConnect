@@ -26,9 +26,9 @@ const phases = [
 
 const HowItWorks = () => {
   return (
-    <section className="relative py-28 bg-background">
+    <section className="relative py-16 sm:py-20 md:py-28 bg-background">
       {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 overflow-hidden">
         <svg
           className="absolute top-0 w-full h-full"
           viewBox="0 0 1440 120"
@@ -48,40 +48,40 @@ const HowItWorks = () => {
         </svg>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container relative z-10 px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
+        <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
             Process
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
             How It Works
           </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
             A simple three-phase process designed for seamless collaboration.
           </p>
         </div>
 
         {/* Phase Cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
           {phases.map((phase, index) => (
             <div
               key={index}
-              className="relative bg-card p-8 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
+              className="relative bg-card p-6 sm:p-8 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
             >
               {/* Phase Number Badge */}
-              <div className="absolute -top-4 left-8 bg-primary text-primary-foreground text-sm font-bold px-4 py-1.5 rounded-full shadow-warm-sm">
+              <div className="absolute -top-3 sm:-top-4 left-6 sm:left-8 bg-primary text-primary-foreground text-xs sm:text-sm font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-warm-sm">
                 Phase {phase.number}
               </div>
 
-              <div className="mt-4">
-                <div className="w-12 h-12 bg-nextstep-brick rounded-xl flex items-center justify-center mb-5 shadow-warm-sm">
-                  <phase.icon className="w-6 h-6 text-card" />
+              <div className="mt-3 sm:mt-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-nextstep-brick rounded-xl flex items-center justify-center mb-4 sm:mb-5 shadow-warm-sm">
+                  <phase.icon className="w-5 h-5 sm:w-6 sm:h-6 text-card" />
                 </div>
-                <h3 className="text-2xl font-bold font-heading text-foreground mb-3">
+                <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-2 sm:mb-3">
                   {phase.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                   {phase.description}
                 </p>
               </div>
@@ -90,12 +90,12 @@ const HowItWorks = () => {
         </div>
 
         {/* Payment Flexibility Note */}
-        <div className="mt-16 max-w-3xl mx-auto text-center">
-          <div className="bg-nextstep-clay/40 border-0 rounded-2xl p-8 shadow-warm-md">
-            <h3 className="text-xl font-bold font-heading text-foreground mb-3">
+        <div className="mt-12 sm:mt-16 max-w-3xl mx-auto text-center">
+          <div className="bg-nextstep-clay/40 border-0 rounded-2xl p-6 sm:p-8 shadow-warm-md">
+            <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
               Flexible Compensation
             </h3>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               Compensation is entirely up to you. Many organizations work with students on a volunteer basis,
               while others choose to offer payment or stipends. Students join NextStep to gain real-world
               experience and build their portfolios, so both paid and unpaid opportunities are welcome.

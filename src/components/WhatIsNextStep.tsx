@@ -23,9 +23,9 @@ const features = [
 
 const WhatIsNextStep = () => {
   return (
-    <section className="relative py-28 bg-nextstep-clay/30">
+    <section className="relative py-16 sm:py-20 md:py-28 bg-nextstep-clay/30">
       {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-24 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 overflow-hidden">
         <svg
           className="absolute top-0 w-full h-full"
           viewBox="0 0 1440 120"
@@ -39,34 +39,34 @@ const WhatIsNextStep = () => {
         </svg>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container relative z-10 px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
+        <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
             About Us
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
             What is NextStep?
           </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
             "We aren't just a matching service; we are a launchpad."
           </p>
         </div>
 
         {/* Card Grid */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group bg-card p-8 rounded-2xl border-0 hover:shadow-warm-lg shadow-warm-md transition-all duration-300"
+              className="group bg-card p-6 sm:p-8 rounded-2xl border-0 hover:shadow-warm-lg shadow-warm-md transition-all duration-300"
             >
-              <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-6 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="w-7 h-7 text-primary-foreground" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary rounded-xl flex items-center justify-center mb-5 sm:mb-6 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
+                <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-bold font-heading text-foreground mb-3">
+              <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
                 {feature.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed text-[15px]">
+              <p className="text-sm sm:text-[15px] text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
             </div>

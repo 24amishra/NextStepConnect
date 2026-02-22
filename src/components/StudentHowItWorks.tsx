@@ -40,9 +40,9 @@ const iconMap = {
 
 const StudentHowItWorks = () => {
   return (
-    <section className="relative py-28 bg-background">
+    <section className="relative py-16 sm:py-20 md:py-28 bg-background">
       {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 overflow-hidden">
         <svg
           className="absolute top-0 w-full h-full"
           viewBox="0 0 1440 120"
@@ -62,43 +62,43 @@ const StudentHowItWorks = () => {
         </svg>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container relative z-10 px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-primary mb-4 bg-nextstep-clay border border-primary/20 px-4 py-2 rounded-full shadow-warm-sm">
+        <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
             Your Journey
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
             How It Works
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
             Four simple steps from application to professional growth.
           </p>
         </div>
 
         {/* Step Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 max-w-7xl mx-auto">
           {steps.map((step, index) => (
             <div
               key={index}
-              className="relative bg-card p-7 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 group"
+              className="relative bg-card p-5 sm:p-7 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 group"
             >
               {/* Step Number Badge */}
-              <div className="absolute -top-3 -right-3 bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-warm-sm">
+              <div className="absolute -top-2.5 sm:-top-3 -right-2.5 sm:-right-3 bg-primary text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-warm-sm">
                 Step {step.number}
               </div>
 
-              <div className="mt-2">
-                <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
+              <div className="mt-1 sm:mt-2">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary rounded-xl flex items-center justify-center mb-4 sm:mb-5 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
                   {(() => {
                     const Icon = iconMap[step.icon as keyof typeof iconMap];
-                    return <Icon className="w-7 h-7 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
+                    return <Icon className="w-6 h-6 sm:w-7 sm:h-7 !text-white" strokeWidth={2.5} style={{ color: 'white', fill: 'none' }} />;
                   })()}
                 </div>
-                <h3 className="text-xl font-bold font-heading text-foreground mb-3">
+                <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed text-sm">
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   {step.description}
                 </p>
               </div>
@@ -107,44 +107,44 @@ const StudentHowItWorks = () => {
         </div>
 
         {/* Additional Benefits Section */}
-        <div className="mt-20 max-w-4xl mx-auto">
-          <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/50 border border-primary/20 rounded-3xl p-10">
-            <h3 className="text-2xl font-bold font-heading text-foreground mb-6 text-center">
+        <div className="mt-12 sm:mt-16 md:mt-20 max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/50 border border-primary/20 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10">
+            <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-5 sm:mb-6 text-center">
               What You'll Gain
             </h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
+            <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2"></div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Professional Portfolio</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-semibold text-sm sm:text-base text-foreground mb-0.5 sm:mb-1">Professional Portfolio</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Real client work and measurable results to showcase
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2"></div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Industry Connections</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-semibold text-sm sm:text-base text-foreground mb-0.5 sm:mb-1">Industry Connections</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Network with local business leaders and professionals
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2"></div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Interview Stories</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-semibold text-sm sm:text-base text-foreground mb-0.5 sm:mb-1">Interview Stories</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Concrete examples of impact and problem-solving
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
+              <div className="flex gap-2 sm:gap-3">
+                <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5 sm:mt-2"></div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">Practical Skills</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-semibold text-sm sm:text-base text-foreground mb-0.5 sm:mb-1">Practical Skills</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Apply classroom theory to real-world challenges
                   </p>
                 </div>
