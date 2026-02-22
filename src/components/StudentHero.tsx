@@ -1,4 +1,4 @@
-import { Linkedin, Mail, ArrowRight, Sparkles, Award, Briefcase, GraduationCap } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, Sparkles, Award, Briefcase, GraduationCap, Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/NextStepLogo.png";
@@ -31,6 +31,15 @@ const StudentHero = () => {
               aria-label="Email"
             >
               <Mail className="w-5 h-5 text-background" />
+            </a>
+            <a
+              href="https://www.instagram.com/join.nextstep/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-background/10 transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="w-5 h-5 text-background" />
             </a>
           </div>
         </div>
