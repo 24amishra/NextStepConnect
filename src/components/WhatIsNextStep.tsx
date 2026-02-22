@@ -49,7 +49,7 @@ const WhatIsNextStep = () => {
             What is NextStep?
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
-            "We aren't just a matching service; we are a launchpad."
+            We serve as a launchpad for both students and businesses to connect and grow together.
           </p>
         </div>
 

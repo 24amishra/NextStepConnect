@@ -86,7 +86,7 @@ const Hero = () => {
                   </a>
                 </Button>
                 <Button variant="outline" size="lg" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base shadow-warm-sm w-full sm:w-auto">
-                  Learn More
+                  <Link to="https://www.linkedin.com/company/nextstepconnects/" target="_blank" rel="noopener noreferrer">Learn More</Link>
                 </Button>
               </div>
 
