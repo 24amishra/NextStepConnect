@@ -76,7 +76,7 @@ const StudentHero = () => {
                 style={{ animationDelay: "0.3s" }}
               >
                 <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base shadow-warm-md w-full sm:w-auto" asChild>
-                  <a href="https://nextstep-expressinterest.vercel.app/" target="_blank" rel="noopener noreferrer">
+                  <a href="https://tally.so/r/LZKD4z" target="_blank" rel="noopener noreferrer">
                     Express Interest
                     <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                   </a>

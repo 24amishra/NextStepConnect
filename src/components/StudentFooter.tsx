@@ -23,7 +23,7 @@ const StudentFooter = () => {
               asChild
               className="text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6 h-auto bg-nextstep-ember hover:bg-primary shadow-warm-md w-full sm:w-auto"
             >
-              <a href="https://nextstep-expressinterest.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <a href="https://tally.so/r/LZKD4z" target="_blank" rel="noopener noreferrer">
                 Express Interest
               </a>
             </Button>
