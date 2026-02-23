@@ -20,7 +20,7 @@ const steps = [
     title: "Learn & Execute",
     icon: "rocket",
     description:
-      "Access our Learning Hub with professional frameworks and guides. Work on real projects with real clients.",
+      "Collaborate with local businesses on meaningful projects that create real impact. Gain hands-on experience while delivering value to your partner organizations.",
   },
   {
     number: "04",

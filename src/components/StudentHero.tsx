@@ -11,11 +11,6 @@ const StudentHero = () => {
         <div className="container flex items-center justify-between">
           <img src={logo} alt="NextStep Logo" className="h-8 sm:h-10 w-auto" />
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <Link to="/student/login">
-              <Button variant="ghost" size="sm" className="text-background hover:bg-background/10 text-xs sm:text-sm px-2 sm:px-4">
-                Login
-              </Button>
-            </Link>
             <a
               href="https://www.linkedin.com/company/nextstepconnects/"
               target="_blank"
@@ -81,8 +76,8 @@ const StudentHero = () => {
                 style={{ animationDelay: "0.3s" }}
               >
                 <Button size="lg" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base shadow-warm-md w-full sm:w-auto" asChild>
-                  <a href="https://tally.so/r/LZKD4z" target="_blank" rel="noopener noreferrer">
-                    Join NextStep
+                  <a href="https://nextstep-expressinterest.vercel.app/" target="_blank" rel="noopener noreferrer">
+                    Express Interest
                     <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                   </a>
                 </Button>

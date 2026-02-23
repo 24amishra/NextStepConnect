@@ -9,9 +9,9 @@ const features = [
   },
   {
     icon: BookOpen,
-    title: "The Educational Framework",
+    title: "Win-Win Partnership",
     description:
-      "Unlike traditional internships, our students are backed by the NextStep Learning Hub. We provide \"how-to\" guides for every deliverable, ensuring your organization receives high-quality, professional work.",
+      "We create mutually beneficial partnerships where businesses gain fresh perspectives and dedicated support, while students build real-world experience and professional connections. This synergy drives value for both parties, fostering growth and innovation together.",
   },
   {
     icon: Rocket,

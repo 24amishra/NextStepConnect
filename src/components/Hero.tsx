@@ -16,6 +16,11 @@ const Hero = () => {
                 Login
               </Button>
             </Link>
+            <Link to="/business/signup">
+              <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+                Sign Up
+              </Button>
+            </Link>
             <a
               href="https://www.linkedin.com/company/nextstepconnects/"
               target="_blank"
