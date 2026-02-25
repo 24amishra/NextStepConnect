@@ -930,31 +930,7 @@ const StudentDashboard = () => {
                 </Card>
 
                 {/* FAQ or Additional Info */}
-                <Card className="border-0 shadow-warm-md bg-nextstep-clay/40">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Common Questions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm">
-                    <div>
-                      <p className="font-semibold text-foreground mb-1">How do I apply to opportunities?</p>
-                      <p className="text-muted-foreground">
-                        Browse opportunities in the "Opportunities" tab and click on any posting to view details and apply.
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground mb-1">What is Smart Matching?</p>
-                      <p className="text-muted-foreground">
-                        Smart Matching allows us to automatically match you with opportunities that fit your skills and interests.
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground mb-1">How do I update my profile?</p>
-                      <p className="text-muted-foreground">
-                        Go to "Profile & Ratings" and click the "Edit Profile" button to update your information.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+               
               </div>
             )}
           </main>
