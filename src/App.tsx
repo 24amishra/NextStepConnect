@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BusinessProtectedRoute } from "@/components/BusinessProtectedRoute";
+import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BusinessLogin from "./pages/BusinessLogin";
@@ -25,6 +26,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <Analytics />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

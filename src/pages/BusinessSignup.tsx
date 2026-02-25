@@ -711,8 +711,16 @@ const BusinessSignup = () => {
   const canGoForward = currentStep !== "complete";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-lg shadow-warm-lg border-0 rounded-3xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-nextstep-brick/10 via-background to-primary/5 relative overflow-hidden">
+      {/* Decorative Background Elements - Business Theme */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-nextstep-brick/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-nextstep-brick/5 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-36 h-36 bg-primary/5 rounded-full blur-3xl"></div>
+      </div>
+
+      <Card className="w-full max-w-lg shadow-warm-lg border-0 rounded-3xl overflow-hidden relative z-10">
         {/* Progress bar */}
         {currentStep !== "complete" && (
           <div className="h-1.5 bg-muted">

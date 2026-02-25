@@ -132,7 +132,6 @@ export interface StudentProfile {
   skills: string[]; // Array of skills
   desiredRoles: string[]; // Array of desired roles/positions
   bio?: string; // Strengths, characteristics, about me
-  portfolioUrl?: string; // Optional portfolio link
   linkedinUrl?: string; // Optional LinkedIn
   openToMatching?: boolean; // Whether student wants to be matched to opportunities
   createdAt: Date | any;

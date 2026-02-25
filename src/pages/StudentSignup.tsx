@@ -32,7 +32,7 @@ type Step =
   | "linkedin"
   | "complete";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 8;
 
 const StudentSignup = () => {
   const [currentStep, setCurrentStep] = useState<Step>("email");
@@ -48,7 +48,6 @@ const StudentSignup = () => {
   const [desiredRoles, setDesiredRoles] = useState<string[]>([]);
   const [roleInput, setRoleInput] = useState("");
   const [elevatorPitch, setElevatorPitch] = useState("");
-  const [portfolioUrl, setPortfolioUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
 
   const [error, setError] = useState("");
@@ -69,7 +68,6 @@ const StudentSignup = () => {
     "skills",
     "roles",
     "pitch",
-    "portfolio",
     "linkedin",
     "complete",
   ];
@@ -180,7 +178,6 @@ const StudentSignup = () => {
             skills,
             desiredRoles,
             bio: elevatorPitch,
-            portfolioUrl: portfolioUrl || undefined,
             linkedinUrl: linkedinUrl || undefined,
             createdAt: new Date(),
           });
@@ -575,41 +572,6 @@ const StudentSignup = () => {
           </div>
         );
 
-      case "portfolio":
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold font-heading">Showcase your work</h2>
-              <p className="text-muted-foreground">Link to your portfolio (optional)</p>
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="portfolioUrl"
-                className={`transition-all duration-200 ${
-                  focusedField || portfolioUrl ? "text-primary text-sm" : "text-muted-foreground"
-                }`}
-              >
-                Portfolio URL
-              </Label>
-              <div className="relative">
-                <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
-                <Input
-                  id="portfolioUrl"
-                  type="url"
-                  placeholder="https://..."
-                  className="pl-12 h-14 text-lg"
-                  value={portfolioUrl}
-                  onChange={(e) => setPortfolioUrl(e.target.value)}
-                  onFocus={() => setFocusedField(true)}
-                  onBlur={() => setFocusedField(false)}
-                  autoFocus
-                  disabled={loading}
-                />
-              </div>
-            </div>
-          </div>
-        );
-
       case "linkedin":
         return (
           <div className="space-y-6">
@@ -690,8 +652,20 @@ const StudentSignup = () => {
   const canGoForward = currentStep !== "complete";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-lg shadow-warm-lg border-0 rounded-3xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-nextstep-clay/30 relative overflow-hidden">
+      {/* Decorative Background Elements - Student Theme */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-32 left-16 w-32 h-32 bg-nextstep-clay/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-28 h-28 bg-primary/5 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-36 h-36 bg-nextstep-clay/20 rounded-full blur-3xl"></div>
+        {/* Accent dots pattern */}
+        <div className="absolute top-1/4 left-1/2 w-2 h-2 bg-primary/20 rounded-full"></div>
+        <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-primary/20 rounded-full"></div>
+        <div className="absolute bottom-1/2 left-1/4 w-2 h-2 bg-primary/20 rounded-full"></div>
+      </div>
+
+      <Card className="w-full max-w-lg shadow-warm-lg border-0 rounded-3xl overflow-hidden relative z-10">
         {/* Progress bar */}
         {currentStep !== "complete" && (
           <div className="h-1.5 bg-muted">

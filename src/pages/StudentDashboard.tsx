@@ -38,7 +38,6 @@ const StudentDashboard = () => {
     skills: [] as string[],
     desiredRoles: [] as string[],
     bio: "",
-    portfolioUrl: "",
     linkedinUrl: "",
   });
 
@@ -71,7 +70,6 @@ const StudentDashboard = () => {
               skills: profile.skills || [],
               desiredRoles: profile.desiredRoles || [],
               bio: profile.bio || "",
-              portfolioUrl: profile.portfolioUrl || "",
               linkedinUrl: profile.linkedinUrl || "",
             });
             // Pre-fill question form
@@ -127,7 +125,6 @@ const StudentDashboard = () => {
         skills: studentProfile.skills || [],
         desiredRoles: studentProfile.desiredRoles || [],
         bio: studentProfile.bio || "",
-        portfolioUrl: studentProfile.portfolioUrl || "",
         linkedinUrl: studentProfile.linkedinUrl || "",
       });
     }
@@ -155,7 +152,6 @@ const StudentDashboard = () => {
         skills: formData.skills,
         desiredRoles: formData.desiredRoles,
         bio: formData.bio,
-        portfolioUrl: formData.portfolioUrl,
         linkedinUrl: formData.linkedinUrl,
       });
 
@@ -670,36 +666,19 @@ const StudentDashboard = () => {
                             <Link2 className="h-5 w-5 text-primary" />
                             <h3 className="text-lg font-semibold text-foreground">Professional Links</h3>
                           </div>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="portfolio">Portfolio URL</Label>
-                              <div className="relative">
-                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  id="portfolio"
-                                  type="url"
-                                  className="pl-10"
-                                  value={formData.portfolioUrl}
-                                  onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-                                  disabled={saving}
-                                  placeholder="https://yourportfolio.com"
-                                />
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="linkedin">LinkedIn URL</Label>
-                              <div className="relative">
-                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  id="linkedin"
-                                  type="url"
-                                  className="pl-10"
-                                  value={formData.linkedinUrl}
-                                  onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
-                                  disabled={saving}
-                                  placeholder="https://linkedin.com/in/yourprofile"
-                                />
-                              </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="linkedin">LinkedIn URL</Label>
+                            <div className="relative">
+                              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="linkedin"
+                                type="url"
+                                className="pl-10"
+                                value={formData.linkedinUrl}
+                                onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                                disabled={saving}
+                                placeholder="https://linkedin.com/in/yourprofile"
+                              />
                             </div>
                           </div>
                         </div>
@@ -789,39 +768,24 @@ const StudentDashboard = () => {
                         )}
 
                         {/* Links Section */}
-                        {(studentProfile?.portfolioUrl || studentProfile?.linkedinUrl) && (
+                        {studentProfile?.linkedinUrl && (
                           <div className="space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
                               <Link2 className="h-5 w-5 text-primary" />
                               <h3 className="text-lg font-semibold text-foreground">Professional Links</h3>
                             </div>
                             <div className="space-y-3">
-                              {studentProfile.portfolioUrl && (
-                                <div>
-                                  <Label className="text-sm text-muted-foreground">Portfolio</Label>
-                                  <a
-                                    href={studentProfile.portfolioUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline block break-all"
-                                  >
-                                    {studentProfile.portfolioUrl}
-                                  </a>
-                                </div>
-                              )}
-                              {studentProfile.linkedinUrl && (
-                                <div>
-                                  <Label className="text-sm text-muted-foreground">LinkedIn</Label>
-                                  <a
-                                    href={studentProfile.linkedinUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline block break-all"
-                                  >
-                                    {studentProfile.linkedinUrl}
-                                  </a>
-                                </div>
-                              )}
+                              <div>
+                                <Label className="text-sm text-muted-foreground">LinkedIn</Label>
+                                <a
+                                  href={studentProfile.linkedinUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline block break-all"
+                                >
+                                  {studentProfile.linkedinUrl}
+                                </a>
+                              </div>
                             </div>
                           </div>
                         )}

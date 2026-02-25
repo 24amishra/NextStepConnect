@@ -36,8 +36,20 @@ const StudentLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md shadow-warm-lg border-0 rounded-3xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-nextstep-clay/30 relative overflow-hidden">
+      {/* Decorative Background Elements - Student Theme */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-32 left-16 w-32 h-32 bg-nextstep-clay/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-28 h-28 bg-primary/5 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-36 h-36 bg-nextstep-clay/20 rounded-full blur-3xl"></div>
+        {/* Accent dots pattern */}
+        <div className="absolute top-1/4 left-1/2 w-2 h-2 bg-primary/20 rounded-full"></div>
+        <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-primary/20 rounded-full"></div>
+        <div className="absolute bottom-1/2 left-1/4 w-2 h-2 bg-primary/20 rounded-full"></div>
+      </div>
+
+      <Card className="w-full max-w-md shadow-warm-lg border-0 rounded-3xl overflow-hidden relative z-10">
         <CardHeader className="space-y-2 pb-6 pt-8 px-8">
           <CardTitle className="text-3xl font-bold text-center font-heading">
             Let's Start Learning

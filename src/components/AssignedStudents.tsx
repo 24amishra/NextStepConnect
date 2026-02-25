@@ -173,39 +173,21 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                   )}
 
                   {/* Links */}
-                  {(student.portfolioUrl || student.linkedinUrl) && (
+                  {student.linkedinUrl && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                         <Link2 className="h-4 w-4 text-primary" />
-                        Links
+                        LinkedIn
                       </div>
-                      <div className="space-y-2 pl-6">
-                        {student.portfolioUrl && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Portfolio</p>
-                            <a
-                              href={student.portfolioUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline break-all"
-                            >
-                              {student.portfolioUrl}
-                            </a>
-                          </div>
-                        )}
-                        {student.linkedinUrl && (
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">LinkedIn</p>
-                            <a
-                              href={student.linkedinUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm text-primary hover:underline break-all"
-                            >
-                              {student.linkedinUrl}
-                            </a>
-                          </div>
-                        )}
+                      <div className="pl-6">
+                        <a
+                          href={student.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline break-all"
+                        >
+                          {student.linkedinUrl}
+                        </a>
                       </div>
                     </div>
                   )}
