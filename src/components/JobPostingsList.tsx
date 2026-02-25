@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getAllBusinessesWithBadges } from "@/lib/firestore";
+import { getAllBusinessesWithBadges, getApplicationsForStudent, Application } from "@/lib/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,12 +23,14 @@ import {
 import ApplicationForm from "./ApplicationForm";
 
 const JobPostingsList = () => {
+  const { currentUser } = useAuth();
   const [allBusinesses, setAllBusinesses] = useState<Array<any>>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState<any | null>(null);
   const [applicationOpen, setApplicationOpen] = useState(false);
+  const [studentApplications, setStudentApplications] = useState<Application[]>([]);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,6 +57,22 @@ const JobPostingsList = () => {
 
     fetchBusinesses();
   }, []);
+
+  // Fetch student's applications
+  useEffect(() => {
+    const fetchStudentApplications = async () => {
+      if (currentUser?.uid) {
+        try {
+          const applications = await getApplicationsForStudent(currentUser.uid);
+          setStudentApplications(applications);
+        } catch (err) {
+          console.error("Error fetching student applications:", err);
+        }
+      }
+    };
+
+    fetchStudentApplications();
+  }, [currentUser?.uid]);
 
   // Apply filters
   useEffect(() => {
@@ -88,9 +107,30 @@ const JobPostingsList = () => {
     setSelectedCategories([]);
   };
 
-  const handleApply = (business: PublicBusinessData) => {
+  const handleApply = (business: any) => {
     setSelectedBusiness(business);
     setApplicationOpen(true);
+  };
+
+  const hasApplied = (businessId: string) => {
+    return studentApplications.some(app => app.businessId === businessId);
+  };
+
+  const getApplicationStatus = (businessId: string) => {
+    const application = studentApplications.find(app => app.businessId === businessId);
+    return application?.status || null;
+  };
+
+  const handleApplicationSuccess = async () => {
+    // Refresh the student's applications after submitting a new one
+    if (currentUser?.uid) {
+      try {
+        const applications = await getApplicationsForStudent(currentUser.uid);
+        setStudentApplications(applications);
+      } catch (err) {
+        console.error("Error refreshing applications:", err);
+      }
+    }
   };
 
   if (loading) {
@@ -293,13 +333,24 @@ const JobPostingsList = () => {
                     </div>
 
                     <div className="flex items-center justify-end pt-2">
-                      <Button
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90"
-                        onClick={() => handleApply(business)}
-                      >
-                        Apply Now
-                      </Button>
+                      {hasApplied(business.businessId) ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled
+                          className="border-primary/50 text-primary"
+                        >
+                          ✓ Applied
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90"
+                          onClick={() => handleApply(business)}
+                        >
+                          Apply Now
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -314,6 +365,7 @@ const JobPostingsList = () => {
           business={selectedBusiness}
           open={applicationOpen}
           onOpenChange={setApplicationOpen}
+          onSuccess={handleApplicationSuccess}
         />
       )}
     </>

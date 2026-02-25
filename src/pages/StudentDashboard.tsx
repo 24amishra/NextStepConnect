@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send } from "lucide-react";
+import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ import logo from "@/assets/NextStepLogo.png";
 
 import Disclaimer from "@/components/Disclaimer";
 import StudentRatings from "@/components/StudentRatings";
+import MatchedOpportunities from "@/components/MatchedOpportunities";
+import MyApplications from "@/components/MyApplications";
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -27,7 +29,7 @@ const StudentDashboard = () => {
   const [openToMatching, setOpenToMatching] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [updatingPreference, setUpdatingPreference] = useState(false);
-  const [activeSection, setActiveSection] = useState<"opportunities" | "profile" | "matching" | "questions">("opportunities");
+  const [activeSection, setActiveSection] = useState<"opportunities" | "applications" | "profile" | "matching" | "questions">("opportunities");
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -322,16 +324,17 @@ const StudentDashboard = () => {
                     Opportunities
                   </button>
                   <button
-                    onClick={() => setActiveSection("matching")}
+                    onClick={() => setActiveSection("applications")}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "matching"
+                      activeSection === "applications"
                         ? "bg-primary/10 text-primary font-semibold"
                         : "text-foreground hover:bg-muted"
                     }`}
                   >
-                    <Target className="h-5 w-5" />
-                    Smart Matching
+                    <FileText className="h-5 w-5" />
+                    My Applications
                   </button>
+                  
                   <button
                     onClick={() => setActiveSection("profile")}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
@@ -367,6 +370,9 @@ const StudentDashboard = () => {
             {/* Opportunities Section */}
             {activeSection === "opportunities" && (
               <div className="space-y-6">
+                {/* Matched Opportunities - Show at top if student is assigned to businesses */}
+                {currentUser?.uid && <MatchedOpportunities studentId={currentUser.uid} />}
+
                 <div>
                   <h2 className="text-3xl font-bold font-heading mb-2">Available Opportunities</h2>
                   <p className="text-muted-foreground">
@@ -374,6 +380,19 @@ const StudentDashboard = () => {
                   </p>
                 </div>
                 <JobPostingsList />
+              </div>
+            )}
+
+            {/* Applications Section */}
+            {activeSection === "applications" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-bold font-heading mb-2">My Applications</h2>
+                  <p className="text-muted-foreground">
+                    Track the status of your submitted applications
+                  </p>
+                </div>
+                {currentUser?.uid && <MyApplications studentId={currentUser.uid} />}
               </div>
             )}
 

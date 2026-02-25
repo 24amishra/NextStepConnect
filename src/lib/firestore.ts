@@ -335,6 +335,24 @@ export const getApplicationsForBusiness = async (businessId: string): Promise<Ap
   }
 };
 
+export const getApplicationsForStudent = async (studentId: string): Promise<Application[]> => {
+  try {
+    const applicationsRef = collection(db, "applications");
+    const q = query(applicationsRef, where("studentId", "==", studentId));
+    const querySnapshot = await getDocs(q);
+
+    const applications: Application[] = [];
+    querySnapshot.forEach((doc) => {
+      applications.push({ id: doc.id, ...doc.data() } as Application);
+    });
+
+    return applications;
+  } catch (error) {
+    console.error("Error fetching applications for student:", error);
+    throw error;
+  }
+};
+
 export const markApplicationCompleted = async (applicationId: string): Promise<void> => {
   try {
     await updateDoc(doc(db, "applications", applicationId), {
@@ -472,6 +490,37 @@ export const getAssignedStudents = async (businessId: string): Promise<StudentPr
     return students;
   } catch (error) {
     console.error("Error fetching assigned students:", error);
+    throw error;
+  }
+};
+
+// Get all businesses assigned to a student (reverse lookup)
+export const getBusinessesAssignedToStudent = async (studentId: string): Promise<PublicBusinessData[]> => {
+  try {
+    // Get all businesses
+    const businessesRef = collection(db, "businesses");
+    const businessesSnapshot = await getDocs(businessesRef);
+
+    const assignedBusinesses: PublicBusinessData[] = [];
+
+    // Check each business to see if this student is assigned
+    for (const businessDoc of businessesSnapshot.docs) {
+      const assignedStudentDoc = await getDoc(
+        doc(db, "businesses", businessDoc.id, "assignedStudents", studentId)
+      );
+
+      if (assignedStudentDoc.exists()) {
+        const businessData = businessDoc.data() as PublicBusinessData;
+        assignedBusinesses.push({
+          ...businessData,
+          businessId: businessDoc.id,
+        });
+      }
+    }
+
+    return assignedBusinesses;
+  } catch (error) {
+    console.error("Error fetching businesses assigned to student:", error);
     throw error;
   }
 };

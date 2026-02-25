@@ -168,33 +168,19 @@ const StudentDetailsDialog = ({
                       </>
                     )}
 
-                    {(profile.portfolioUrl || profile.linkedinUrl) && (
+                    {profile.linkedinUrl && (
                       <>
                         <Separator className="bg-primary/20" />
                         <div className="space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">Links</p>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.portfolioUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(profile.portfolioUrl, "_blank")}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                Portfolio
-                              </Button>
-                            )}
-                            {profile.linkedinUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(profile.linkedinUrl, "_blank")}
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                LinkedIn
-                              </Button>
-                            )}
-                          </div>
+                          <p className="text-sm font-medium text-muted-foreground">LinkedIn</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(profile.linkedinUrl, "_blank")}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            LinkedIn Profile
+                          </Button>
                         </div>
                       </>
                     )}
