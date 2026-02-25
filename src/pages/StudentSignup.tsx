@@ -171,16 +171,24 @@ const StudentSignup = () => {
             throw new Error("User not authenticated");
           }
 
-          await saveStudentProfile({
+          const profileData: any = {
             userId: currentUser.uid,
             name,
             email: currentUser.email || "",
             skills,
             desiredRoles,
-            bio: elevatorPitch,
-            linkedinUrl: linkedinUrl || undefined,
             createdAt: new Date(),
-          });
+          };
+
+          // Only add optional fields if they have values
+          if (elevatorPitch) {
+            profileData.bio = elevatorPitch;
+          }
+          if (linkedinUrl) {
+            profileData.linkedinUrl = linkedinUrl;
+          }
+
+          await saveStudentProfile(profileData);
           break;
       }
 

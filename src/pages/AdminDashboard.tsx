@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPendingBusinesses, approveBusiness, rejectBusiness, BusinessWithApprovalStatus } from "@/lib/firestore";
+import { getPendingBusinesses, approveBusiness, rejectBusiness, BusinessWithApprovalStatus, isAdmin, getAllPartnerships, Partnership } from "@/lib/firestore";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,15 +22,30 @@ import {
   XCircle,
   Shield,
   RefreshCw,
+  Users,
+  Calendar,
+  Link2,
+  Award,
 } from "lucide-react";
 
 const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [pendingBusinesses, setPendingBusinesses] = useState<BusinessWithApprovalStatus[]>([]);
+  const [partnerships, setPartnerships] = useState<Partnership[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"approvals" | "partnerships">("approvals");
+
+  // Check if current user is admin
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+      if (!isAdmin(currentUser.email)) {
+        navigate("/");
+      }
+    }
+  }, [authLoading, currentUser, navigate]);
 
   const fetchPendingBusinesses = async () => {
     try {
@@ -46,11 +61,29 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    if (!authLoading) {
-      fetchPendingBusinesses();
+  const fetchPartnerships = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getAllPartnerships();
+      setPartnerships(data);
+    } catch (err) {
+      console.error("Error fetching partnerships:", err);
+      setError("Failed to load partnerships");
+    } finally {
+      setLoading(false);
     }
-  }, [authLoading]);
+  };
+
+  useEffect(() => {
+    if (!authLoading && isAdmin(currentUser?.email)) {
+      if (activeTab === "approvals") {
+        fetchPendingBusinesses();
+      } else {
+        fetchPartnerships();
+      }
+    }
+  }, [authLoading, currentUser?.email, activeTab]);
 
   const handleApprove = async (userId: string) => {
     try {
@@ -148,7 +181,7 @@ const AdminDashboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchPendingBusinesses}
+              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchPartnerships}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -161,13 +194,44 @@ const AdminDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="container">
+          <div className="flex gap-1 border-t border-primary/10">
+            <button
+              onClick={() => setActiveTab("approvals")}
+              className={`px-6 py-3 font-medium transition-all ${
+                activeTab === "approvals"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <AlertCircle className="h-4 w-4 inline mr-2" />
+              Pending Approvals
+            </button>
+            <button
+              onClick={() => setActiveTab("partnerships")}
+              className={`px-6 py-3 font-medium transition-all ${
+                activeTab === "partnerships"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Users className="h-4 w-4 inline mr-2" />
+              Partnerships
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
       <main className="container py-8">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Summary Card */}
-          <Card className="border-primary/20 shadow-lg">
+          {/* Approvals Tab */}
+          {activeTab === "approvals" && (
+            <>
+              {/* Summary Card */}
+              <Card className="border-primary/20 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <AlertCircle className="h-5 w-5 text-primary" />
@@ -369,6 +433,165 @@ const AdminDashboard = () => {
                 </Card>
               ))}
             </div>
+          )}
+            </>
+          )}
+
+          {/* Partnerships Tab */}
+          {activeTab === "partnerships" && (
+            <>
+              {/* Summary Card */}
+              <Card className="border-primary/20 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Users className="h-5 w-5 text-primary" />
+                    Active Partnerships
+                  </CardTitle>
+                  <CardDescription>
+                    All student-business partnerships currently active
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-lg px-4 py-2">
+                      {partnerships.length} Active
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Error Alert */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Partnerships Grid */}
+              {partnerships.length === 0 ? (
+                <Card className="border-primary/20">
+                  <CardContent className="py-12 text-center">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium text-foreground">No partnerships yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Assign students to businesses to create partnerships
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {partnerships.map((partnership, index) => (
+                    <Card key={`${partnership.businessId}-${partnership.studentId}-${index}`} className="border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
+                      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg flex items-center gap-2 text-foreground mb-2">
+                              <Link2 className="h-5 w-5 text-primary" />
+                              Partnership
+                            </CardTitle>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              {partnership.assignedAt?.toDate
+                                ? new Date(partnership.assignedAt.toDate()).toLocaleDateString()
+                                : new Date(partnership.assignedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <Badge variant="default" className="bg-green-600">
+                            Active
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        {/* Student Info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <User className="h-4 w-4" />
+                            Student
+                          </div>
+                          <div className="pl-6 space-y-1">
+                            <p className="font-medium text-foreground">
+                              {partnership.student?.name || "Unknown Student"}
+                            </p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {partnership.student?.email || "No email"}
+                            </p>
+                            {partnership.student?.skills && partnership.student.skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {partnership.student.skills.slice(0, 3).map((skill) => (
+                                  <Badge key={skill} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                                {partnership.student.skills.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{partnership.student.skills.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <Separator className="bg-primary/20" />
+
+                        {/* Business Info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <Building2 className="h-4 w-4" />
+                            Business
+                          </div>
+                          <div className="pl-6 space-y-1">
+                            <p className="font-medium text-foreground">
+                              {partnership.business?.companyName || "Unknown Business"}
+                            </p>
+                            {partnership.business?.location && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {partnership.business.location}
+                              </p>
+                            )}
+                            {partnership.business?.categories && partnership.business.categories.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {partnership.business.categories.slice(0, 2).map((category) => (
+                                  <Badge key={category} variant="outline" className="text-xs border-primary/30">
+                                    {category}
+                                  </Badge>
+                                ))}
+                                {partnership.business.categories.length > 2 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{partnership.business.categories.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {partnership.notes && (
+                          <>
+                            <Separator className="bg-primary/20" />
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">Notes:</p>
+                              <p className="text-sm text-foreground pl-2 border-l-2 border-primary/20">
+                                {partnership.notes}
+                              </p>
+                            </div>
+                          </>
+                        )}
+
+                        {partnership.assignedBy && (
+                          <div className="text-xs text-muted-foreground pt-2 border-t border-primary/10">
+                            Assigned by: {partnership.assignedBy}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

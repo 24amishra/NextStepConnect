@@ -149,13 +149,21 @@ const StudentDashboard = () => {
 
     try {
       setSaving(true);
-      await updateStudentProfile(currentUser.uid, {
+      const updateData: any = {
         name: formData.name,
         skills: formData.skills,
         desiredRoles: formData.desiredRoles,
-        bio: formData.bio,
-        linkedinUrl: formData.linkedinUrl,
-      });
+      };
+
+      // Only add optional fields if they have values
+      if (formData.bio) {
+        updateData.bio = formData.bio;
+      }
+      if (formData.linkedinUrl) {
+        updateData.linkedinUrl = formData.linkedinUrl;
+      }
+
+      await updateStudentProfile(currentUser.uid, updateData);
 
       // Refresh profile
       const updatedProfile = await getStudentProfile(currentUser.uid);

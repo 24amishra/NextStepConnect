@@ -537,6 +537,74 @@ export const removeStudentAssignment = async (businessId: string, studentId: str
 };
 
 // ============================================
+// ADMIN FUNCTIONS
+// ============================================
+
+// Admin configuration - store admin email
+const ADMIN_EMAIL = "nextstep.connects@gmail.com"; // Change this to your admin email
+
+export const isAdmin = (email: string | null | undefined): boolean => {
+  return email === ADMIN_EMAIL;
+};
+
+// Get all partnerships (student-business assignments with details)
+export interface Partnership {
+  studentId: string;
+  businessId: string;
+  student?: StudentProfile;
+  business?: PublicBusinessData;
+  assignedAt: Date | any;
+  assignedBy?: string;
+  notes?: string;
+}
+
+export const getAllPartnerships = async (): Promise<Partnership[]> => {
+  try {
+    const partnerships: Partnership[] = [];
+
+    // Get all businesses
+    const businessesRef = collection(db, "businesses");
+    const businessesSnapshot = await getDocs(businessesRef);
+
+    // For each business, get their assigned students
+    for (const businessDoc of businessesSnapshot.docs) {
+      const assignedStudentsRef = collection(db, "businesses", businessDoc.id, "assignedStudents");
+      const assignedStudentsSnapshot = await getDocs(assignedStudentsRef);
+
+      for (const assignmentDoc of assignedStudentsSnapshot.docs) {
+        const assignmentData = assignmentDoc.data();
+
+        // Fetch full student and business profiles
+        const studentProfile = await getStudentProfile(assignmentData.studentId);
+        const businessData = businessDoc.data() as PublicBusinessData;
+
+        partnerships.push({
+          studentId: assignmentData.studentId,
+          businessId: businessDoc.id,
+          student: studentProfile || undefined,
+          business: { ...businessData, businessId: businessDoc.id },
+          assignedAt: assignmentData.assignedAt,
+          assignedBy: assignmentData.assignedBy,
+          notes: assignmentData.notes,
+        });
+      }
+    }
+
+    // Sort by most recent first
+    partnerships.sort((a, b) => {
+      const dateA = a.assignedAt?.toDate ? a.assignedAt.toDate() : new Date(a.assignedAt);
+      const dateB = b.assignedAt?.toDate ? b.assignedAt.toDate() : new Date(b.assignedAt);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return partnerships;
+  } catch (error) {
+    console.error("Error fetching partnerships:", error);
+    throw error;
+  }
+};
+
+// ============================================
 // ADMIN APPROVAL FUNCTIONS
 // ============================================
 export interface BusinessWithApprovalStatus extends BusinessData {
