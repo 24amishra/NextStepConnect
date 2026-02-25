@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc } from "firebase/firestore";
 
 export interface CustomQuestion {
   question: string;
@@ -417,6 +417,73 @@ export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData 
     return businessesWithBadges;
   } catch (error) {
     console.error("Error fetching businesses with badges:", error);
+    throw error;
+  }
+};
+
+// ============================================
+// STUDENT-BUSINESS ASSIGNMENTS
+// ============================================
+export interface StudentAssignment {
+  studentId: string;
+  businessId: string;
+  assignedAt: Date | any;
+  assignedBy?: string; // Admin who made the assignment
+  notes?: string; // Optional notes about the assignment
+}
+
+// Assign a student to a business
+export const assignStudentToBusiness = async (
+  businessId: string,
+  studentId: string,
+  assignedBy?: string,
+  notes?: string
+): Promise<void> => {
+  try {
+    await setDoc(doc(db, "businesses", businessId, "assignedStudents", studentId), {
+      studentId,
+      businessId,
+      assignedAt: new Date(),
+      assignedBy: assignedBy || "admin",
+      notes: notes || "",
+    });
+  } catch (error) {
+    console.error("Error assigning student to business:", error);
+    throw error;
+  }
+};
+
+// Get all students assigned to a business
+export const getAssignedStudents = async (businessId: string): Promise<StudentProfile[]> => {
+  try {
+    const assignedStudentsRef = collection(db, "businesses", businessId, "assignedStudents");
+    const querySnapshot = await getDocs(assignedStudentsRef);
+
+    const students: StudentProfile[] = [];
+
+    // Fetch full student profiles for each assigned student
+    for (const assignmentDoc of querySnapshot.docs) {
+      const studentId = assignmentDoc.data().studentId;
+      const studentProfile = await getStudentProfile(studentId);
+      if (studentProfile) {
+        students.push(studentProfile);
+      }
+    }
+
+    return students;
+  } catch (error) {
+    console.error("Error fetching assigned students:", error);
+    throw error;
+  }
+};
+
+// Remove a student assignment from a business
+export const removeStudentAssignment = async (businessId: string, studentId: string): Promise<void> => {
+  try {
+    const assignmentDocRef = doc(db, "businesses", businessId, "assignedStudents", studentId);
+    await deleteDoc(assignmentDocRef);
+  } catch (error) {
+    console.error("Error removing student assignment:", error);
     throw error;
   }
 };

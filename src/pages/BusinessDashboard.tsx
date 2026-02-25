@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import CategorySelector from "@/components/CategorySelector";
 import Disclaimer from "@/components/Disclaimer";
+import AssignedStudents from "@/components/AssignedStudents";
 import {
   Loader2,
   LogOut,
@@ -666,6 +667,9 @@ const BusinessDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Assigned Students Section */}
+            {currentUser?.uid && <AssignedStudents businessId={currentUser.uid} />}
+
             {businessData.createdAt && (
               <Card className="border-primary/20">
                 <CardHeader>
@@ -673,7 +677,7 @@ const BusinessDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground">
-                    Profile created: {businessData.createdAt?.toDate 
+                    Profile created: {businessData.createdAt?.toDate
                       ? new Date(businessData.createdAt.toDate()).toLocaleDateString()
                       : new Date(businessData.createdAt).toLocaleDateString()}
                   </div>

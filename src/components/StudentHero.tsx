@@ -11,6 +11,16 @@ const StudentHero = () => {
         <div className="container flex items-center justify-between">
           <img src={logo} alt="NextStep Logo" className="h-8 sm:h-10 w-auto" />
           <div className="flex items-center gap-1.5 sm:gap-3">
+            <Link to="/student/login">
+              <Button variant="ghost" size="sm" className="text-background hover:bg-background/10 text-xs sm:text-sm px-2 sm:px-4">
+                Login
+              </Button>
+            </Link>
+            <Link to="/student/signup">
+              <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+                Sign Up
+              </Button>
+            </Link>
             <a
               href="https://www.linkedin.com/company/nextstepconnects/"
               target="_blank"

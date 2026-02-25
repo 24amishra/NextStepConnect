@@ -142,7 +142,13 @@ export const BusinessProtectedRoute = ({ children }: BusinessProtectedRouteProps
                   nextstep.connects@gmail.com
                 </a>
               </p>
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-3">
+                <Button
+                  variant="default"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Status
+                </Button>
                 <Button
                   variant="outline"
                   onClick={async () => {

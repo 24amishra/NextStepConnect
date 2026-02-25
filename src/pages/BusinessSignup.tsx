@@ -37,7 +37,7 @@ type Step =
   | "categories"
   | "complete";
 
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 12;
 
 const BusinessSignup = () => {
   const [currentStep, setCurrentStep] = useState<Step>("email");
