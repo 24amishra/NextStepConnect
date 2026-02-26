@@ -198,24 +198,33 @@ export interface Application {
   appliedAt: Date | any;
 }
 
-// This returns only public data (safe for all authenticated users to see)
+// This returns only public data for APPROVED businesses (safe for all authenticated users to see)
 export const getAllBusinesses = async (): Promise<PublicBusinessData[]> => {
   try {
     const businessesRef = collection(db, "businesses");
     const querySnapshot = await getDocs(businessesRef);
     const businesses: PublicBusinessData[] = [];
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as PublicBusinessData;
-      // Ensure businessId is set to the document ID (which is the user's UID)
-      businesses.push({
-        ...data,
-        businessId: doc.id,
-      });
-    });
+    // Filter to only include approved businesses
+    for (const businessDoc of querySnapshot.docs) {
+      const publicData = businessDoc.data() as PublicBusinessData;
 
-    // Note: We can't sort by createdAt here since it's in private data
-    // If you need sorting, you'll need to add a publicCreatedAt field to public data
+      // Check approval status in private data
+      const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
+      const privateDocSnap = await getDoc(privateDocRef);
+
+      if (privateDocSnap.exists()) {
+        const privateData = privateDocSnap.data() as PrivateBusinessData;
+
+        // Only include approved businesses
+        if (privateData.approvalStatus === "approved") {
+          businesses.push({
+            ...publicData,
+            businessId: businessDoc.id,
+          });
+        }
+      }
+    }
 
     return businesses;
   } catch (error) {
@@ -494,7 +503,7 @@ export const getAssignedStudents = async (businessId: string): Promise<StudentPr
   }
 };
 
-// Get all businesses assigned to a student (reverse lookup)
+// Get all APPROVED businesses assigned to a student (reverse lookup)
 export const getBusinessesAssignedToStudent = async (studentId: string): Promise<PublicBusinessData[]> => {
   try {
     // Get all businesses
@@ -510,11 +519,22 @@ export const getBusinessesAssignedToStudent = async (studentId: string): Promise
       );
 
       if (assignedStudentDoc.exists()) {
-        const businessData = businessDoc.data() as PublicBusinessData;
-        assignedBusinesses.push({
-          ...businessData,
-          businessId: businessDoc.id,
-        });
+        // Also check approval status before showing to student
+        const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
+        const privateDocSnap = await getDoc(privateDocRef);
+
+        if (privateDocSnap.exists()) {
+          const privateData = privateDocSnap.data() as PrivateBusinessData;
+
+          // Only include approved businesses in matched opportunities
+          if (privateData.approvalStatus === "approved") {
+            const businessData = businessDoc.data() as PublicBusinessData;
+            assignedBusinesses.push({
+              ...businessData,
+              businessId: businessDoc.id,
+            });
+          }
+        }
       }
     }
 

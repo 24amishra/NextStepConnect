@@ -97,7 +97,8 @@ After reviewing your application for ${data.businessName}, we're unable to appro
 - Verification requirements not met
 - Business type not aligned with our platform
 
-If you believe this is an error or would like more information, please contact our support team at support@nextstep.com.
+If you believe this is an error or would like more information, please contact our support team at nextstep.connects@gmail.com
+
 
 We appreciate your interest and hope to work with you in the future.
 
