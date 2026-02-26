@@ -559,6 +559,96 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
+              {/* Assignment Interface */}
+              <Card className="border-primary/20 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-500/5 border-b border-primary/20">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <UserPlus className="h-5 w-5 text-green-600" />
+                    Assign Student to Business
+                  </CardTitle>
+                  <CardDescription>
+                    Create a new partnership by assigning a student to an approved business
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Select Student */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Select Student</label>
+                      <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a student..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {students.map((student) => (
+                            <SelectItem key={student.userId} value={student.userId}>
+                              {student.name} - {student.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedStudent && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {students.find(s => s.userId === selectedStudent)?.skills?.length || 0} skills
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Select Business */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Select Business</label>
+                      <Select value={selectedBusiness} onValueChange={setSelectedBusiness}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a business..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {businesses.map((business) => (
+                            <SelectItem key={business.userId} value={business.userId}>
+                              {business.companyName} - {business.location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedBusiness && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {businesses.find(b => b.userId === selectedBusiness)?.industry}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
+                    <Textarea
+                      placeholder="Add any notes about this partnership..."
+                      value={assignmentNotes}
+                      onChange={(e) => setAssignmentNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Assign Button */}
+                  <Button
+                    onClick={handleAssignStudent}
+                    disabled={!selectedStudent || !selectedBusiness || isAssigning}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    {isAssigning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Assigning...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Create Partnership
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
               {/* Error Alert */}
               {error && (
                 <Alert variant="destructive">
@@ -685,6 +775,19 @@ const AdminDashboard = () => {
                             Assigned by: {partnership.assignedBy}
                           </div>
                         )}
+
+                        {/* Remove Partnership Button */}
+                        <div className="pt-4 border-t border-primary/10">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => handleRemovePartnership(partnership.businessId, partnership.studentId)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove Partnership
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
