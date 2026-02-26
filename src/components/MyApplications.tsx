@@ -44,7 +44,6 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
               const business = await getBusinessData(app.businessId);
               return { ...app, business };
             } catch (err) {
-              console.error(`Error fetching business ${app.businessId}:`, err);
               return app;
             }
           })
@@ -59,7 +58,6 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
 
         setApplications(appsWithBusiness);
       } catch (err) {
-        console.error("Error fetching applications:", err);
         setError("Failed to load applications");
       } finally {
         setLoading(false);

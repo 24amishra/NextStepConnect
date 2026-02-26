@@ -31,7 +31,6 @@ export const BusinessProtectedRoute = ({ children }: BusinessProtectedRouteProps
         const data = await getBusinessData(currentUser.uid);
         setBusinessData(data);
       } catch (err) {
-        console.error("Error fetching business data:", err);
         setError("Failed to load business data");
       } finally {
         setLoading(false);

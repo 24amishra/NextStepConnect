@@ -95,7 +95,6 @@ const BusinessDashboard = () => {
           navigate("/business/signup");
         }
       } catch (err) {
-        console.error("Error fetching business data:", err);
         setError("Failed to load business data");
         setFetchedUserId(currentUser.uid);
       } finally {
@@ -163,7 +162,6 @@ const BusinessDashboard = () => {
         variant: "default",
       });
     } catch (err) {
-      console.error("Error updating business data:", err);
       setError("Failed to update business data");
       toast({
         title: "Update Failed",
@@ -180,7 +178,6 @@ const BusinessDashboard = () => {
       await logout();
       navigate("/");
     } catch (err) {
-      console.error("Error logging out:", err);
     }
   };
 

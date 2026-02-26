@@ -221,7 +221,6 @@ const BusinessSignup = () => {
             });
           } catch (emailError) {
             // Don't fail the signup if email fails
-            console.error("Failed to send admin notification:", emailError);
           }
           break;
       }

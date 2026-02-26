@@ -32,7 +32,6 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
         const businesses = await getBusinessesAssignedToStudent(studentId);
         setMatchedBusinesses(businesses);
       } catch (err) {
-        console.error("Error fetching matched businesses:", err);
         setError("Failed to load matched opportunities");
       } finally {
         setLoading(false);

@@ -45,7 +45,6 @@ const StudentRatings = () => {
           });
         }
       } catch (error) {
-        console.error("Error fetching ratings:", error);
       } finally {
         setLoading(false);
       }

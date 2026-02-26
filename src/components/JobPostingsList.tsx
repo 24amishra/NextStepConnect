@@ -43,12 +43,9 @@ const JobPostingsList = () => {
         setLoading(true);
         setError("");
         const businesses = await getAllBusinessesWithBadges();
-        console.log(businesses);
-
         setAllBusinesses(businesses);
         setFilteredBusinesses(businesses);
       } catch (err) {
-        console.error("Error fetching businesses:", err);
         setError("Failed to load opportunities");
       } finally {
         setLoading(false);
@@ -66,7 +63,7 @@ const JobPostingsList = () => {
           const applications = await getApplicationsForStudent(currentUser.uid);
           setStudentApplications(applications);
         } catch (err) {
-          console.error("Error fetching student applications:", err);
+          // Silent fail
         }
       }
     };
@@ -128,7 +125,7 @@ const JobPostingsList = () => {
         const applications = await getApplicationsForStudent(currentUser.uid);
         setStudentApplications(applications);
       } catch (err) {
-        console.error("Error refreshing applications:", err);
+        // Silent fail
       }
     }
   };

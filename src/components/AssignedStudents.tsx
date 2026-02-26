@@ -33,7 +33,6 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
         const assignedStudents = await getAssignedStudents(businessId);
         setStudents(assignedStudents);
       } catch (err) {
-        console.error("Error fetching assigned students:", err);
         setError("Failed to load assigned students");
       } finally {
         setLoading(false);

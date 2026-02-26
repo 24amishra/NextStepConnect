@@ -50,7 +50,6 @@ const StudentDetailsDialog = ({
           setAverageRating(avg);
         }
       } catch (error) {
-        console.error("Error fetching student data:", error);
       } finally {
         setLoading(false);
       }

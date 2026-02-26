@@ -62,7 +62,6 @@ export const saveBusinessData = async (businessData: BusinessData): Promise<void
       approvalStatus: businessData.approvalStatus || "pending", // Keep in private too for consistency
     });
   } catch (error) {
-    console.error("Error saving business data:", error);
     throw error;
   }
 };
@@ -93,7 +92,6 @@ export const getBusinessData = async (userId: string): Promise<BusinessData | nu
       return null;
     }
   } catch (error) {
-    console.error("Error fetching business data:", error);
     throw error;
   }
 };
@@ -125,7 +123,6 @@ export const updateBusinessData = async (userId: string, businessData: Partial<B
 
     await setDoc(doc(db, "businesses", userId, "private", "details"), privateUpdates, { merge: true });
   } catch (error) {
-    console.error("Error updating business data:", error);
     throw error;
   }
 };
@@ -154,7 +151,6 @@ export const saveStudentProfile = async (profile: StudentProfile): Promise<void>
       updatedAt: new Date(),
     });
   } catch (error) {
-    console.error("Error saving student profile:", error);
     throw error;
   }
 };
@@ -169,7 +165,6 @@ export const getStudentProfile = async (userId: string): Promise<StudentProfile 
     }
     return null;
   } catch (error) {
-    console.error("Error fetching student profile:", error);
     throw error;
   }
 };
@@ -181,7 +176,6 @@ export const updateStudentProfile = async (userId: string, profile: Partial<Stud
       updatedAt: new Date(),
     }, { merge: true });
   } catch (error) {
-    console.error("Error updating student profile:", error);
     throw error;
   }
 };
@@ -190,7 +184,6 @@ export const updateMatchingPreference = async (userId: string, openToMatching: b
   try {
     await updateStudentProfile(userId, { openToMatching });
   } catch (error) {
-    console.error("Error updating matching preference:", error);
     throw error;
   }
 };
@@ -207,7 +200,6 @@ export const getAllStudents = async (): Promise<StudentProfile[]> => {
 
     return students;
   } catch (error) {
-    console.error("Error fetching all students:", error);
     throw error;
   }
 };
@@ -245,7 +237,6 @@ export const getAllBusinesses = async (): Promise<PublicBusinessData[]> => {
 
     return businesses;
   } catch (error) {
-    console.error("Error fetching businesses:", error);
     throw error;
   }
 };
@@ -260,7 +251,6 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
     });
     return docRef.id;
   } catch (error) {
-    console.error("Error saving application:", error);
     throw error;
   }
 };
@@ -320,7 +310,6 @@ export const saveRating = async (rating: Omit<Rating, "id" | "createdAt">): Prom
 
     return docRef.id;
   } catch (error) {
-    console.error("Error saving rating:", error);
     throw error;
   }
 };
@@ -338,7 +327,6 @@ export const getRatingsForStudent = async (studentId: string): Promise<Rating[]>
 
     return ratings;
   } catch (error) {
-    console.error("Error fetching ratings for student:", error);
     throw error;
   }
 };
@@ -356,7 +344,6 @@ export const getApplicationsForBusiness = async (businessId: string): Promise<Ap
 
     return applications;
   } catch (error) {
-    console.error("Error fetching applications for business:", error);
     throw error;
   }
 };
@@ -374,7 +361,6 @@ export const getApplicationsForStudent = async (studentId: string): Promise<Appl
 
     return applications;
   } catch (error) {
-    console.error("Error fetching applications for student:", error);
     throw error;
   }
 };
@@ -386,7 +372,6 @@ export const markApplicationCompleted = async (applicationId: string): Promise<v
       completedAt: new Date(),
     });
   } catch (error) {
-    console.error("Error marking application completed:", error);
     throw error;
   }
 };
@@ -416,7 +401,6 @@ const incrementCompletedProjects = async (businessId: string): Promise<void> => 
       });
     }
   } catch (error) {
-    console.error("Error incrementing completed projects:", error);
     throw error;
   }
 };
@@ -437,7 +421,6 @@ export const getBadgeStatus = async (businessId: string): Promise<BadgeStatus> =
 
     return { completedProjects, badge };
   } catch (error) {
-    console.error("Error fetching badge status:", error);
     return { completedProjects: 0, badge: "none" };
   }
 };
@@ -459,7 +442,6 @@ export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData 
 
     return businessesWithBadges;
   } catch (error) {
-    console.error("Error fetching businesses with badges:", error);
     throw error;
   }
 };
@@ -491,7 +473,6 @@ export const assignStudentToBusiness = async (
       notes: notes || "",
     });
   } catch (error) {
-    console.error("Error assigning student to business:", error);
     throw error;
   }
 };
@@ -515,7 +496,6 @@ export const getAssignedStudents = async (businessId: string): Promise<StudentPr
 
     return students;
   } catch (error) {
-    console.error("Error fetching assigned students:", error);
     throw error;
   }
 };
@@ -550,7 +530,6 @@ export const getBusinessesAssignedToStudent = async (studentId: string): Promise
 
     return assignedBusinesses;
   } catch (error) {
-    console.error("Error fetching businesses assigned to student:", error);
     throw error;
   }
 };
@@ -561,7 +540,6 @@ export const removeStudentAssignment = async (businessId: string, studentId: str
     const assignmentDocRef = doc(db, "businesses", businessId, "assignedStudents", studentId);
     await deleteDoc(assignmentDocRef);
   } catch (error) {
-    console.error("Error removing student assignment:", error);
     throw error;
   }
 };
@@ -629,7 +607,6 @@ export const getAllPartnerships = async (): Promise<Partnership[]> => {
 
     return partnerships;
   } catch (error) {
-    console.error("Error fetching partnerships:", error);
     throw error;
   }
 };
@@ -671,7 +648,6 @@ export const getPendingBusinesses = async (): Promise<BusinessWithApprovalStatus
 
     return pendingBusinesses;
   } catch (error) {
-    console.error("Error fetching pending businesses:", error);
     throw error;
   }
 };
@@ -681,7 +657,6 @@ export const approveBusiness = async (userId: string): Promise<void> => {
   try {
     await updateBusinessData(userId, { approvalStatus: "approved" });
   } catch (error) {
-    console.error("Error approving business:", error);
     throw error;
   }
 };
@@ -691,7 +666,6 @@ export const rejectBusiness = async (userId: string): Promise<void> => {
   try {
     await updateBusinessData(userId, { approvalStatus: "rejected" });
   } catch (error) {
-    console.error("Error rejecting business:", error);
     throw error;
   }
 };
@@ -724,7 +698,6 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
 
     return approvedBusinesses;
   } catch (error) {
-    console.error("Error fetching approved businesses:", error);
     throw error;
   }
 };

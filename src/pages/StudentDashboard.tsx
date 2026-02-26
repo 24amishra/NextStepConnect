@@ -83,7 +83,6 @@ const StudentDashboard = () => {
             });
           }
         } catch (error) {
-          console.error("Error loading profile:", error);
         } finally {
           setLoadingProfile(false);
         }
@@ -98,7 +97,6 @@ const StudentDashboard = () => {
       await logout();
       navigate("/");
     } catch (err) {
-      console.error("Error logging out:", err);
     }
   };
 
@@ -110,7 +108,6 @@ const StudentDashboard = () => {
       await updateMatchingPreference(currentUser.uid, checked);
       setOpenToMatching(checked);
     } catch (error) {
-      console.error("Error updating matching preference:", error);
     } finally {
       setUpdatingPreference(false);
     }
@@ -176,7 +173,6 @@ const StudentDashboard = () => {
         variant: "default",
       });
     } catch (error) {
-      console.error("Error updating profile:", error);
       toast({
         title: "Update Failed",
         description: "Failed to update your profile. Please try again.",
@@ -252,7 +248,6 @@ const StudentDashboard = () => {
         message: "",
       });
     } catch (error) {
-      console.error("Error sending question:", error);
       toast({
         title: "Send Failed",
         description: "Failed to send your message. Please try again or email us directly.",

@@ -96,7 +96,6 @@ const RatingDialog = ({
       setSkillQualityRating(0);
       setFeedback("");
     } catch (error) {
-      console.error("Error submitting rating:", error);
       toast.error("Failed to submit rating");
     } finally {
       setSubmitting(false);

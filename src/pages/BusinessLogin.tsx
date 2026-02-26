@@ -37,7 +37,6 @@ const BusinessLogin = () => {
           setBusinessData(data);
           setFetchedUserId(currentUser.uid);
         } catch (err) {
-          console.error("Error fetching business data:", err);
           setFetchedUserId(currentUser.uid); // Set even on error to prevent infinite retries
         } finally {
           setLoadingData(false);

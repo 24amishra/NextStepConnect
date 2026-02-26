@@ -51,7 +51,6 @@ const BusinessApplications = () => {
         
         setApplications(apps);
       } catch (error) {
-        console.error("Error fetching applications:", error);
       } finally {
         setLoading(false);
       }
@@ -74,7 +73,6 @@ const BusinessApplications = () => {
         )
       );
     } catch (error) {
-      console.error("Error marking application completed:", error);
       toast.error("Failed to mark project as completed");
     }
   };
@@ -114,7 +112,6 @@ const BusinessApplications = () => {
 
           setApplications(apps);
         } catch (error) {
-          console.error("Error refreshing applications:", error);
         }
       };
 
