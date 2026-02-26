@@ -18,6 +18,7 @@ export interface PublicBusinessData {
   potentialProblems: string;
   customQuestions?: CustomQuestion[];
   categories?: string[]; // Array of category tags
+  approvalStatus?: "pending" | "approved" | "rejected"; // Public so students can filter
 }
 
 // Private data structure (only business owner sees)
@@ -40,12 +41,13 @@ export interface BusinessData extends PublicBusinessData {
 
 export const saveBusinessData = async (businessData: BusinessData): Promise<void> => {
   try {
-    const { userId, phone, createdAt, updatedAt, approvalStatus, ...publicData } = businessData;
+    const { userId, phone, createdAt, updatedAt, ...publicData } = businessData;
 
-    // Ensure businessId is set to userId
+    // Ensure businessId is set to userId and include approval status in public data
     const publicDataWithId = {
       ...publicData,
       businessId: userId,
+      approvalStatus: businessData.approvalStatus || "pending", // Default to pending, make it public
     };
 
     // Save public data (visible to all authenticated users)
@@ -57,7 +59,7 @@ export const saveBusinessData = async (businessData: BusinessData): Promise<void
       phone,
       createdAt: createdAt || new Date(),
       updatedAt: updatedAt || new Date(),
-      approvalStatus: approvalStatus || "pending", // Default to pending for new businesses
+      approvalStatus: businessData.approvalStatus || "pending", // Keep in private too for consistency
     });
   } catch (error) {
     console.error("Error saving business data:", error);
@@ -100,12 +102,18 @@ export const updateBusinessData = async (userId: string, businessData: Partial<B
   try {
     const { phone, createdAt, updatedAt, approvalStatus, ...publicData } = businessData;
 
-    // Update public data
-    if (Object.keys(publicData).length > 0) {
-      const publicDataWithId = {
-        ...publicData,
-        businessId: userId, // Ensure businessId is always set
-      };
+    // Update public data (including approval status if provided)
+    const publicDataWithId: any = {
+      ...publicData,
+      businessId: userId, // Ensure businessId is always set
+    };
+
+    // Add approval status to public data if it's being updated
+    if (approvalStatus !== undefined) {
+      publicDataWithId.approvalStatus = approvalStatus;
+    }
+
+    if (Object.keys(publicDataWithId).length > 1) { // More than just businessId
       await setDoc(doc(db, "businesses", userId), publicDataWithId, { merge: true });
     }
 
@@ -223,25 +231,17 @@ export const getAllBusinesses = async (): Promise<PublicBusinessData[]> => {
     const businesses: PublicBusinessData[] = [];
 
     // Filter to only include approved businesses
-    for (const businessDoc of querySnapshot.docs) {
+    querySnapshot.forEach((businessDoc) => {
       const publicData = businessDoc.data() as PublicBusinessData;
 
-      // Check approval status in private data
-      const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
-      const privateDocSnap = await getDoc(privateDocRef);
-
-      if (privateDocSnap.exists()) {
-        const privateData = privateDocSnap.data() as PrivateBusinessData;
-
-        // Only include approved businesses
-        if (privateData.approvalStatus === "approved") {
-          businesses.push({
-            ...publicData,
-            businessId: businessDoc.id,
-          });
-        }
+      // Check approval status from public data (no longer need to read private subcollection)
+      if (publicData.approvalStatus === "approved") {
+        businesses.push({
+          ...publicData,
+          businessId: businessDoc.id,
+        });
       }
-    }
+    });
 
     return businesses;
   } catch (error) {
@@ -536,21 +536,14 @@ export const getBusinessesAssignedToStudent = async (studentId: string): Promise
       );
 
       if (assignedStudentDoc.exists()) {
-        // Also check approval status before showing to student
-        const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
-        const privateDocSnap = await getDoc(privateDocRef);
+        const businessData = businessDoc.data() as PublicBusinessData;
 
-        if (privateDocSnap.exists()) {
-          const privateData = privateDocSnap.data() as PrivateBusinessData;
-
-          // Only include approved businesses in matched opportunities
-          if (privateData.approvalStatus === "approved") {
-            const businessData = businessDoc.data() as PublicBusinessData;
-            assignedBusinesses.push({
-              ...businessData,
-              businessId: businessDoc.id,
-            });
-          }
+        // Only include approved businesses in matched opportunities (check public data)
+        if (businessData.approvalStatus === "approved") {
+          assignedBusinesses.push({
+            ...businessData,
+            businessId: businessDoc.id,
+          });
         }
       }
     }
@@ -713,15 +706,14 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
     for (const businessDoc of querySnapshot.docs) {
       const publicData = businessDoc.data() as PublicBusinessData;
 
-      // Get private data including approval status
-      const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
-      const privateDocSnap = await getDoc(privateDocRef);
+      // Check approval status from public data
+      if (publicData.approvalStatus === "approved") {
+        // Get private data for admin use (phone, etc.)
+        const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
+        const privateDocSnap = await getDoc(privateDocRef);
 
-      if (privateDocSnap.exists()) {
-        const privateData = privateDocSnap.data() as PrivateBusinessData;
-
-        // Only include approved businesses
-        if (privateData.approvalStatus === "approved") {
+        if (privateDocSnap.exists()) {
+          const privateData = privateDocSnap.data() as PrivateBusinessData;
           approvedBusinesses.push({
             ...publicData,
             ...privateData,
