@@ -187,6 +187,23 @@ export const updateMatchingPreference = async (userId: string, openToMatching: b
   }
 };
 
+export const getAllStudents = async (): Promise<StudentProfile[]> => {
+  try {
+    const studentsRef = collection(db, "students");
+    const querySnapshot = await getDocs(studentsRef);
+    const students: StudentProfile[] = [];
+
+    querySnapshot.forEach((doc) => {
+      students.push(doc.data() as StudentProfile);
+    });
+
+    return students;
+  } catch (error) {
+    console.error("Error fetching all students:", error);
+    throw error;
+  }
+};
+
 export interface Application {
   id?: string;
   studentId: string;
@@ -682,6 +699,40 @@ export const rejectBusiness = async (userId: string): Promise<void> => {
     await updateBusinessData(userId, { approvalStatus: "rejected" });
   } catch (error) {
     console.error("Error rejecting business:", error);
+    throw error;
+  }
+};
+
+// Get all approved businesses (for admin use)
+export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
+  try {
+    const businessesRef = collection(db, "businesses");
+    const querySnapshot = await getDocs(businessesRef);
+    const approvedBusinesses: BusinessData[] = [];
+
+    for (const businessDoc of querySnapshot.docs) {
+      const publicData = businessDoc.data() as PublicBusinessData;
+
+      // Get private data including approval status
+      const privateDocRef = doc(db, "businesses", businessDoc.id, "private", "details");
+      const privateDocSnap = await getDoc(privateDocRef);
+
+      if (privateDocSnap.exists()) {
+        const privateData = privateDocSnap.data() as PrivateBusinessData;
+
+        // Only include approved businesses
+        if (privateData.approvalStatus === "approved") {
+          approvedBusinesses.push({
+            ...publicData,
+            ...privateData,
+          } as BusinessData);
+        }
+      }
+    }
+
+    return approvedBusinesses;
+  } catch (error) {
+    console.error("Error fetching approved businesses:", error);
     throw error;
   }
 };

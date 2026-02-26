@@ -618,54 +618,7 @@ const BusinessDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Badge Status Card */}
-            <Card className="border-primary/20">
-              <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Award className="h-5 w-5 text-primary" />
-                  Badge Status
-                </CardTitle>
-                <CardDescription>Your NextStep achievement level</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Completed Projects
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">{badgeStatus.completedProjects}</p>
-                </div>
-
-                <Separator className="bg-primary/20" />
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Current Badge
-                  </div>
-                  {badgeStatus.badge === "frequent" && (
-                    <Badge className="bg-primary text-primary-foreground">
-                      <Award className="h-3 w-3 mr-1" />
-                      Frequent Partner
-                    </Badge>
-                  )}
-                  {badgeStatus.badge === "returning" && (
-                    <Badge variant="secondary" className="bg-primary/20 text-primary">
-                      <Award className="h-3 w-3 mr-1" />
-                      Returning Member
-                    </Badge>
-                  )}
-                  {badgeStatus.badge === "none" && (
-                    <p className="text-sm text-muted-foreground">
-                      Complete your first project to earn a badge!
-                    </p>
-                  )}
-                </div>
-
-                <div className="text-xs text-muted-foreground pt-2 border-t border-primary/20">
-                  <p>• 1+ projects: Returning Member</p>
-                  <p>• 5+ projects: Frequent Partner</p>
-                </div>
-              </CardContent>
-            </Card>
+          
 
             {/* Assigned Students Section */}
             {currentUser?.uid && <AssignedStudents businessId={currentUser.uid} />}

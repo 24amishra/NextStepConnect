@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPendingBusinesses, approveBusiness, rejectBusiness, BusinessWithApprovalStatus, isAdmin, getAllPartnerships, Partnership } from "@/lib/firestore";
+import {
+  getPendingBusinesses,
+  approveBusiness,
+  rejectBusiness,
+  BusinessWithApprovalStatus,
+  isAdmin,
+  getAllPartnerships,
+  Partnership,
+  getAllStudents,
+  getApprovedBusinesses,
+  assignStudentToBusiness,
+  removeStudentAssignment,
+  StudentProfile,
+  BusinessData
+} from "@/lib/firestore";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +40,17 @@ import {
   Calendar,
   Link2,
   Award,
+  UserPlus,
+  Trash2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
@@ -37,6 +61,14 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"approvals" | "partnerships">("approvals");
+
+  // Assignment form state
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [businesses, setBusinesses] = useState<BusinessData[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
+  const [assignmentNotes, setAssignmentNotes] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Check if current user is admin
   useEffect(() => {
@@ -75,12 +107,79 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchStudentsAndBusinesses = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const [studentsData, businessesData, partnershipsData] = await Promise.all([
+        getAllStudents(),
+        getApprovedBusinesses(),
+        getAllPartnerships(),
+      ]);
+      setStudents(studentsData);
+      setBusinesses(businessesData);
+      setPartnerships(partnershipsData);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignStudent = async () => {
+    if (!selectedStudent || !selectedBusiness) {
+      setError("Please select both a student and a business");
+      return;
+    }
+
+    try {
+      setIsAssigning(true);
+      setError("");
+      await assignStudentToBusiness(
+        selectedBusiness,
+        selectedStudent,
+        currentUser?.email || "admin",
+        assignmentNotes
+      );
+
+      // Reset form
+      setSelectedStudent("");
+      setSelectedBusiness("");
+      setAssignmentNotes("");
+
+      // Refresh partnerships
+      await fetchStudentsAndBusinesses();
+    } catch (err) {
+      console.error("Error assigning student:", err);
+      setError("Failed to assign student to business");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleRemovePartnership = async (businessId: string, studentId: string) => {
+    if (!confirm("Are you sure you want to remove this partnership?")) {
+      return;
+    }
+
+    try {
+      setError("");
+      await removeStudentAssignment(businessId, studentId);
+      // Refresh partnerships
+      await fetchStudentsAndBusinesses();
+    } catch (err) {
+      console.error("Error removing partnership:", err);
+      setError("Failed to remove partnership");
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && isAdmin(currentUser?.email)) {
       if (activeTab === "approvals") {
         fetchPendingBusinesses();
       } else {
-        fetchPartnerships();
+        fetchStudentsAndBusinesses();
       }
     }
   }, [authLoading, currentUser?.email, activeTab]);
@@ -181,7 +280,7 @@ const AdminDashboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchPartnerships}
+              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchStudentsAndBusinesses}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
