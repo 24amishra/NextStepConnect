@@ -378,7 +378,6 @@ const StudentDashboard = () => {
                 {currentUser?.uid && <CurrentProjects studentId={currentUser.uid} />}
 
                 {/* Matched Opportunities - Show at top if student is assigned to businesses */}
-                {currentUser?.uid && <MatchedOpportunities studentId={currentUser.uid} />}
 
                 <div>
                   <h2 className="text-3xl font-bold font-heading mb-2">Available Opportunities</h2>

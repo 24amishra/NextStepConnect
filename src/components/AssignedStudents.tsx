@@ -68,22 +68,22 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
   }
 
   return (
-    <Card className="border-0 shadow-warm-md bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-      <CardHeader className="bg-gradient-to-r from-green-600/10 to-emerald-600/10 border-b border-green-200 dark:border-green-800">
+    <Card className="border-0 shadow-warm-md bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-green-600 rounded-lg">
+          <div className="p-2 bg-primary rounded-lg">
             <Users className="h-5 w-5 text-white" />
           </div>
           <div>
             <CardTitle className="flex items-center gap-2 text-foreground">
               Your Matched Students
               {students.length > 0 && (
-                <Badge className="bg-green-600 hover:bg-green-700">
+                <Badge className="bg-primary hover:bg-primary/90">
                   {students.length} Active
                 </Badge>
               )}
             </CardTitle>
-            <CardDescription className="text-green-700 dark:text-green-400">
+            <CardDescription className="text-primary dark:text-primary/80">
               Students approved for partnerships - ready to contact!
             </CardDescription>
           </div>
@@ -109,27 +109,27 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
           <div className="space-y-6">
             {students.map((student, index) => (
               <div key={student.userId}>
-                {index > 0 && <Separator className="bg-green-200 dark:bg-green-800 my-6" />}
+                {index > 0 && <Separator className="bg-primary/20 my-6" />}
 
-                <div className="bg-card border-2 border-green-200 dark:border-green-800 rounded-lg p-6 space-y-4 hover:border-green-300 dark:hover:border-green-700 transition-all">
+                <div className="bg-card border-2 border-primary/20 rounded-lg p-6 space-y-4 hover:border-primary/40 transition-all">
                   {/* Student Header with Badge */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-14 h-14 bg-green-600/10 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-green-600/20">
-                        <User className="w-7 h-7 text-green-600" />
+                      <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-primary/20">
+                        <User className="w-7 h-7 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-xl font-bold text-foreground">
                             {student.name}
                           </h3>
-                          <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                          <Badge className="bg-primary hover:bg-primary/90 text-white">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Active
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="h-4 w-4 text-green-600" />
+                          <Mail className="h-4 w-4 text-primary" />
                           <span className="font-medium">{student.email}</span>
                         </div>
                       </div>
@@ -140,7 +140,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                   <div className="flex flex-wrap gap-3 pt-2">
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-primary hover:bg-primary/90 text-white"
                       onClick={() => window.location.href = `mailto:${student.email}`}
                     >
                       <Mail className="h-4 w-4 mr-2" />
@@ -150,7 +150,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-green-600/20 text-green-700 hover:bg-green-600/10"
+                        className="border-primary/20 text-primary hover:bg-primary/10"
                         onClick={() => window.open(student.linkedinUrl, '_blank')}
                       >
                         <Link2 className="h-4 w-4 mr-2" />
@@ -159,13 +159,13 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                     )}
                   </div>
 
-                  <Separator className="bg-green-200 dark:bg-green-800" />
+                  <Separator className="bg-primary/20" />
 
                   {/* Bio */}
                   {student.bio && (
                     <div className="space-y-2 bg-muted/30 p-4 rounded-lg">
                       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <Sparkles className="h-4 w-4 text-green-600" />
+                        <Sparkles className="h-4 w-4 text-primary" />
                         About
                       </div>
                       <p className="text-sm text-foreground leading-relaxed">{student.bio}</p>
@@ -178,7 +178,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                     {student.skills && student.skills.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          <Award className="h-4 w-4 text-green-600" />
+                          <Award className="h-4 w-4 text-primary" />
                           Skills
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -186,7 +186,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                             <Badge
                               key={skill}
                               variant="secondary"
-                              className="bg-green-600/10 text-green-700 border-green-600/20"
+                              className="bg-primary/10 text-primary border-primary/20"
                             >
                               {skill}
                             </Badge>
@@ -199,7 +199,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                     {student.desiredRoles && student.desiredRoles.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                          <Briefcase className="h-4 w-4 text-green-600" />
+                          <Briefcase className="h-4 w-4 text-primary" />
                           Interested In
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -207,7 +207,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                             <Badge
                               key={role}
                               variant="outline"
-                              className="border-green-600/30 text-foreground"
+                              className="border-primary/30 text-foreground"
                             >
                               {role}
                             </Badge>

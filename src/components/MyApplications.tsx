@@ -233,7 +233,7 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
                   <Alert className="bg-green-600/5 border-green-600/20">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-sm font-medium">
-                      Congratulations! This business has accepted your application. Check "Current Projects" at the top for full contact details.
+                      Congratulations! This business has accepted your application. Check the Opportunities Dashboard for additional details.
                     </AlertDescription>
                   </Alert>
                 )}

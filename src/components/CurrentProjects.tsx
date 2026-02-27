@@ -109,20 +109,20 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
   }
 
   return (
-    <Card className="border-0 shadow-warm-md bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-      <CardHeader className="bg-gradient-to-r from-green-600/10 to-emerald-600/10 border-b border-green-200 dark:border-green-800">
+    <Card className="border-0 shadow-warm-md bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-green-600 rounded-lg">
+          <div className="p-2 bg-primary rounded-lg">
             <Briefcase className="h-5 w-5 text-white" />
           </div>
           <div>
             <CardTitle className="flex items-center gap-2 text-foreground">
               Current Projects
-              <Badge className="bg-green-600 hover:bg-green-700">
+              <Badge className="bg-primary hover:bg-primary/90">
                 {projects.length} Active
               </Badge>
             </CardTitle>
-            <CardDescription className="text-green-700 dark:text-green-400">
+            <CardDescription className="text-primary dark:text-primary/80">
               Your accepted applications are now live projects!
             </CardDescription>
           </div>
@@ -133,14 +133,14 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
           {projects.map((project) => (
             <div
               key={project.id}
-              className="bg-card border-2 border-green-200 dark:border-green-800 rounded-lg p-6 hover:border-green-300 dark:hover:border-green-700 transition-all shadow-sm"
+              className="bg-card border-2 border-primary/20 rounded-lg p-6 hover:border-primary/40 transition-all shadow-sm"
             >
               <div className="space-y-4">
                 {/* Header with status badge */}
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                      <Building2 className="h-6 w-6 text-green-600" />
+                      <Building2 className="h-6 w-6 text-primary" />
                       {project.business?.companyName || project.businessName}
                     </h3>
                     {project.business?.location && (
@@ -150,27 +150,26 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
                       </div>
                     )}
                   </div>
-                  <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                  <Badge className="bg-primary hover:bg-primary/90 text-white">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     Accepted
                   </Badge>
                 </div>
 
-                <Separator className="bg-green-200 dark:bg-green-800" />
+                <Separator className="bg-primary/20" />
 
                 {/* Success message */}
-                <Alert className="bg-green-500/10 border-green-500/30">
-                  <Sparkles className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-sm font-medium text-green-700 dark:text-green-400">
-                    Congratulations! This business has accepted your application. Contact them to get started on your project.
-                  </AlertDescription>
+                <Alert className="bg-primary/10 border-primary/30">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm font-medium text-primary dark:text-primary/80">
+                  <strong>Great news!</strong> This organization is interested in working with you. Keep an eye on your inbox for further details!                  </AlertDescription>
                 </Alert>
 
                 {/* Project info */}
                 {project.business?.potentialProblems && (
                   <div className="space-y-2">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-green-600" />
+                      <Briefcase className="h-4 w-4 text-primary" />
                       Project Details
                     </h4>
                     <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
@@ -179,12 +178,12 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
                   </div>
                 )}
 
-                <Separator className="bg-green-200 dark:bg-green-800" />
+                <Separator className="bg-primary/20" />
 
                 {/* Contact Details */}
                 <div className="space-y-3">
                   <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <User className="h-4 w-4 text-green-600" />
+                    <User className="h-4 w-4 text-primary" />
                     Contact Information
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
@@ -198,7 +197,7 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
                       <p className="text-xs text-muted-foreground">Email</p>
                       <a
                         href={`mailto:${project.business?.email}`}
-                        className="text-green-600 hover:text-green-700 font-semibold flex items-center gap-1 text-sm"
+                        className="text-primary hover:text-primary/80 font-semibold flex items-center gap-1 text-sm"
                       >
                         <Mail className="h-3 w-3" />
                         {project.business?.email || "N/A"}
@@ -208,7 +207,7 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
                       <p className="text-xs text-muted-foreground">Phone</p>
                       <a
                         href={`tel:${project.business?.phone}`}
-                        className="text-green-600 hover:text-green-700 font-semibold flex items-center gap-1"
+                        className="text-primary hover:text-primary/80 font-semibold flex items-center gap-1"
                       >
                         <Phone className="h-3 w-3" />
                         {project.business?.phone || "N/A"}
@@ -224,14 +223,14 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
                 </div>
 
                 {/* Dates */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-primary/20">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     <span>Applied: {formatDate(project.appliedAt)}</span>
                   </div>
                   {project.acceptedAt && (
                     <div className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3 text-green-600" />
+                      <CheckCircle2 className="h-3 w-3 text-primary" />
                       <span>Accepted: {formatDate(project.acceptedAt)}</span>
                     </div>
                   )}
