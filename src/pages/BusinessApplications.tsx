@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Application, markApplicationCompleted } from "@/lib/firestore";
+import { Application, markApplicationCompleted, acceptApplication, rejectApplication } from "@/lib/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Mail, FileText, Loader2, MessageSquare, CheckCircle, Star, Eye } from "lucide-react";
+import { ArrowLeft, User, Mail, FileText, Loader2, MessageSquare, CheckCircle, Star, Eye, ThumbsUp, X } from "lucide-react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import RatingDialog from "@/components/RatingDialog";
@@ -58,6 +58,52 @@ const BusinessApplications = () => {
 
     fetchApplications();
   }, [currentUser?.uid]);
+
+  const handleAcceptApplication = async (application: Application) => {
+    if (!application.id) return;
+
+    console.log("🎯 Accepting application:", application.id);
+    console.log("Student ID:", application.studentId);
+    console.log("Business ID:", application.businessId);
+
+    try {
+      await acceptApplication(application.id);
+      console.log("✅ Application accepted successfully");
+      toast.success("Application accepted! Student will appear in Assigned Students.");
+
+      // Refresh applications
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === application.id ? { ...app, status: "accepted" } : app
+        )
+      );
+    } catch (error) {
+      console.error("❌ Error accepting application:", error);
+      toast.error(`Failed to accept application: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  };
+
+  const handleRejectApplication = async (application: Application) => {
+    if (!application.id) return;
+
+    if (!confirm("Are you sure you want to reject this application? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await rejectApplication(application.id);
+      toast.success("Application rejected");
+
+      // Refresh applications
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === application.id ? { ...app, status: "rejected" } : app
+        )
+      );
+    } catch (error) {
+      toast.error("Failed to reject application");
+    }
+  };
 
   const handleMarkCompleted = async (application: Application) => {
     if (!application.id) return;
@@ -179,8 +225,14 @@ const BusinessApplications = () => {
                             <User className="h-5 w-5 text-primary" />
                             {application.studentName || "Student"}
                           </CardTitle>
+                          {(application as any).status === "accepted" && (
+                            <Badge variant="secondary" className="bg-green-600/10 text-green-700 border-green-600/20">
+                              <ThumbsUp className="h-3 w-3 mr-1" />
+                              Accepted
+                            </Badge>
+                          )}
                           {(application as any).status === "completed" && (
-                            <Badge variant="secondary" className="bg-green-500/10 text-green-700 border-green-500/20">
+                            <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 border-blue-500/20">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Completed
                             </Badge>
@@ -191,8 +243,14 @@ const BusinessApplications = () => {
                               Rated
                             </Badge>
                           )}
+                          {(application as any).status === "rejected" && (
+                            <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
+                              <X className="h-3 w-3 mr-1" />
+                              Rejected
+                            </Badge>
+                          )}
                           {(!((application as any).status) || (application as any).status === "pending") && (
-                            <Badge variant="outline" className="bg-primary/5 border-primary/20">
+                            <Badge variant="outline" className="bg-amber-500/10 border-amber-500/20 text-amber-700">
                               Pending
                             </Badge>
                           )}
@@ -246,11 +304,33 @@ const BusinessApplications = () => {
                     {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-3">
                       {(!((application as any).status) || (application as any).status === "pending") && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRejectApplication(application)}
+                            className="border-destructive/20 text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptApplication(application)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" />
+                            Accept Application
+                          </Button>
+                        </>
+                      )}
+
+                      {(application as any).status === "accepted" && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleMarkCompleted(application)}
-                          className="border-green-500/20 text-green-700 hover:bg-green-500/10"
+                          className="border-blue-500/20 text-blue-700 hover:bg-blue-500/10"
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Mark as Completed
@@ -271,6 +351,12 @@ const BusinessApplications = () => {
                       {(application as any).status === "rated" && (
                         <p className="text-sm text-muted-foreground">
                           Rating submitted
+                        </p>
+                      )}
+
+                      {(application as any).status === "rejected" && (
+                        <p className="text-sm text-muted-foreground">
+                          Application rejected
                         </p>
                       )}
                     </div>

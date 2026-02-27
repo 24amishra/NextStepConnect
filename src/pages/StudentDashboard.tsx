@@ -21,6 +21,7 @@ import Disclaimer from "@/components/Disclaimer";
 import StudentRatings from "@/components/StudentRatings";
 import MatchedOpportunities from "@/components/MatchedOpportunities";
 import MyApplications from "@/components/MyApplications";
+import CurrentProjects from "@/components/CurrentProjects";
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
@@ -373,6 +374,9 @@ const StudentDashboard = () => {
             {/* Opportunities Section */}
             {activeSection === "opportunities" && (
               <div className="space-y-6">
+                {/* Current Projects - Show accepted applications at the very top */}
+                {currentUser?.uid && <CurrentProjects studentId={currentUser.uid} />}
+
                 {/* Matched Opportunities - Show at top if student is assigned to businesses */}
                 {currentUser?.uid && <MatchedOpportunities studentId={currentUser.uid} />}
 

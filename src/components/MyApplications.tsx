@@ -78,9 +78,16 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
             Pending Review
           </Badge>
         );
+      case "accepted":
+        return (
+          <Badge variant="outline" className="border-green-600/50 bg-green-600/10 text-green-700">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Accepted
+          </Badge>
+        );
       case "completed":
         return (
-          <Badge variant="outline" className="border-green-500/50 bg-green-500/10 text-green-700">
+          <Badge variant="outline" className="border-blue-500/50 bg-blue-500/10 text-blue-700">
             <CheckCircle className="h-3 w-3 mr-1" />
             Completed
           </Badge>
@@ -222,9 +229,17 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
                     </AlertDescription>
                   </Alert>
                 )}
-                {app.status === "completed" && (
-                  <Alert className="bg-green-500/5 border-green-500/20">
+                {app.status === "accepted" && (
+                  <Alert className="bg-green-600/5 border-green-600/20">
                     <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-sm font-medium">
+                      Congratulations! This business has accepted your application. Check "Current Projects" at the top for full contact details.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {app.status === "completed" && (
+                  <Alert className="bg-blue-500/5 border-blue-500/20">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
                     <AlertDescription className="text-sm">
                       Congratulations! You successfully completed this project.
                     </AlertDescription>

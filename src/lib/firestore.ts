@@ -70,10 +70,10 @@ export const getBusinessData = async (userId: string): Promise<BusinessData | nu
   try {
     const docRef = doc(db, "businesses", userId);
     const docSnap = await getDoc(docRef);
-    
+
     if (docSnap.exists()) {
       const publicData = docSnap.data() as PublicBusinessData;
-      
+
       // Get private data
       const privateDocRef = doc(db, "businesses", userId, "private", "details");
       const privateDocSnap = await getDoc(privateDocRef);
@@ -83,7 +83,13 @@ export const getBusinessData = async (userId: string): Promise<BusinessData | nu
         createdAt: new Date(),
         approvalStatus: "pending" as const,
       };
-      
+
+      // Debug logging
+      console.log("🔍 Business Data Debug:");
+      console.log("Public approvalStatus:", publicData.approvalStatus);
+      console.log("Private approvalStatus:", privateData.approvalStatus);
+      console.log("Private doc exists:", privateDocSnap.exists());
+
       return {
         ...publicData,
         ...privateData,
@@ -111,8 +117,15 @@ export const updateBusinessData = async (userId: string, businessData: Partial<B
       publicDataWithId.approvalStatus = approvalStatus;
     }
 
+    console.log("💾 Updating business data:");
+    console.log("userId:", userId);
+    console.log("approvalStatus:", approvalStatus);
+    console.log("publicDataWithId:", publicDataWithId);
+    console.log("Will update public?", Object.keys(publicDataWithId).length > 1);
+
     if (Object.keys(publicDataWithId).length > 1) { // More than just businessId
       await setDoc(doc(db, "businesses", userId), publicDataWithId, { merge: true });
+      console.log("✅ Public document updated");
     }
 
     // Update private data
@@ -121,8 +134,12 @@ export const updateBusinessData = async (userId: string, businessData: Partial<B
     if (createdAt !== undefined) privateUpdates.createdAt = createdAt;
     if (approvalStatus !== undefined) privateUpdates.approvalStatus = approvalStatus;
 
+    console.log("Private updates:", privateUpdates);
+
     await setDoc(doc(db, "businesses", userId, "private", "details"), privateUpdates, { merge: true });
+    console.log("✅ Private document updated");
   } catch (error) {
+    console.error("❌ Error updating business data:", error);
     throw error;
   }
 };
@@ -213,6 +230,9 @@ export interface Application {
   businessName: string;
   answers: { [questionId: string]: string };
   appliedAt: Date | any;
+  status?: "pending" | "accepted" | "completed" | "rejected" | "rated";
+  acceptedAt?: Date | any;
+  completedAt?: Date | any;
 }
 
 // This returns only public data for APPROVED businesses (safe for all authenticated users to see)
@@ -247,9 +267,74 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
     const docRef = await addDoc(applicationsRef, {
       ...application,
       appliedAt: new Date(),
-      status: "pending", // pending, completed, rejected
+      status: "pending", // pending, accepted, completed, rejected, rated
     });
     return docRef.id;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Accept an application (business accepts student's application)
+export const acceptApplication = async (applicationId: string): Promise<void> => {
+  try {
+    console.log("🔄 acceptApplication called with ID:", applicationId);
+
+    // First, get the application to extract student and business IDs
+    const appDoc = await getDoc(doc(db, "applications", applicationId));
+    if (!appDoc.exists()) {
+      console.error("❌ Application document not found");
+      throw new Error("Application not found");
+    }
+
+    const application = appDoc.data() as Application;
+    console.log("📋 Application data:", {
+      studentId: application.studentId,
+      businessId: application.businessId,
+      studentName: application.studentName
+    });
+
+    // Update application status
+    console.log("📝 Updating application status to 'accepted'...");
+    await updateDoc(doc(db, "applications", applicationId), {
+      status: "accepted",
+      acceptedAt: new Date(),
+    });
+    console.log("✅ Application status updated");
+
+    // Automatically create a student-business assignment (partnership)
+    // This makes the student appear in the business's "Assigned Students" section
+    console.log("🤝 Creating student-business assignment...");
+    console.log("   businessId:", application.businessId, "type:", typeof application.businessId);
+    console.log("   studentId:", application.studentId, "type:", typeof application.studentId);
+
+    if (!application.businessId) {
+      throw new Error("businessId is missing from application");
+    }
+    if (!application.studentId) {
+      throw new Error("studentId is missing from application");
+    }
+
+    await assignStudentToBusiness(
+      application.businessId,
+      application.studentId,
+      "business-acceptance", // Indicates this was from business accepting application
+      `Accepted from application on ${new Date().toLocaleDateString()}`
+    );
+
+    console.log("✅ Application accepted and student assigned to business");
+  } catch (error) {
+    console.error("❌ Error in acceptApplication:", error);
+    throw error;
+  }
+};
+
+// Reject an application
+export const rejectApplication = async (applicationId: string): Promise<void> => {
+  try {
+    await updateDoc(doc(db, "applications", applicationId), {
+      status: "rejected",
+    });
   } catch (error) {
     throw error;
   }
@@ -465,14 +550,40 @@ export const assignStudentToBusiness = async (
   notes?: string
 ): Promise<void> => {
   try {
-    await setDoc(doc(db, "businesses", businessId, "assignedStudents", studentId), {
+    console.log("🤝 assignStudentToBusiness called:");
+    console.log("   businessId:", businessId);
+    console.log("   studentId:", studentId);
+    console.log("   assignedBy:", assignedBy);
+    console.log("   Path:", `businesses/${businessId}/assignedStudents/${studentId}`);
+
+    const assignmentRef = doc(db, "businesses", businessId, "assignedStudents", studentId);
+    const assignmentData = {
       studentId,
       businessId,
       assignedAt: new Date(),
       assignedBy: assignedBy || "admin",
       notes: notes || "",
-    });
+    };
+
+    console.log("   Data to write:", assignmentData);
+
+    await setDoc(assignmentRef, assignmentData);
+
+    console.log("✅ Student assignment created successfully");
+
+    // Verify it was written
+    const verifyDoc = await getDoc(assignmentRef);
+    if (verifyDoc.exists()) {
+      console.log("✅ Verified: Assignment document exists in database");
+    } else {
+      console.error("❌ WARNING: Assignment document was NOT found after writing!");
+    }
   } catch (error) {
+    console.error("❌ Error in assignStudentToBusiness:", error);
+    if (error instanceof Error) {
+      console.error("   Error message:", error.message);
+      console.error("   Error stack:", error.stack);
+    }
     throw error;
   }
 };
@@ -480,22 +591,33 @@ export const assignStudentToBusiness = async (
 // Get all students assigned to a business
 export const getAssignedStudents = async (businessId: string): Promise<StudentProfile[]> => {
   try {
+    console.log("👥 getAssignedStudents called for businessId:", businessId);
+    console.log("   Path:", `businesses/${businessId}/assignedStudents`);
+
     const assignedStudentsRef = collection(db, "businesses", businessId, "assignedStudents");
     const querySnapshot = await getDocs(assignedStudentsRef);
+
+    console.log("   Found", querySnapshot.size, "assigned student documents");
 
     const students: StudentProfile[] = [];
 
     // Fetch full student profiles for each assigned student
     for (const assignmentDoc of querySnapshot.docs) {
       const studentId = assignmentDoc.data().studentId;
+      console.log("   Fetching profile for studentId:", studentId);
       const studentProfile = await getStudentProfile(studentId);
       if (studentProfile) {
         students.push(studentProfile);
+        console.log("   ✓ Added student:", studentProfile.name);
+      } else {
+        console.log("   ✗ Student profile not found for:", studentId);
       }
     }
 
+    console.log("✅ Returning", students.length, "assigned students");
     return students;
   } catch (error) {
+    console.error("❌ Error in getAssignedStudents:", error);
     throw error;
   }
 };

@@ -40,6 +40,31 @@ export const BusinessProtectedRoute = ({ children }: BusinessProtectedRouteProps
     fetchBusinessData();
   }, [currentUser, authLoading]);
 
+  // Poll for approval status updates every 10 seconds when status is pending
+  useEffect(() => {
+    if (!currentUser || !businessData || businessData.approvalStatus !== "pending") {
+      return;
+    }
+
+    const checkApprovalStatus = async () => {
+      try {
+        const data = await getBusinessData(currentUser.uid);
+        if (data && data.approvalStatus !== businessData.approvalStatus) {
+          // Status changed, update the state to trigger re-render
+          setBusinessData(data);
+        }
+      } catch (err) {
+        // Silently fail - we'll retry on next interval
+      }
+    };
+
+    // Check every 10 seconds
+    const intervalId = setInterval(checkApprovalStatus, 10000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [currentUser, businessData]);
+
   // Show loading spinner while checking auth
   if (loading || authLoading) {
     return (
@@ -112,7 +137,7 @@ export const BusinessProtectedRoute = ({ children }: BusinessProtectedRouteProps
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertDescription className="text-foreground">
                 Your business account is currently being reviewed by our admin team.
-                This process typically takes 1-2 business days.
+                This process typically takes 1-2 business days. This page automatically checks for updates every 10 seconds.
               </AlertDescription>
             </Alert>
 

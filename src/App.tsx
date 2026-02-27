@@ -16,8 +16,7 @@ import StudentSignup from "./pages/StudentSignup";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
-// Admin dashboard excluded from production (see .gitignore)
-// import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -59,15 +58,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            {/* Admin route excluded from production (see .gitignore) */}
-            {/* <Route
+            <Route
               path="/admin/dashboard"
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
                 </ProtectedRoute>
               }
-            /> */}
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

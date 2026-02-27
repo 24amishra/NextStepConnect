@@ -582,7 +582,7 @@ const AdminDashboard = () => {
                         <SelectContent>
                           {students.map((student) => (
                             <SelectItem key={student.userId} value={student.userId}>
-                              {student.name} - {student.email}
+                              {student.name}{student.email ? ` - ${student.email}` : " (no email)"}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -702,10 +702,12 @@ const AdminDashboard = () => {
                             <p className="font-medium text-foreground">
                               {partnership.student?.name || "Unknown Student"}
                             </p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {partnership.student?.email || "No email"}
-                            </p>
+                            {partnership.student?.email && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {partnership.student.email}
+                              </p>
+                            )}
                             {partnership.student?.skills && partnership.student.skills.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {partnership.student.skills.slice(0, 3).map((skill) => (
