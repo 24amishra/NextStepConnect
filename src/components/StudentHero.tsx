@@ -91,9 +91,7 @@ const StudentHero = () => {
                     <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                   </a>
                 </Button>
-                <Button variant="outline" size="lg" className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base shadow-warm-sm w-full sm:w-auto">
-                  <Link to="https://www.linkedin.com/company/nextstepconnects/" target="_blank" rel="noopener noreferrer">Learn More</Link>
-                </Button>
+              
               </div>
 
               {/* Key Benefits */}
@@ -142,7 +140,7 @@ const StudentHero = () => {
                     <div>
                       <h3 className="text-xl sm:text-2xl font-bold font-heading mb-2">Launch Your Career</h3>
                       <p className="text-sm sm:text-base text-muted-foreground">
-                        Gain experience employers actually want to see. Build connections that matter.
+                        Gain experience employers actually want to see. Create genuine change through your project.
                       </p>
                     </div>
                     <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4 border-t border-border/50">

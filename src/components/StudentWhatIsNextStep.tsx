@@ -4,26 +4,38 @@ const benefits = [
   {
     icon: "briefcase",
     title: "Real-World Experience",
-    description:
-      "Go beyond theory. Work on actual projects for local businesses and organizations, gaining hands-on experience that sets you apart in today's competitive job market.",
+    description: (
+      <>
+        <strong>Go beyond theory.</strong> Work on actual projects for local businesses and organizations, gaining hands-on experience that sets you apart in today's competitive job market.
+      </>
+    ),
   },
   {
     icon: "graduation-cap",
     title: "All Majors Welcome",
-    description:
-      "Whether you're studying business, computer science, design, communications, or any other field—we have opportunities that match your skills and interests.",
+    description: (
+      <>
+        <strong>All interests. All backgrounds.</strong>  No matter your major, there’s an opportunity to apply your skills and make an impact.
+      </>
+    ),
   },
   {
     icon: "award",
-    title: "Resume & Portfolio Builder",
-    description:
-      "Build a portfolio of real client work you can showcase. Gain tangible results and accomplishments to discuss in interviews and future career opportunities.",
+    title: "Ownership",
+    description: (
+      <>
+        <strong>Take full ownership of your project </strong>.Build something that demonstrates initiative, accountability, and real industry contribution.
+      </>
+    ),
   },
   {
     icon: "heart",
     title: "Community Impact",
-    description:
-      "Use what you're learning to help local businesses succeed. Make a meaningful difference while developing professional skills and building lasting connections.",
+    description: (
+      <>
+        <strong>Use what you're learning to help local businesses succeed.</strong> Make a meaningful difference while developing professional skills and building lasting connections.
+      </>
+    ),
   },
 ];
 
@@ -61,9 +73,8 @@ const StudentWhatIsNextStep = () => {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
             Why Join NextStep?
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-            NextStep bridges the gap between classroom learning and professional success,
-            giving you the experience employers actually want to see.
+          <p className="text-base font-bold sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+          Anyone can build a side project and slap it on their resume. Take it a step further — empower a local business and create real, lasting change for the communities that need it most.
           </p>
         </div>
 

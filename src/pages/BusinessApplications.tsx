@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Application, markApplicationCompleted, acceptApplication, rejectApplication } from "@/lib/firestore";
+import { Application, markApplicationCompleted, acceptApplication, rejectApplication, Opportunity, getOpportunitiesForBusiness } from "@/lib/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Mail, FileText, Loader2, MessageSquare, CheckCircle, Star, Eye, ThumbsUp, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, User, Mail, FileText, Loader2, MessageSquare, CheckCircle, Star, Eye, ThumbsUp, X, Filter } from "lucide-react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import RatingDialog from "@/components/RatingDialog";
@@ -17,23 +19,31 @@ import { toast } from "sonner";
 const BusinessApplications = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [applications, setApplications] = useState<Application[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | "all">("all");
   const [loading, setLoading] = useState(true);
   const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
   const [studentDetailsOpen, setStudentDetailsOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    const fetchData = async () => {
       if (!currentUser?.uid) return;
 
       try {
         setLoading(true);
+
+        // Fetch opportunities for this business
+        const opps = await getOpportunitiesForBusiness(currentUser.uid);
+        setOpportunities(opps);
+
         // Query applications for this business
         const applicationsRef = collection(db, "applications");
         const q = query(applicationsRef, where("businessId", "==", currentUser.uid));
         const querySnapshot = await getDocs(q);
-        
+
         const apps: Application[] = [];
         querySnapshot.forEach((doc) => {
           apps.push({
@@ -41,23 +51,29 @@ const BusinessApplications = () => {
             ...doc.data(),
           } as Application);
         });
-        
+
         // Sort by applied date (newest first)
         apps.sort((a, b) => {
           const dateA = a.appliedAt?.toDate ? a.appliedAt.toDate() : new Date(a.appliedAt);
           const dateB = b.appliedAt?.toDate ? b.appliedAt.toDate() : new Date(b.appliedAt);
           return dateB.getTime() - dateA.getTime();
         });
-        
+
         setApplications(apps);
+
+        // Check if opportunityId is in URL params and set it
+        const opportunityIdParam = searchParams.get("opportunityId");
+        if (opportunityIdParam) {
+          setSelectedOpportunityId(opportunityIdParam);
+        }
       } catch (error) {
       } finally {
         setLoading(false);
       }
     };
 
-    fetchApplications();
-  }, [currentUser?.uid]);
+    fetchData();
+  }, [currentUser?.uid, searchParams]);
 
   const handleAcceptApplication = async (application: Application) => {
     if (!application.id) return;
@@ -165,6 +181,13 @@ const BusinessApplications = () => {
     }
   };
 
+  // Filter applications based on selected opportunity
+  const displayedApplications = selectedOpportunityId === "all"
+    ? applications
+    : selectedOpportunityId === "legacy"
+    ? applications.filter(app => !app.opportunityId)
+    : applications.filter(app => app.opportunityId === selectedOpportunityId);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -195,7 +218,40 @@ const BusinessApplications = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
-          {applications.length === 0 ? (
+          {/* Opportunity Filter */}
+          {opportunities.length > 0 && (
+            <Card className="border-primary/20">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base">Filter Applications</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label>Filter by Opportunity</Label>
+                  <Select value={selectedOpportunityId} onValueChange={setSelectedOpportunityId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Opportunities ({applications.length})</SelectItem>
+                      {opportunities.map(opp => (
+                        <SelectItem key={opp.id} value={opp.id!}>
+                          {opp.title} ({applications.filter(app => app.opportunityId === opp.id).length} applications)
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="legacy">
+                        Legacy Applications (no opportunity) ({applications.filter(app => !app.opportunityId).length})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {displayedApplications.length === 0 ? (
             <Card className="border-primary/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -211,11 +267,11 @@ const BusinessApplications = () => {
             <>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">
-                  {applications.length} {applications.length === 1 ? "Application" : "Applications"}
+                  {displayedApplications.length} {displayedApplications.length === 1 ? "Application" : "Applications"}
                 </h2>
               </div>
-              
-              {applications.map((application) => (
+
+              {displayedApplications.map((application) => (
                 <Card key={application.id} className="border-primary/20 hover:border-primary/40 transition-colors shadow-sm">
                   <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/20">
                     <div className="flex items-start justify-between">
@@ -256,6 +312,11 @@ const BusinessApplications = () => {
                           )}
                         </div>
                         <CardDescription className="mt-1">
+                          {application.opportunityTitle && (
+                            <div className="text-sm font-medium text-foreground mb-1">
+                              For: {application.opportunityTitle}
+                            </div>
+                          )}
                           Applied {application.appliedAt?.toDate
                             ? new Date(application.appliedAt.toDate()).toLocaleDateString()
                             : new Date(application.appliedAt).toLocaleDateString()}

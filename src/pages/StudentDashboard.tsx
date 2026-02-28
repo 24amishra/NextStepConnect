@@ -232,7 +232,7 @@ const StudentDashboard = () => {
           from_email: questionForm.email,
           subject: questionForm.subject,
           message: questionForm.message,
-          to_email: 'support@nextstep.com', // Your support email
+          to_email: 'nextstep.connects@gmail.com', // Your support email
         }
       );
 
@@ -260,21 +260,21 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30" style={{ fontFamily: 'Arimo, sans-serif' }}>
       {/* Dark Header - Matching dashboard.png */}
-      <header className="bg-nextstep-brick text-background sticky top-0 z-50 shadow-warm-md">
+      <header className="bg-nextstep-brick sticky top-0 z-50 shadow-warm-md">
         <div className="container py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logo} alt="NextStep Logo" className="h-8 w-auto" />
-            <h1 className="text-xl font-bold font-heading">Student Dashboard</h1>
+            <h1 className="text-xl font-bold text-white">Student Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-background/70 hidden md:inline">{currentUser?.email}</span>
+            <span className="text-sm text-white/70 hidden md:inline">{currentUser?.email}</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-background hover:bg-background/10"
+              className="text-white hover:bg-white/10"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign out
@@ -906,7 +906,8 @@ const StudentDashboard = () => {
                       <Alert className="bg-primary/5 border-primary/20">
                         <HelpCircle className="h-4 w-4 text-primary" />
                         <AlertDescription>
-                          We typically respond within 24-48 hours. For urgent matters, please email us directly at support@nextstep.com
+                          We typically respond within 24-48 hours. For urgent matters, please email us directly at nextstep.connects@gmail.com
+
                         </AlertDescription>
                       </Alert>
 
