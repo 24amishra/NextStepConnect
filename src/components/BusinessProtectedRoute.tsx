@@ -239,7 +239,8 @@ export const BusinessProtectedRoute = ({ children }: BusinessProtectedRouteProps
               <p className="text-sm text-muted-foreground text-center">
                 For assistance, please contact:{" "}
                 <a href="mailto:support@nextstep.com" className="text-primary hover:underline">
-                  support@nextstep.com
+                nextstep.connects@gmail.com
+
                 </a>
               </p>
               <div className="flex justify-center">

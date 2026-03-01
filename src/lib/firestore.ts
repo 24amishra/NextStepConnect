@@ -39,6 +39,23 @@ export interface BusinessData extends PublicBusinessData {
   approvalStatus?: "pending" | "approved" | "rejected";
 }
 
+// ============================================
+// OPPORTUNITIES
+// ============================================
+export interface Opportunity {
+  id?: string;
+  businessId: string;
+  businessName: string; // Denormalized for performance
+  title: string;
+  description: string;
+  categories: string[];
+  customQuestions?: CustomQuestion[];
+  status: "active" | "closed" | "draft";
+  createdAt: Date | any;
+  updatedAt?: Date | any;
+  applicationCount?: number; // Cached count for performance
+}
+
 export const saveBusinessData = async (businessData: BusinessData): Promise<void> => {
   try {
     const { userId, phone, createdAt, updatedAt, ...publicData } = businessData;
@@ -228,6 +245,8 @@ export interface Application {
   studentEmail: string;
   businessId: string;
   businessName: string;
+  opportunityId?: string; // NEW - optional for backward compatibility
+  opportunityTitle?: string; // NEW - denormalized for display
   answers: { [questionId: string]: string };
   appliedAt: Date | any;
   status?: "pending" | "accepted" | "completed" | "rejected" | "rated";
@@ -261,6 +280,83 @@ export const getAllBusinesses = async (): Promise<PublicBusinessData[]> => {
   }
 };
 
+// ============================================
+// OPPORTUNITY CRUD FUNCTIONS
+// ============================================
+
+// CREATE
+export const createOpportunity = async (opportunity: Omit<Opportunity, "id" | "createdAt" | "updatedAt">): Promise<string> => {
+  const opportunitiesRef = collection(db, "opportunities");
+  const docRef = await addDoc(opportunitiesRef, {
+    ...opportunity,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    applicationCount: 0,
+  });
+  return docRef.id;
+};
+
+// READ
+export const getOpportunity = async (opportunityId: string): Promise<Opportunity | null> => {
+  const docRef = doc(db, "opportunities", opportunityId);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Opportunity : null;
+};
+
+export const getOpportunitiesForBusiness = async (businessId: string): Promise<Opportunity[]> => {
+  const q = query(collection(db, "opportunities"), where("businessId", "==", businessId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+};
+
+export const getAllActiveOpportunities = async (): Promise<Opportunity[]> => {
+  const q = query(collection(db, "opportunities"), where("status", "==", "active"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
+};
+
+// UPDATE
+export const updateOpportunity = async (opportunityId: string, updates: Partial<Opportunity>): Promise<void> => {
+  const docRef = doc(db, "opportunities", opportunityId);
+  await updateDoc(docRef, {
+    ...updates,
+    updatedAt: new Date(),
+  });
+};
+
+export const closeOpportunity = async (opportunityId: string): Promise<void> => {
+  await updateOpportunity(opportunityId, { status: "closed" });
+};
+
+// DELETE
+export const deleteOpportunity = async (opportunityId: string): Promise<void> => {
+  // First check if there are any applications
+  const applications = await getApplicationsForOpportunity(opportunityId);
+  const activeApplications = applications.filter(app =>
+    app.status === "pending" || app.status === "accepted" || app.status === "completed"
+  );
+
+  if (activeApplications.length > 0) {
+    throw new Error("Cannot delete opportunity with active applications. Please close it instead.");
+  }
+
+  await deleteDoc(doc(db, "opportunities", opportunityId));
+};
+
+// UTILITY
+export const incrementOpportunityApplicationCount = async (opportunityId: string): Promise<void> => {
+  const docRef = doc(db, "opportunities", opportunityId);
+  await updateDoc(docRef, {
+    applicationCount: increment(1)
+  });
+};
+
+export const getApplicationsForOpportunity = async (opportunityId: string): Promise<Application[]> => {
+  const q = query(collection(db, "applications"), where("opportunityId", "==", opportunityId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+};
+
 export const saveApplication = async (application: Omit<Application, "id">): Promise<string> => {
   try {
     const applicationsRef = collection(db, "applications");
@@ -269,6 +365,12 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
       appliedAt: new Date(),
       status: "pending", // pending, accepted, completed, rejected, rated
     });
+
+    // Increment opportunity application count if opportunityId exists
+    if (application.opportunityId) {
+      await incrementOpportunityApplicationCount(application.opportunityId);
+    }
+
     return docRef.id;
   } catch (error) {
     throw error;
