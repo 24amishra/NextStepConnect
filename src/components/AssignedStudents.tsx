@@ -45,6 +45,14 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
 
     if (businessId) {
       fetchAssignedStudents();
+
+      // Auto-refresh every 30 seconds to check for partnership changes
+      const intervalId = setInterval(() => {
+        fetchAssignedStudents();
+      }, 30000); // 30 seconds
+
+      // Cleanup interval on unmount
+      return () => clearInterval(intervalId);
     }
   }, [businessId]);
 

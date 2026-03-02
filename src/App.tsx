@@ -13,6 +13,8 @@ import BusinessLogin from "./pages/BusinessLogin";
 import StudentLogin from "./pages/StudentLogin";
 import BusinessSignup from "./pages/BusinessSignup";
 import StudentSignup from "./pages/StudentSignup";
+import BusinessForgotPassword from "./pages/BusinessForgotPassword";
+import StudentForgotPassword from "./pages/StudentForgotPassword";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -32,6 +34,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/business/login" element={<BusinessLogin />} />
             <Route path="/business/signup" element={<BusinessSignup />} />
+            <Route path="/business/forgot-password" element={<BusinessForgotPassword />} />
             <Route
               path="/business/dashboard"
               element={
@@ -50,6 +53,7 @@ const App = () => (
             />
             <Route path="/student/login" element={<StudentLogin />} />
             <Route path="/student/signup" element={<StudentSignup />} />
+            <Route path="/student/forgot-password" element={<StudentForgotPassword />} />
             <Route
               path="/student/dashboard"
               element={

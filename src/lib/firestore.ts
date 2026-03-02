@@ -367,8 +367,14 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
     });
 
     // Increment opportunity application count if opportunityId exists
+    // Wrap in try-catch so if this fails, the application save is still successful
     if (application.opportunityId) {
-      await incrementOpportunityApplicationCount(application.opportunityId);
+      try {
+        await incrementOpportunityApplicationCount(application.opportunityId);
+      } catch (countError) {
+        console.error("Failed to increment application count, but application was saved:", countError);
+        // Don't throw - the application was saved successfully
+      }
     }
 
     return docRef.id;
