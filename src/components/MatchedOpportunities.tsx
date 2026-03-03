@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getBusinessesAssignedToStudent, PublicBusinessData } from "@/lib/firestore";
+import { getOpportunitiesAssignedToStudent, Opportunity, getBusinessData, PublicBusinessData } from "@/lib/firestore";
 import {
   Sparkles,
   Building2,
@@ -19,18 +19,34 @@ interface MatchedOpportunitiesProps {
   studentId: string;
 }
 
+interface OpportunityWithBusiness extends Opportunity {
+  business?: PublicBusinessData;
+}
+
 const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
-  const [matchedBusinesses, setMatchedBusinesses] = useState<PublicBusinessData[]>([]);
+  const [matchedOpportunities, setMatchedOpportunities] = useState<OpportunityWithBusiness[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchMatchedBusinesses = async () => {
+    const fetchMatchedOpportunities = async () => {
       try {
         setLoading(true);
         setError("");
-        const businesses = await getBusinessesAssignedToStudent(studentId);
-        setMatchedBusinesses(businesses);
+        const opportunities = await getOpportunitiesAssignedToStudent(studentId);
+
+        // Enrich each opportunity with business data
+        const opportunitiesWithBusiness = await Promise.all(
+          opportunities.map(async (opp) => {
+            const businessData = await getBusinessData(opp.businessId);
+            return {
+              ...opp,
+              business: businessData || undefined
+            };
+          })
+        );
+
+        setMatchedOpportunities(opportunitiesWithBusiness);
       } catch (err) {
         setError("Failed to load matched opportunities");
       } finally {
@@ -39,7 +55,7 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
     };
 
     if (studentId) {
-      fetchMatchedBusinesses();
+      fetchMatchedOpportunities();
     }
   }, [studentId]);
 
@@ -64,7 +80,7 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
     );
   }
 
-  if (matchedBusinesses.length === 0) {
+  if (matchedOpportunities.length === 0) {
     return null; // Don't show anything if no matches
   }
 
@@ -81,15 +97,15 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
               Your Matched Opportunities
             </CardTitle>
             <CardDescription className="mt-1">
-              We've matched you with {matchedBusinesses.length} {matchedBusinesses.length === 1 ? 'organization' : 'organizations'} based on your skills and interests
+              You're matched to {matchedOpportunities.length} {matchedOpportunities.length === 1 ? 'opportunity' : 'opportunities'} based on your skills and interests
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          {matchedBusinesses.map((business) => (
-            <Card key={business.businessId} className="border-primary/20 hover:border-primary/40 transition-colors">
+          {matchedOpportunities.map((opportunity) => (
+            <Card key={opportunity.id} className="border-primary/20 hover:border-primary/40 transition-colors">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   {/* Header */}
@@ -102,39 +118,36 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
                         </Badge>
                       </div>
                       <h3 className="text-xl font-bold text-foreground mb-1">
-                        {business.companyName}
+                        {opportunity.title}
                       </h3>
                       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          {business.location}
+                          <Building2 className="h-4 w-4" />
+                          {opportunity.businessName}
                         </div>
+                        {opportunity.business?.location && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {opportunity.business.location}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Industry */}
+                  {/* Opportunity Description */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <Briefcase className="h-4 w-4 text-primary" />
-                      What They Do
+                      Opportunity Details
                     </div>
-                    <p className="text-sm text-foreground line-clamp-2">{business.industry}</p>
-                  </div>
-
-                  {/* Project Needs */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      What They Need Help With
-                    </div>
-                    <p className="text-sm text-foreground line-clamp-3">{business.potentialProblems}</p>
+                    <p className="text-sm text-foreground">{opportunity.description}</p>
                   </div>
 
                   {/* Categories */}
-                  {business.categories && business.categories.length > 0 && (
+                  {opportunity.categories && opportunity.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {business.categories.map((category) => (
+                      {opportunity.categories.map((category) => (
                         <Badge key={category} variant="secondary" className="bg-primary/10 text-primary">
                           {category}
                         </Badge>
@@ -147,13 +160,13 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
                     <Alert className="bg-primary/5 border-primary/20">
                       <Sparkles className="h-4 w-4 text-primary" />
                       <AlertDescription className="text-sm">
-                        <strong>Great news!</strong> This organization is interested in working with you.
+                        <strong>Great news!</strong> This organization is interested in working with you on this opportunity.
                         Reach out to them at{" "}
                         <a
-                          href={`mailto:${business.email}`}
+                          href={`mailto:${opportunity.business?.email}`}
                           className="text-primary hover:underline font-semibold"
                         >
-                          {business.email}
+                          {opportunity.business?.email}
                         </a>
                         {" "}to get started!
                       </AlertDescription>
@@ -161,8 +174,8 @@ const MatchedOpportunities = ({ studentId }: MatchedOpportunitiesProps) => {
                   </div>
 
                   <Button className="w-full" size="lg" asChild>
-                    <a href={`mailto:${business.email}?subject=NextStep Match - ${business.companyName}`}>
-                      Contact {business.companyName}
+                    <a href={`mailto:${opportunity.business?.email}?subject=NextStep Match - ${opportunity.title}`}>
+                      Contact about {opportunity.title}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
                   </Button>

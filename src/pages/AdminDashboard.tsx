@@ -7,14 +7,17 @@ import {
   rejectBusiness,
   BusinessWithApprovalStatus,
   isAdmin,
-  getAllPartnerships,
-  Partnership,
+  getAllOpportunityAssignments,
+  OpportunityAssignment,
   getAllStudents,
   getApprovedBusinesses,
+  assignStudentToOpportunity,
+  removeStudentFromOpportunity,
   assignStudentToBusiness,
-  removeStudentAssignment,
   StudentProfile,
-  BusinessData
+  BusinessData,
+  getAllActiveOpportunities,
+  Opportunity
 } from "@/lib/firestore";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
@@ -49,6 +52,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -56,7 +61,7 @@ const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [pendingBusinesses, setPendingBusinesses] = useState<BusinessWithApprovalStatus[]>([]);
-  const [partnerships, setPartnerships] = useState<Partnership[]>([]);
+  const [assignments, setAssignments] = useState<OpportunityAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -65,8 +70,9 @@ const AdminDashboard = () => {
   // Assignment form state
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [businesses, setBusinesses] = useState<BusinessData[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
+  const [selectedOpportunity, setSelectedOpportunity] = useState<string>("");
   const [assignmentNotes, setAssignmentNotes] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
 
@@ -93,32 +99,34 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchPartnerships = async () => {
+  const fetchAssignments = async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await getAllPartnerships();
-      setPartnerships(data);
+      const data = await getAllOpportunityAssignments();
+      setAssignments(data);
     } catch (err) {
-      console.error("Error fetching partnerships:", err);
-      setError("Failed to load partnerships");
+      console.error("Error fetching assignments:", err);
+      setError("Failed to load assignments");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchStudentsAndBusinesses = async () => {
+  const fetchStudentsBusinessesAndOpportunities = async () => {
     try {
       setLoading(true);
       setError("");
-      const [studentsData, businessesData, partnershipsData] = await Promise.all([
+      const [studentsData, businessesData, opportunitiesData, assignmentsData] = await Promise.all([
         getAllStudents(),
         getApprovedBusinesses(),
-        getAllPartnerships(),
+        getAllActiveOpportunities(),
+        getAllOpportunityAssignments(),
       ]);
       setStudents(studentsData);
       setBusinesses(businessesData);
-      setPartnerships(partnershipsData);
+      setOpportunities(opportunitiesData);
+      setAssignments(assignmentsData);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Failed to load data");
@@ -128,49 +136,63 @@ const AdminDashboard = () => {
   };
 
   const handleAssignStudent = async () => {
-    if (!selectedStudent || !selectedBusiness) {
-      setError("Please select both a student and a business");
+    if (!selectedStudent || !selectedOpportunity) {
+      setError("Please select both a student and an opportunity/business");
       return;
     }
 
     try {
       setIsAssigning(true);
       setError("");
-      await assignStudentToBusiness(
-        selectedBusiness,
-        selectedStudent,
-        currentUser?.email || "admin",
-        assignmentNotes
-      );
+
+      // Check if this is a business-level assignment (for backward compatibility)
+      if (selectedOpportunity.startsWith("business-")) {
+        const businessId = selectedOpportunity.replace("business-", "");
+        await assignStudentToBusiness(
+          businessId,
+          selectedStudent,
+          currentUser?.email || "admin",
+          assignmentNotes
+        );
+      } else {
+        // Opportunity-level assignment (new system)
+        await assignStudentToOpportunity(
+          selectedOpportunity,
+          selectedStudent,
+          undefined, // No application ID for manual assignments
+          currentUser?.email || "admin",
+          assignmentNotes
+        );
+      }
 
       // Reset form
       setSelectedStudent("");
-      setSelectedBusiness("");
+      setSelectedOpportunity("");
       setAssignmentNotes("");
 
-      // Refresh partnerships
-      await fetchStudentsAndBusinesses();
+      // Refresh assignments
+      await fetchStudentsBusinessesAndOpportunities();
     } catch (err) {
       console.error("Error assigning student:", err);
-      setError("Failed to assign student to business");
+      setError("Failed to assign student");
     } finally {
       setIsAssigning(false);
     }
   };
 
-  const handleRemovePartnership = async (businessId: string, studentId: string) => {
-    if (!confirm("Are you sure you want to remove this partnership?")) {
+  const handleRemoveAssignment = async (opportunityId: string, studentId: string) => {
+    if (!confirm("Are you sure you want to remove this assignment?")) {
       return;
     }
 
     try {
       setError("");
-      await removeStudentAssignment(businessId, studentId);
-      // Refresh partnerships
-      await fetchStudentsAndBusinesses();
+      await removeStudentFromOpportunity(opportunityId, studentId);
+      // Refresh assignments
+      await fetchStudentsBusinessesAndOpportunities();
     } catch (err) {
-      console.error("Error removing partnership:", err);
-      setError("Failed to remove partnership");
+      console.error("Error removing assignment:", err);
+      setError("Failed to remove assignment");
     }
   };
 
@@ -179,7 +201,7 @@ const AdminDashboard = () => {
       if (activeTab === "approvals") {
         fetchPendingBusinesses();
       } else {
-        fetchStudentsAndBusinesses();
+        fetchStudentsBusinessesAndOpportunities();
       }
     }
   }, [authLoading, currentUser?.email, activeTab]);
@@ -280,7 +302,7 @@ const AdminDashboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchStudentsAndBusinesses}
+              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchStudentsBusinessesAndOpportunities}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -544,16 +566,16 @@ const AdminDashboard = () => {
                 <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <Users className="h-5 w-5 text-primary" />
-                    Active Partnerships
+                    Opportunity Assignments
                   </CardTitle>
                   <CardDescription>
-                    All student-business partnerships currently active
+                    All student-opportunity assignments currently active
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-lg px-4 py-2">
-                      {partnerships.length} Active
+                      {assignments.length} Active
                     </Badge>
                   </div>
                 </CardContent>
@@ -564,18 +586,26 @@ const AdminDashboard = () => {
                 <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-500/5 border-b border-primary/20">
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <UserPlus className="h-5 w-5 text-green-600" />
-                    Assign Student to Business
+                    Assign Student to Any Opportunity
                   </CardTitle>
                   <CardDescription>
-                    Create a new partnership by assigning a student to an approved business
+                    Match students to opportunities across all businesses (Business owner shown for each option)
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-sm text-blue-900">
+                      <strong>Admin Privilege:</strong> You can match students to any opportunity from any business.
+                      Choose "General Assignment" for business-wide matching (legacy), or select a specific opportunity.
+                    </AlertDescription>
+                  </Alert>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Select Student */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Select Student</label>
-                      <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                      <Select value={selectedStudent || ""} onValueChange={setSelectedStudent}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a student..." />
                         </SelectTrigger>
@@ -594,24 +624,57 @@ const AdminDashboard = () => {
                       )}
                     </div>
 
-                    {/* Select Business */}
+                    {/* Select Opportunity (grouped by business) */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Select Business</label>
-                      <Select value={selectedBusiness} onValueChange={setSelectedBusiness}>
+                      <label className="text-sm font-medium text-foreground">
+                        Select Opportunity or Business
+                      </label>
+                      <Select value={selectedOpportunity || ""} onValueChange={setSelectedOpportunity}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Choose a business..." />
+                          <SelectValue placeholder="Choose an opportunity or business..." />
                         </SelectTrigger>
-                        <SelectContent>
-                          {businesses.map((business) => (
-                            <SelectItem key={business.userId} value={business.userId}>
-                              {business.companyName} - {business.location}
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="max-h-[300px]">
+                          {businesses.map((business) => {
+                            const businessOpps = opportunities.filter(
+                              opp => opp.businessId === business.userId && opp.status === "active"
+                            );
+                            return (
+                              <SelectGroup key={business.userId}>
+                                <SelectLabel className="text-primary font-semibold">
+                                  {business.companyName}
+                                </SelectLabel>
+                                {/* General business-level assignment option */}
+                                <SelectItem
+                                  key={`business-${business.userId}`}
+                                  value={`business-${business.userId}`}
+                                  className="italic text-muted-foreground"
+                                >
+                                  → General Assignment (Business-wide)
+                                </SelectItem>
+                                {/* Specific opportunities */}
+                                {businessOpps.map((opp) => (
+                                  <SelectItem key={opp.id} value={opp.id!}>
+                                    → {opp.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
-                      {selectedBusiness && (
+                      {selectedOpportunity && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          {businesses.find(b => b.userId === selectedBusiness)?.industry}
+                          {selectedOpportunity.startsWith("business-") ? (
+                            <span className="italic">
+                              Legacy business-level assignment (not tied to specific opportunity)
+                            </span>
+                          ) : (
+                            <span>
+                              {opportunities.find(o => o.id === selectedOpportunity)?.description?.substring(0, 80)}
+                              {opportunities.find(o => o.id === selectedOpportunity)?.description &&
+                               opportunities.find(o => o.id === selectedOpportunity)!.description.length > 80 && "..."}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -621,7 +684,7 @@ const AdminDashboard = () => {
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
                     <Textarea
-                      placeholder="Add any notes about this partnership..."
+                      placeholder="Add any notes about this assignment..."
                       value={assignmentNotes}
                       onChange={(e) => setAssignmentNotes(e.target.value)}
                       rows={3}
@@ -631,7 +694,7 @@ const AdminDashboard = () => {
                   {/* Assign Button */}
                   <Button
                     onClick={handleAssignStudent}
-                    disabled={!selectedStudent || !selectedBusiness || isAssigning}
+                    disabled={!selectedStudent || !selectedOpportunity || isAssigning}
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
                     {isAssigning ? (
@@ -642,7 +705,7 @@ const AdminDashboard = () => {
                     ) : (
                       <>
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Create Partnership
+                        Create Assignment
                       </>
                     )}
                   </Button>
@@ -657,33 +720,33 @@ const AdminDashboard = () => {
                 </Alert>
               )}
 
-              {/* Partnerships Grid */}
-              {partnerships.length === 0 ? (
+              {/* Assignments Grid */}
+              {assignments.length === 0 ? (
                 <Card className="border-primary/20">
                   <CardContent className="py-12 text-center">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium text-foreground">No partnerships yet</p>
+                    <p className="text-lg font-medium text-foreground">No assignments yet</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Assign students to businesses to create partnerships
+                      Assign students to opportunities to create matches
                     </p>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {partnerships.map((partnership, index) => (
-                    <Card key={`${partnership.businessId}-${partnership.studentId}-${index}`} className="border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
+                  {assignments.map((assignment, index) => (
+                    <Card key={`${assignment.opportunityId}-${assignment.studentId}-${index}`} className="border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
                       <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-lg flex items-center gap-2 text-foreground mb-2">
                               <Link2 className="h-5 w-5 text-primary" />
-                              Partnership
+                              Assignment
                             </CardTitle>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Calendar className="h-3 w-3" />
-                              {partnership.assignedAt?.toDate
-                                ? new Date(partnership.assignedAt.toDate()).toLocaleDateString()
-                                : new Date(partnership.assignedAt).toLocaleDateString()}
+                              {assignment.assignedAt?.toDate
+                                ? new Date(assignment.assignedAt.toDate()).toLocaleDateString()
+                                : new Date(assignment.assignedAt).toLocaleDateString()}
                             </div>
                           </div>
                           <Badge variant="default" className="bg-green-600">
@@ -700,24 +763,58 @@ const AdminDashboard = () => {
                           </div>
                           <div className="pl-6 space-y-1">
                             <p className="font-medium text-foreground">
-                              {partnership.student?.name || "Unknown Student"}
+                              {assignment.student?.name || "Unknown Student"}
                             </p>
-                            {partnership.student?.email && (
+                            {assignment.student?.email && (
                               <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Mail className="h-3 w-3" />
-                                {partnership.student.email}
+                                {assignment.student.email}
                               </p>
                             )}
-                            {partnership.student?.skills && partnership.student.skills.length > 0 && (
+                            {assignment.student?.skills && assignment.student.skills.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
-                                {partnership.student.skills.slice(0, 3).map((skill) => (
+                                {assignment.student.skills.slice(0, 3).map((skill) => (
                                   <Badge key={skill} variant="secondary" className="text-xs bg-primary/10 text-primary">
                                     {skill}
                                   </Badge>
                                 ))}
-                                {partnership.student.skills.length > 3 && (
+                                {assignment.student.skills.length > 3 && (
                                   <Badge variant="secondary" className="text-xs">
-                                    +{partnership.student.skills.length - 3}
+                                    +{assignment.student.skills.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <Separator className="bg-primary/20" />
+
+                        {/* Opportunity Info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <Briefcase className="h-4 w-4" />
+                            Opportunity
+                          </div>
+                          <div className="pl-6 space-y-1">
+                            <p className="font-medium text-foreground">
+                              {assignment.opportunity?.title || "Unknown Opportunity"}
+                            </p>
+                            {assignment.opportunity?.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {assignment.opportunity.description}
+                              </p>
+                            )}
+                            {assignment.opportunity?.categories && assignment.opportunity.categories.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {assignment.opportunity.categories.slice(0, 2).map((category) => (
+                                  <Badge key={category} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                    {category}
+                                  </Badge>
+                                ))}
+                                {assignment.opportunity.categories.length > 2 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{assignment.opportunity.categories.length - 2}
                                   </Badge>
                                 )}
                               </div>
@@ -729,65 +826,51 @@ const AdminDashboard = () => {
 
                         {/* Business Info */}
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                             <Building2 className="h-4 w-4" />
                             Business
                           </div>
                           <div className="pl-6 space-y-1">
-                            <p className="font-medium text-foreground">
-                              {partnership.business?.companyName || "Unknown Business"}
+                            <p className="text-sm text-foreground">
+                              {assignment.business?.companyName || "Unknown Business"}
                             </p>
-                            {partnership.business?.location && (
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            {assignment.business?.location && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
                                 <MapPin className="h-3 w-3" />
-                                {partnership.business.location}
+                                {assignment.business.location}
                               </p>
-                            )}
-                            {partnership.business?.categories && partnership.business.categories.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {partnership.business.categories.slice(0, 2).map((category) => (
-                                  <Badge key={category} variant="outline" className="text-xs border-primary/30">
-                                    {category}
-                                  </Badge>
-                                ))}
-                                {partnership.business.categories.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{partnership.business.categories.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
                             )}
                           </div>
                         </div>
 
-                        {partnership.notes && (
+                        {assignment.notes && (
                           <>
                             <Separator className="bg-primary/20" />
                             <div className="space-y-1">
                               <p className="text-xs font-medium text-muted-foreground">Notes:</p>
                               <p className="text-sm text-foreground pl-2 border-l-2 border-primary/20">
-                                {partnership.notes}
+                                {assignment.notes}
                               </p>
                             </div>
                           </>
                         )}
 
-                        {partnership.assignedBy && (
+                        {assignment.assignedBy && (
                           <div className="text-xs text-muted-foreground pt-2 border-t border-primary/10">
-                            Assigned by: {partnership.assignedBy}
+                            Assigned by: {assignment.assignedBy}
                           </div>
                         )}
 
-                        {/* Remove Partnership Button */}
+                        {/* Remove Assignment Button */}
                         <div className="pt-4 border-t border-primary/10">
                           <Button
                             variant="destructive"
                             size="sm"
                             className="w-full"
-                            onClick={() => handleRemovePartnership(partnership.businessId, partnership.studentId)}
+                            onClick={() => handleRemoveAssignment(assignment.opportunityId, assignment.studentId)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Remove Partnership
+                            Remove Assignment
                           </Button>
                         </div>
                       </CardContent>

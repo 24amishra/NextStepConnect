@@ -1,16 +1,150 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Businesses collection rules
-    match /businesses/{userId} {
-      // Allow users to read their own business data
-      allow read: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow users to create/update their own business data
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
-    
-    // Default deny all other access
+
+    // Admins collection - stores admin user IDs
+    match /admins/{adminId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only set manually via Firebase Console
+    }
+
+    // Public business information (visible to all authenticated users)
+    match /businesses/{userId} {
+      allow read: if request.auth != null;
+      // Business owners can update their own data
+      // Admins can update any business (for approval/rejection)
+      allow write: if request.auth != null &&
+                     (request.auth.uid == userId || isAdmin());
+
+      // DEPRECATED: Old business-level assigned students subcollection
+      // Kept for backward compatibility - use opportunity-level assignments instead
+      match /assignedStudents/{studentId} {
+        // Business owner can read their assigned students
+        // Students can read their own assignment status
+        // Admins can read all assignments
+        allow read: if request.auth != null &&
+                      (request.auth.uid == userId ||
+                       request.auth.uid == studentId ||
+                       isAdmin());
+        // Authenticated users and admins can write
+        allow write: if request.auth != null;
+      }
+    }
+
+    // Private business information (only visible to owner and admins)
+    match /businesses/{userId}/private/{document} {
+      allow read, write: if request.auth != null &&
+                           (request.auth.uid == userId || isAdmin());
+    }
+
+    // Student profiles
+    match /students/{userId} {
+      // Students can read and write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Businesses and admins can read student profiles
+      allow read: if request.auth != null;
+    }
+
+    // Opportunities collection
+    match /opportunities/{opportunityId} {
+      // All authenticated users can read opportunities (students need to see them)
+      allow read: if request.auth != null;
+
+      // Businesses can create opportunities for themselves
+      allow create: if request.auth != null &&
+                      request.resource.data.businessId == request.auth.uid;
+
+      // Businesses can update their own opportunities
+      // Admins can update any opportunity
+      allow update: if request.auth != null &&
+                      (resource.data.businessId == request.auth.uid || isAdmin());
+
+      // Businesses can delete their own opportunities
+      // Admins can delete any opportunity
+      allow delete: if request.auth != null &&
+                      (resource.data.businessId == request.auth.uid || isAdmin());
+
+      // NEW: Opportunity-level assigned students subcollection
+      match /assignedStudents/{studentId} {
+        // Function to get the opportunity's businessId
+        function getOpportunityBusinessId() {
+          return get(/databases/$(database)/documents/opportunities/$(opportunityId)).data.businessId;
+        }
+
+        // Business owner (of parent opportunity) can read assigned students
+        // Students can read their own assignment status
+        // Admins can read all assignments
+        allow read: if request.auth != null &&
+                      (request.auth.uid == getOpportunityBusinessId() ||
+                       request.auth.uid == studentId ||
+                       isAdmin());
+
+        // Business owners can assign students to their own opportunities
+        // Admins can assign students to any opportunity
+        // When accepting applications, the businessId check is handled by application update rules
+        allow create: if request.auth != null &&
+                        (request.auth.uid == getOpportunityBusinessId() ||
+                         isAdmin() ||
+                         request.resource.data.businessId == getOpportunityBusinessId());
+
+        // Business owners and admins can update assignments
+        allow update: if request.auth != null &&
+                        (request.auth.uid == getOpportunityBusinessId() || isAdmin());
+
+        // Business owners and admins can delete assignments (remove students)
+        allow delete: if request.auth != null &&
+                        (request.auth.uid == getOpportunityBusinessId() || isAdmin());
+      }
+    }
+
+    // Applications collection
+    match /applications/{applicationId} {
+      // Students can create applications
+      allow create: if request.auth != null &&
+                      request.resource.data.studentId == request.auth.uid;
+
+      // Students can read their own applications
+      // Businesses can read applications sent to them
+      // Admins can read all applications
+      allow read: if request.auth != null &&
+                    (resource.data.studentId == request.auth.uid ||
+                     resource.data.businessId == request.auth.uid ||
+                     isAdmin());
+
+      // Businesses and admins can update applications
+      // This includes accepting applications which triggers opportunity assignment
+      allow update: if request.auth != null &&
+                      (resource.data.businessId == request.auth.uid || isAdmin());
+
+      // No one can delete applications
+      allow delete: if false;
+    }
+
+    // Ratings collection
+    match /ratings/{ratingId} {
+      // Only businesses can create ratings
+      allow create: if request.auth != null &&
+                      request.resource.data.businessId == request.auth.uid;
+
+      // Students can read their own ratings
+      // Businesses can read ratings they created
+      // Admins can read all ratings
+      allow read: if request.auth != null &&
+                    (resource.data.studentId == request.auth.uid ||
+                     resource.data.businessId == request.auth.uid ||
+                     isAdmin());
+
+      // No one can update or delete ratings once created
+      allow update, delete: if false;
+    }
+
+    // Deny all other access
     match /{document=**} {
       allow read, write: if false;
     }

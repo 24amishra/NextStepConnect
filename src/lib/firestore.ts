@@ -195,7 +195,11 @@ export const getStudentProfile = async (userId: string): Promise<StudentProfile 
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as StudentProfile;
+      // Ensure userId is included from document ID
+      return {
+        ...docSnap.data(),
+        userId: docSnap.id
+      } as StudentProfile;
     }
     return null;
   } catch (error) {
@@ -229,7 +233,11 @@ export const getAllStudents = async (): Promise<StudentProfile[]> => {
     const students: StudentProfile[] = [];
 
     querySnapshot.forEach((doc) => {
-      students.push(doc.data() as StudentProfile);
+      // Ensure userId is included from document ID
+      students.push({
+        ...doc.data(),
+        userId: doc.id
+      } as StudentProfile);
     });
 
     return students;
@@ -404,27 +412,28 @@ export const acceptApplication = async (applicationId: string): Promise<void> =>
     });
     console.log("✅ Application status updated");
 
-    // Automatically create a student-business assignment (partnership)
-    // This makes the student appear in the business's "Assigned Students" section
-    console.log("🤝 Creating student-business assignment...");
-    console.log("   businessId:", application.businessId, "type:", typeof application.businessId);
+    // Automatically create a student-opportunity assignment
+    // This makes the student appear in the business's "Assigned Students" section grouped by opportunity
+    console.log("🤝 Creating student-opportunity assignment...");
+    console.log("   opportunityId:", application.opportunityId, "type:", typeof application.opportunityId);
     console.log("   studentId:", application.studentId, "type:", typeof application.studentId);
 
-    if (!application.businessId) {
-      throw new Error("businessId is missing from application");
+    if (!application.opportunityId) {
+      throw new Error("Application missing opportunityId - cannot assign to opportunity");
     }
     if (!application.studentId) {
       throw new Error("studentId is missing from application");
     }
 
-    await assignStudentToBusiness(
-      application.businessId,
+    await assignStudentToOpportunity(
+      application.opportunityId,
       application.studentId,
+      applicationId, // Reference to application
       "business-acceptance", // Indicates this was from business accepting application
       `Accepted from application on ${new Date().toLocaleDateString()}`
     );
 
-    console.log("✅ Application accepted and student assigned to business");
+    console.log("✅ Application accepted and student assigned to opportunity");
   } catch (error) {
     console.error("❌ Error in acceptApplication:", error);
     throw error;
@@ -634,7 +643,225 @@ export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData 
 };
 
 // ============================================
-// STUDENT-BUSINESS ASSIGNMENTS
+// OPPORTUNITY-LEVEL ASSIGNMENTS (NEW SYSTEM)
+// ============================================
+
+/**
+ * Assign a student to a specific opportunity (NEW - replaces business-level assignments)
+ */
+export const assignStudentToOpportunity = async (
+  opportunityId: string,
+  studentId: string,
+  applicationId?: string,
+  assignedBy?: string,
+  notes?: string
+): Promise<void> => {
+  try {
+    console.log("🎯 assignStudentToOpportunity called:");
+    console.log("   opportunityId:", opportunityId);
+    console.log("   studentId:", studentId);
+
+    // First, get the opportunity to extract businessId
+    const opportunity = await getOpportunity(opportunityId);
+    if (!opportunity) {
+      throw new Error("Opportunity not found");
+    }
+
+    const assignmentRef = doc(db, "opportunities", opportunityId, "assignedStudents", studentId);
+    const assignmentData = {
+      studentId,
+      opportunityId,
+      businessId: opportunity.businessId, // Denormalized for easier queries
+      assignedAt: new Date(),
+      assignedBy: assignedBy || "admin",
+      notes: notes || "",
+      applicationId: applicationId || "",
+    };
+
+    console.log("   Path:", `opportunities/${opportunityId}/assignedStudents/${studentId}`);
+    console.log("   Data to write:", assignmentData);
+
+    await setDoc(assignmentRef, assignmentData);
+    console.log("✅ Student assigned to opportunity successfully");
+  } catch (error) {
+    console.error("❌ Error in assignStudentToOpportunity:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all students assigned to a specific opportunity
+ */
+export const getAssignedStudentsForOpportunity = async (opportunityId: string): Promise<StudentProfile[]> => {
+  try {
+    const assignedStudentsRef = collection(db, "opportunities", opportunityId, "assignedStudents");
+    const querySnapshot = await getDocs(assignedStudentsRef);
+
+    const students: StudentProfile[] = [];
+
+    for (const assignmentDoc of querySnapshot.docs) {
+      const studentId = assignmentDoc.data().studentId;
+      const studentProfile = await getStudentProfile(studentId);
+      if (studentProfile) {
+        students.push(studentProfile);
+      }
+    }
+
+    return students;
+  } catch (error) {
+    console.error("❌ Error in getAssignedStudentsForOpportunity:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all opportunities with their assigned students for a business (Business Dashboard)
+ */
+export const getAssignedStudentsGroupedByOpportunity = async (businessId: string): Promise<OpportunityWithStudents[]> => {
+  try {
+    console.log("📊 getAssignedStudentsGroupedByOpportunity for businessId:", businessId);
+
+    // Get all opportunities for this business
+    const opportunities = await getOpportunitiesForBusiness(businessId);
+    console.log("   Found", opportunities.length, "opportunities");
+
+    const opportunitiesWithStudents: OpportunityWithStudents[] = [];
+
+    // For each opportunity, get assigned students
+    for (const opportunity of opportunities) {
+      if (!opportunity.id) continue;
+
+      const students = await getAssignedStudentsForOpportunity(opportunity.id);
+
+      // Only include opportunities that have assigned students
+      if (students.length > 0) {
+        opportunitiesWithStudents.push({
+          opportunity,
+          students,
+          assignmentCount: students.length,
+        });
+      }
+    }
+
+    console.log("✅ Returning", opportunitiesWithStudents.length, "opportunities with students");
+    return opportunitiesWithStudents;
+  } catch (error) {
+    console.error("❌ Error in getAssignedStudentsGroupedByOpportunity:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all opportunities assigned to a student (Student Dashboard)
+ */
+export const getOpportunitiesAssignedToStudent = async (studentId: string): Promise<Opportunity[]> => {
+  try {
+    console.log("🎯 getOpportunitiesAssignedToStudent for studentId:", studentId);
+
+    // Get all opportunities
+    const allOpportunities = await getAllActiveOpportunities();
+    const assignedOpportunities: Opportunity[] = [];
+
+    // Check each opportunity to see if this student is assigned
+    for (const opportunity of allOpportunities) {
+      if (!opportunity.id) continue;
+
+      const assignmentDoc = await getDoc(
+        doc(db, "opportunities", opportunity.id, "assignedStudents", studentId)
+      );
+
+      if (assignmentDoc.exists()) {
+        assignedOpportunities.push(opportunity);
+      }
+    }
+
+    console.log("✅ Found", assignedOpportunities.length, "assigned opportunities");
+    return assignedOpportunities;
+  } catch (error) {
+    console.error("❌ Error in getOpportunitiesAssignedToStudent:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all opportunity assignments (Admin Dashboard)
+ */
+export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignment[]> => {
+  try {
+    console.log("📋 getAllOpportunityAssignments called");
+    const assignments: OpportunityAssignment[] = [];
+
+    // Get all opportunities
+    const opportunitiesRef = collection(db, "opportunities");
+    const opportunitiesSnapshot = await getDocs(opportunitiesRef);
+
+    // For each opportunity, get assigned students
+    for (const oppDoc of opportunitiesSnapshot.docs) {
+      const assignedStudentsRef = collection(db, "opportunities", oppDoc.id, "assignedStudents");
+      const assignedStudentsSnapshot = await getDocs(assignedStudentsRef);
+
+      for (const assignmentDoc of assignedStudentsSnapshot.docs) {
+        const assignmentData = assignmentDoc.data();
+
+        // Fetch full profiles
+        const studentProfile = await getStudentProfile(assignmentData.studentId);
+        const opportunity = await getOpportunity(oppDoc.id);
+
+        // Get business data if opportunity exists
+        let businessData: PublicBusinessData | undefined;
+        if (opportunity) {
+          const businessDoc = await getDoc(doc(db, "businesses", opportunity.businessId));
+          if (businessDoc.exists()) {
+            businessData = { ...businessDoc.data(), businessId: businessDoc.id } as PublicBusinessData;
+          }
+        }
+
+        assignments.push({
+          studentId: assignmentData.studentId,
+          opportunityId: oppDoc.id,
+          businessId: assignmentData.businessId,
+          student: studentProfile || undefined,
+          opportunity: opportunity || undefined,
+          business: businessData,
+          assignedAt: assignmentData.assignedAt,
+          assignedBy: assignmentData.assignedBy,
+          notes: assignmentData.notes,
+          applicationId: assignmentData.applicationId,
+        });
+      }
+    }
+
+    // Sort by most recent first
+    assignments.sort((a, b) => {
+      const dateA = a.assignedAt?.toDate ? a.assignedAt.toDate() : new Date(a.assignedAt);
+      const dateB = b.assignedAt?.toDate ? b.assignedAt.toDate() : new Date(b.assignedAt);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log("✅ Found", assignments.length, "opportunity assignments");
+    return assignments;
+  } catch (error) {
+    console.error("❌ Error in getAllOpportunityAssignments:", error);
+    throw error;
+  }
+};
+
+/**
+ * Remove a student from an opportunity
+ */
+export const removeStudentFromOpportunity = async (opportunityId: string, studentId: string): Promise<void> => {
+  try {
+    const assignmentDocRef = doc(db, "opportunities", opportunityId, "assignedStudents", studentId);
+    await deleteDoc(assignmentDocRef);
+    console.log("✅ Student removed from opportunity");
+  } catch (error) {
+    console.error("❌ Error in removeStudentFromOpportunity:", error);
+    throw error;
+  }
+};
+
+// ============================================
+// STUDENT-BUSINESS ASSIGNMENTS (DEPRECATED - USE OPPORTUNITY-LEVEL INSTEAD)
 // ============================================
 export interface StudentAssignment {
   studentId: string;
@@ -644,7 +871,10 @@ export interface StudentAssignment {
   notes?: string; // Optional notes about the assignment
 }
 
-// Assign a student to a business
+/**
+ * @deprecated Use assignStudentToOpportunity instead
+ * Assigns student to business (old system - loses opportunity context)
+ */
 export const assignStudentToBusiness = async (
   businessId: string,
   studentId: string,
@@ -690,7 +920,10 @@ export const assignStudentToBusiness = async (
   }
 };
 
-// Get all students assigned to a business
+/**
+ * @deprecated Use getAssignedStudentsGroupedByOpportunity instead
+ * Gets students assigned to business (old system - doesn't show which opportunity)
+ */
 export const getAssignedStudents = async (businessId: string): Promise<StudentProfile[]> => {
   try {
     console.log("👥 getAssignedStudents called for businessId:", businessId);
@@ -724,7 +957,10 @@ export const getAssignedStudents = async (businessId: string): Promise<StudentPr
   }
 };
 
-// Get all APPROVED businesses assigned to a student (reverse lookup)
+/**
+ * @deprecated Use getOpportunitiesAssignedToStudent instead
+ * Gets businesses assigned to student (old system - loses opportunity context)
+ */
 export const getBusinessesAssignedToStudent = async (studentId: string): Promise<PublicBusinessData[]> => {
   try {
     // Get all businesses
@@ -758,7 +994,10 @@ export const getBusinessesAssignedToStudent = async (studentId: string): Promise
   }
 };
 
-// Remove a student assignment from a business
+/**
+ * @deprecated Use removeStudentFromOpportunity instead
+ * Removes student from business (old system)
+ */
 export const removeStudentAssignment = async (businessId: string, studentId: string): Promise<void> => {
   try {
     const assignmentDocRef = doc(db, "businesses", businessId, "assignedStudents", studentId);
@@ -779,7 +1018,10 @@ export const isAdmin = (email: string | null | undefined): boolean => {
   return email === ADMIN_EMAIL;
 };
 
-// Get all partnerships (student-business assignments with details)
+/**
+ * @deprecated Use getAllOpportunityAssignments instead
+ * Gets all partnerships (old system - business-level assignments)
+ */
 export interface Partnership {
   studentId: string;
   businessId: string;
@@ -790,6 +1032,32 @@ export interface Partnership {
   notes?: string;
 }
 
+// ============================================
+// OPPORTUNITY-LEVEL ASSIGNMENTS (NEW)
+// ============================================
+
+export interface OpportunityAssignment {
+  studentId: string;
+  opportunityId: string;
+  businessId: string; // Denormalized for easier queries
+  student?: StudentProfile;
+  opportunity?: Opportunity;
+  business?: PublicBusinessData;
+  assignedAt: Date | any;
+  assignedBy?: string;
+  notes?: string;
+  applicationId?: string; // Reference to application that created this
+}
+
+export interface OpportunityWithStudents {
+  opportunity: Opportunity;
+  students: StudentProfile[];
+  assignmentCount: number;
+}
+
+/**
+ * @deprecated Use getAllOpportunityAssignments instead
+ */
 export const getAllPartnerships = async (): Promise<Partnership[]> => {
   try {
     const partnerships: Partnership[] = [];
