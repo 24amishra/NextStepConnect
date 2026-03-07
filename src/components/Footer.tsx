@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Linkedin, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 import logo from "@/assets/NextStepLogo.png";
 
 const Footer = () => {
@@ -14,9 +15,9 @@ const Footer = () => {
             Ready to mentor the next generation?
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-background/70 mb-8 sm:mb-10 leading-relaxed px-4">
-            We are currently building our network of local partners. If you're interested
-            in working with a student or learning more about our upcoming projects,
-            let us know through our quick interest form.
+            Join our network of local partners and start working with talented students
+            on meaningful projects. Create an account to post opportunities and connect
+            with ambitious learners in your community.
           </p>
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4 px-4">
             <Button
@@ -24,9 +25,9 @@ const Footer = () => {
               asChild
               className="text-sm sm:text-base px-6 sm:px-8 py-4 sm:py-6 h-auto bg-nextstep-ember hover:bg-primary shadow-warm-md w-full sm:w-auto"
             >
-              <a href="https://tally.so/r/rja6gR" target="_blank" rel="noopener noreferrer">
-                Express Interest
-              </a>
+              <Link to="/business/signup">
+                Sign Up
+              </Link>
             </Button>
           </div>
         </div>
