@@ -785,6 +785,7 @@ export const getOpportunitiesAssignedToStudent = async (studentId: string): Prom
 
 /**
  * Get all opportunity assignments (Admin Dashboard)
+ * Also includes legacy business-level assignments for backward compatibility
  */
 export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignment[]> => {
   try {
@@ -795,7 +796,7 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
     const opportunitiesRef = collection(db, "opportunities");
     const opportunitiesSnapshot = await getDocs(opportunitiesRef);
 
-    // For each opportunity, get assigned students
+    // For each opportunity, get assigned students (NEW SYSTEM)
     for (const oppDoc of opportunitiesSnapshot.docs) {
       const assignedStudentsRef = collection(db, "opportunities", oppDoc.id, "assignedStudents");
       const assignedStudentsSnapshot = await getDocs(assignedStudentsRef);
@@ -831,6 +832,40 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
       }
     }
 
+    // ALSO get legacy business-level assignments (OLD SYSTEM)
+    console.log("📋 Also fetching legacy business-level assignments...");
+    const businessesRef = collection(db, "businesses");
+    const businessesSnapshot = await getDocs(businessesRef);
+
+    for (const businessDoc of businessesSnapshot.docs) {
+      const assignedStudentsRef = collection(db, "businesses", businessDoc.id, "assignedStudents");
+      const assignedStudentsSnapshot = await getDocs(assignedStudentsRef);
+
+      for (const assignmentDoc of assignedStudentsSnapshot.docs) {
+        const assignmentData = assignmentDoc.data();
+
+        // Fetch student profile
+        const studentProfile = await getStudentProfile(assignmentData.studentId);
+
+        // Get business data
+        const businessData = businessDoc.data() as PublicBusinessData;
+
+        // Create a pseudo-assignment with a special opportunityId to indicate it's business-level
+        assignments.push({
+          studentId: assignmentData.studentId,
+          opportunityId: `business-${businessDoc.id}`, // Special ID to indicate legacy assignment
+          businessId: businessDoc.id,
+          student: studentProfile || undefined,
+          opportunity: undefined, // No specific opportunity for legacy assignments
+          business: { ...businessData, businessId: businessDoc.id },
+          assignedAt: assignmentData.assignedAt,
+          assignedBy: assignmentData.assignedBy,
+          notes: assignmentData.notes,
+          applicationId: undefined,
+        });
+      }
+    }
+
     // Sort by most recent first
     assignments.sort((a, b) => {
       const dateA = a.assignedAt?.toDate ? a.assignedAt.toDate() : new Date(a.assignedAt);
@@ -838,7 +873,7 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
       return dateB.getTime() - dateA.getTime();
     });
 
-    console.log("✅ Found", assignments.length, "opportunity assignments");
+    console.log("✅ Found", assignments.length, "total assignments (including legacy)");
     return assignments;
   } catch (error) {
     console.error("❌ Error in getAllOpportunityAssignments:", error);
@@ -848,12 +883,21 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
 
 /**
  * Remove a student from an opportunity
+ * Also handles legacy business-level assignments
  */
 export const removeStudentFromOpportunity = async (opportunityId: string, studentId: string): Promise<void> => {
   try {
-    const assignmentDocRef = doc(db, "opportunities", opportunityId, "assignedStudents", studentId);
-    await deleteDoc(assignmentDocRef);
-    console.log("✅ Student removed from opportunity");
+    // Check if this is a legacy business-level assignment
+    if (opportunityId.startsWith("business-")) {
+      const businessId = opportunityId.replace("business-", "");
+      console.log("🗑️ Removing legacy business-level assignment");
+      await removeStudentAssignment(businessId, studentId);
+    } else {
+      // New opportunity-level assignment
+      const assignmentDocRef = doc(db, "opportunities", opportunityId, "assignedStudents", studentId);
+      await deleteDoc(assignmentDocRef);
+      console.log("✅ Student removed from opportunity");
+    }
   } catch (error) {
     console.error("❌ Error in removeStudentFromOpportunity:", error);
     throw error;

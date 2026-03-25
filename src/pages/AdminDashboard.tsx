@@ -797,27 +797,40 @@ const AdminDashboard = () => {
                             Opportunity
                           </div>
                           <div className="pl-6 space-y-1">
-                            <p className="font-medium text-foreground">
-                              {assignment.opportunity?.title || "Unknown Opportunity"}
-                            </p>
-                            {assignment.opportunity?.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-2">
-                                {assignment.opportunity.description}
-                              </p>
-                            )}
-                            {assignment.opportunity?.categories && assignment.opportunity.categories.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {assignment.opportunity.categories.slice(0, 2).map((category) => (
-                                  <Badge key={category} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                                    {category}
-                                  </Badge>
-                                ))}
-                                {assignment.opportunity.categories.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    +{assignment.opportunity.categories.length - 2}
-                                  </Badge>
+                            {assignment.opportunityId.startsWith("business-") ? (
+                              <>
+                                <p className="font-medium text-foreground italic">
+                                  General Business Assignment
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Legacy business-wide assignment (not tied to a specific opportunity)
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-medium text-foreground">
+                                  {assignment.opportunity?.title || "Unknown Opportunity"}
+                                </p>
+                                {assignment.opportunity?.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {assignment.opportunity.description}
+                                  </p>
                                 )}
-                              </div>
+                                {assignment.opportunity?.categories && assignment.opportunity.categories.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {assignment.opportunity.categories.slice(0, 2).map((category) => (
+                                      <Badge key={category} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                        {category}
+                                      </Badge>
+                                    ))}
+                                    {assignment.opportunity.categories.length > 2 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        +{assignment.opportunity.categories.length - 2}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
