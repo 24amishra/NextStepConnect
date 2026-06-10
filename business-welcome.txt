@@ -1,0 +1,17 @@
+Subject: Welcome to NextStep, {{to_name}}!
+
+Hi {{to_name}},
+
+Thank you for registering {{company_name}} with NextStep! Your account has been successfully created.
+
+Your account is currently under review by our team. Once approved, you'll be able to:
+- Browse student profiles and connect with talent
+- Post project opportunities
+- Manage applications from students
+
+Please keep an eye on your email — you'll receive an update on your account status within the next week.
+
+If you have any questions in the meantime, feel free to reach out to us at nextstep.connects@gmail.com.
+
+Thank you for your patience,
+The NextStep Team

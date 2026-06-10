@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveBusinessData } from "@/lib/firestore";
-import { sendAdminNotification } from "@/lib/emailNotifications";
+import { sendAdminNotification, sendBusinessWelcomeEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -212,16 +212,18 @@ const BusinessSignup = () => {
             businessId: currentUser.uid,
           });
 
-          // Send admin notification about new registration
-          try {
-            await sendAdminNotification({
-              businessName: companyName,
-              contactEmail: contactEmail,
-              contactPersonName: contactPersonName,
-            });
-          } catch (emailError) {
-            // Don't fail the signup if email fails
-          }
+          // Send welcome email to business and notify admin (fire-and-forget)
+          sendBusinessWelcomeEmail({
+            to_email: contactEmail,
+            to_name: contactPersonName,
+            company_name: companyName,
+          }).catch((err) => console.error("Business welcome email failed:", err));
+
+          sendAdminNotification({
+            businessName: companyName,
+            contactEmail: contactEmail,
+            contactPersonName: contactPersonName,
+          }).catch((err) => console.error("Admin notification failed:", err));
           break;
       }
 

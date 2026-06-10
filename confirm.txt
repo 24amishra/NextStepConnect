@@ -1,0 +1,16 @@
+Subject: Welcome to NextStep, {{to_name}}!
+
+Hi {{to_name}},
+
+Thank you for signing up for NextStep! Your account has been successfully created.
+
+We're excited to have you on board. Our team is currently reviewing profiles and preparing opportunities tailored to students like you.
+
+Here's what to expect next:
+- Keep an eye on your inbox — you'll receive an update from us within the next week with next steps.
+- In the meantime, make sure your profile is complete so businesses can find you.
+
+If you have any questions, feel free to reach out to us at nextstep.connects@gmail.com.
+
+Welcome aboard,
+The NextStep Team

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveStudentProfile } from "@/lib/firestore";
+import { sendWelcomeEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -189,6 +190,12 @@ const StudentSignup = () => {
           }
 
           await saveStudentProfile(profileData);
+
+          // Send welcome email (fire-and-forget so it doesn't block signup)
+          sendWelcomeEmail({
+            to_email: currentUser.email || email,
+            to_name: name,
+          }).catch((err) => console.error("Welcome email failed:", err));
           break;
       }
 

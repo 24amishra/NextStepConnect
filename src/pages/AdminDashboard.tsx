@@ -6,7 +6,6 @@ import {
   approveBusiness,
   rejectBusiness,
   BusinessWithApprovalStatus,
-  isAdmin,
   getAllOpportunityAssignments,
   OpportunityAssignment,
   getAllStudents,
@@ -75,15 +74,6 @@ const AdminDashboard = () => {
   const [selectedOpportunity, setSelectedOpportunity] = useState<string>("");
   const [assignmentNotes, setAssignmentNotes] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
-
-  // Check if current user is admin
-  useEffect(() => {
-    if (!authLoading && currentUser) {
-      if (!isAdmin(currentUser.email)) {
-        navigate("/");
-      }
-    }
-  }, [authLoading, currentUser, navigate]);
 
   const fetchPendingBusinesses = async () => {
     try {
@@ -197,14 +187,14 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (!authLoading && isAdmin(currentUser?.email)) {
+    if (!authLoading && currentUser) {
       if (activeTab === "approvals") {
         fetchPendingBusinesses();
       } else {
         fetchStudentsBusinessesAndOpportunities();
       }
     }
-  }, [authLoading, currentUser?.email, activeTab]);
+  }, [authLoading, currentUser, activeTab]);
 
   const handleApprove = async (userId: string) => {
     try {

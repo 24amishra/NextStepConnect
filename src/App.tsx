@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BusinessProtectedRoute } from "@/components/BusinessProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -17,6 +18,8 @@ import BusinessDashboard from "./pages/BusinessDashboard";
 import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import StudentForgotPassword from "./pages/StudentForgotPassword";
+import BusinessForgotPassword from "./pages/BusinessForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +35,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/business/login" element={<BusinessLogin />} />
             <Route path="/business/signup" element={<BusinessSignup />} />
+            <Route path="/business/forgot-password" element={<BusinessForgotPassword />} />
             <Route
               path="/business/dashboard"
               element={
@@ -50,6 +54,7 @@ const App = () => (
             />
             <Route path="/student/login" element={<StudentLogin />} />
             <Route path="/student/signup" element={<StudentSignup />} />
+            <Route path="/student/forgot-password" element={<StudentForgotPassword />} />
             <Route
               path="/student/dashboard"
               element={
@@ -61,9 +66,9 @@ const App = () => (
             <Route
               path="/admin/dashboard"
               element={
-                <ProtectedRoute>
+                <AdminProtectedRoute>
                   <AdminDashboard />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

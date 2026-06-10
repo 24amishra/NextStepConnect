@@ -374,9 +374,9 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
       status: "pending", // pending, accepted, completed, rejected, rated
     });
 
-    // Increment opportunity application count if opportunityId exists
+    // Increment opportunity application count (fire-and-forget so it can't fail the submission)
     if (application.opportunityId) {
-      await incrementOpportunityApplicationCount(application.opportunityId);
+      incrementOpportunityApplicationCount(application.opportunityId).catch(console.error);
     }
 
     return docRef.id;
@@ -1055,11 +1055,18 @@ export const removeStudentAssignment = async (businessId: string, studentId: str
 // ADMIN FUNCTIONS
 // ============================================
 
-// Admin configuration - store admin email
-const ADMIN_EMAIL = "nextstep.connects@gmail.com"; // Change this to your admin email
-
-export const isAdmin = (email: string | null | undefined): boolean => {
-  return email === ADMIN_EMAIL;
+/**
+ * Check if a user has the admin role.
+ * Reads from the Firestore `user_roles/{uid}` document.
+ * The document should have a `role` field set to "admin".
+ */
+export const checkIsAdmin = async (uid: string): Promise<boolean> => {
+  try {
+    const roleDoc = await getDoc(doc(db, "user_roles", uid));
+    return roleDoc.exists() && roleDoc.data()?.role === "admin";
+  } catch {
+    return false;
+  }
 };
 
 /**

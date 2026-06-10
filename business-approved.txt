@@ -1,0 +1,13 @@
+Subject: Your NextStep Account Has Been Approved!
+
+Hi {{to_name}},
+
+Your account for {{company_name}} has been approved!
+
+You now have full access to NextStep. Check it out and confirm your info here:
+{{login_url}}
+
+If anything looks off or you need to update your details, you can do so from your dashboard.
+
+Welcome aboard,
+The NextStep Team
