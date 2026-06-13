@@ -18,7 +18,7 @@ import {
   getAllActiveOpportunities,
   Opportunity
 } from "@/lib/firestore";
-import { sendApprovalEmail, sendRejectionEmail } from "@/lib/emailNotifications";
+import { sendApprovalEmail, sendRejectionEmail, sendMatchEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -135,9 +135,11 @@ const AdminDashboard = () => {
       setIsAssigning(true);
       setError("");
 
-      // Check if this is a business-level assignment (for backward compatibility)
+      // Resolve the company name for the notification email
+      let companyName = "a business";
       if (selectedOpportunity.startsWith("business-")) {
         const businessId = selectedOpportunity.replace("business-", "");
+        companyName = businesses.find(b => b.userId === businessId)?.companyName || companyName;
         await assignStudentToBusiness(
           businessId,
           selectedStudent,
@@ -145,7 +147,8 @@ const AdminDashboard = () => {
           assignmentNotes
         );
       } else {
-        // Opportunity-level assignment (new system)
+        const opp = opportunities.find(o => o.id === selectedOpportunity);
+        companyName = opp?.businessName || companyName;
         await assignStudentToOpportunity(
           selectedOpportunity,
           selectedStudent,
@@ -153,6 +156,16 @@ const AdminDashboard = () => {
           currentUser?.email || "admin",
           assignmentNotes
         );
+      }
+
+      // Send match notification email to the student (fire-and-forget)
+      const student = students.find(s => s.userId === selectedStudent);
+      if (student?.email) {
+        sendMatchEmail({
+          studentEmail: student.email,
+          studentName: student.name,
+          companyName,
+        }).catch(console.error);
       }
 
       // Reset form

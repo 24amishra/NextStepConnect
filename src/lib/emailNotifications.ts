@@ -18,6 +18,7 @@ const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID;
 const EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID;
 const EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID;
+const EMAILJS_STUDENT_MATCHED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_STUDENT_MATCHED_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 export interface WelcomeEmailData {
@@ -138,6 +139,51 @@ The NextStep Team
     console.error("Error sending rejection email:", error);
     throw error;
   }
+};
+
+export interface MatchEmailData {
+  studentEmail: string;
+  studentName: string;
+  companyName: string;
+}
+
+/**
+ * Notify a student that they've been matched to a business/opportunity.
+ */
+export const sendMatchEmail = async (data: MatchEmailData): Promise<void> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_STUDENT_MATCHED_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS student-matched template is not configured. Logging email instead.");
+    console.log("===== STUDENT MATCH EMAIL =====");
+    console.log(`To: ${data.studentEmail}`);
+    console.log(`Subject: You've Been Matched!`);
+    console.log(`
+Dear ${data.studentName},
+
+You've been matched! We're excited to let you know that you have been matched to a business!
+
+The opportunity will be with ${data.companyName}.
+
+Check out your dashboard for more info:
+${window.location.origin}/student/dashboard
+
+Best regards,
+The NextStep Team
+    `);
+    console.log("===============================");
+    return;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_STUDENT_MATCHED_TEMPLATE_ID,
+    {
+      to_email: data.studentEmail,
+      to_name: data.studentName,
+      company_name: data.companyName,
+      dashboard_url: `${window.location.origin}/student/dashboard`,
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
 };
 
 /**
