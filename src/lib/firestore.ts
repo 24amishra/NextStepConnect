@@ -257,9 +257,12 @@ export interface Application {
   opportunityTitle?: string; // NEW - denormalized for display
   answers: { [questionId: string]: string };
   appliedAt: Date | any;
-  status?: "pending" | "accepted" | "completed" | "rejected" | "rated";
+  status?: "pending" | "accepted" | "completed" | "rejected" | "rated" | "dismissed";
+  type?: "application" | "interest";
   acceptedAt?: Date | any;
   completedAt?: Date | any;
+  dismissedAt?: Date | any;
+  dismissedBy?: string;
 }
 
 // This returns only public data for APPROVED businesses (safe for all authenticated users to see)
@@ -380,6 +383,57 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
     }
 
     return docRef.id;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const saveInterest = async (interest: Omit<Application, "id">): Promise<string> => {
+  try {
+    const applicationsRef = collection(db, "applications");
+    const docRef = await addDoc(applicationsRef, {
+      ...interest,
+      appliedAt: new Date(),
+      status: "pending",
+      type: "interest",
+    });
+
+    if (interest.opportunityId) {
+      incrementOpportunityApplicationCount(interest.opportunityId).catch(console.error);
+    }
+
+    return docRef.id;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getAllPendingInterests = async (): Promise<Application[]> => {
+  try {
+    const applicationsRef = collection(db, "applications");
+    const q = query(
+      applicationsRef,
+      where("type", "==", "interest"),
+      where("status", "==", "pending")
+    );
+    const querySnapshot = await getDocs(q);
+    const interests: Application[] = [];
+    querySnapshot.forEach((doc) => {
+      interests.push({ id: doc.id, ...doc.data() } as Application);
+    });
+    return interests;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const dismissInterest = async (id: string, adminEmail: string): Promise<void> => {
+  try {
+    await updateDoc(doc(db, "applications", id), {
+      status: "dismissed",
+      dismissedAt: new Date(),
+      dismissedBy: adminEmail,
+    });
   } catch (error) {
     throw error;
   }
@@ -1060,10 +1114,12 @@ export const removeStudentAssignment = async (businessId: string, studentId: str
  * Reads from the Firestore `user_roles/{uid}` document.
  * The document should have a `role` field set to "admin".
  */
-export const checkIsAdmin = async (uid: string): Promise<boolean> => {
+export const checkIsAdmin = async (email: string): Promise<boolean> => {
   try {
-    const roleDoc = await getDoc(doc(db, "user_roles", uid));
-    return roleDoc.exists() && roleDoc.data()?.role === "admin";
+    const adminsRef = collection(db, "admins");
+    const q = query(adminsRef, where("email", "==", email), where("role", "==", "admin"));
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
   } catch {
     return false;
   }

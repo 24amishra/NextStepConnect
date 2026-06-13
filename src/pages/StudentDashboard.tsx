@@ -336,7 +336,7 @@ const StudentDashboard = () => {
                     }`}
                   >
                     <FileText className="h-5 w-5" />
-                    My Applications
+                    My Interests
                   </button>
                   
                   <button
@@ -382,7 +382,7 @@ const StudentDashboard = () => {
                 <div>
                   <h2 className="text-3xl font-bold font-heading mb-2">Available Opportunities</h2>
                   <p className="text-muted-foreground">
-                    Browse and apply to projects from local businesses
+                    Browse and express interest in projects from local businesses
                   </p>
                 </div>
                 <JobPostingsList />
@@ -393,9 +393,9 @@ const StudentDashboard = () => {
             {activeSection === "applications" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">My Applications</h2>
+                  <h2 className="text-3xl font-bold font-heading mb-2">My Interests</h2>
                   <p className="text-muted-foreground">
-                    Track the status of your submitted applications
+                    Track your expressed interests
                   </p>
                 </div>
                 {currentUser?.uid && <MyApplications studentId={currentUser.uid} />}

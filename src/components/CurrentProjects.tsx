@@ -123,7 +123,7 @@ const CurrentProjects = ({ studentId }: CurrentProjectsProps) => {
               </Badge>
             </CardTitle>
             <CardDescription className="text-primary dark:text-primary/80">
-              Your accepted applications are now live projects!
+              You've been matched to these projects!
             </CardDescription>
           </div>
         </div>

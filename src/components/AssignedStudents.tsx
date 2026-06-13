@@ -103,7 +103,7 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
             <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium text-foreground mb-2">No students assigned to any opportunities yet</p>
             <p className="text-sm text-muted-foreground">
-              Students will appear here when you accept their applications
+              Students will appear here when they are matched to your opportunities
             </p>
           </div>
         ) : (

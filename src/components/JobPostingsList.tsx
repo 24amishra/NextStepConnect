@@ -128,12 +128,12 @@ const JobPostingsList = () => {
     setSelectedCategories([]);
   };
 
-  const handleApply = (opportunity: Opportunity) => {
+  const handleExpressInterest = (opportunity: Opportunity) => {
     setSelectedOpportunity(opportunity);
     setApplicationOpen(true);
   };
 
-  const hasApplied = (opportunityId: string) => {
+  const hasExpressedInterest = (opportunityId: string) => {
     // For legacy opportunities, check by businessId
     if (opportunityId.startsWith('legacy-')) {
       const businessId = opportunityId.replace('legacy-', '');
@@ -143,7 +143,7 @@ const JobPostingsList = () => {
     return studentApplications.some(app => app.opportunityId === opportunityId);
   };
 
-  const handleApplicationSuccess = async () => {
+  const handleInterestSuccess = async () => {
     // Refresh the student's applications after submitting a new one
     if (currentUser?.uid) {
       try {
@@ -336,22 +336,22 @@ const JobPostingsList = () => {
                     </div>
 
                     <div className="flex items-center justify-end pt-2">
-                      {hasApplied(opportunity.id!) ? (
+                      {hasExpressedInterest(opportunity.id!) ? (
                         <Button
                           size="sm"
                           variant="outline"
                           disabled
                           className="border-primary/50 text-primary"
                         >
-                          ✓ Applied
+                          ✓ Interest Sent
                         </Button>
                       ) : (
                         <Button
                           size="sm"
                           className="bg-primary hover:bg-primary/90"
-                          onClick={() => handleApply(opportunity)}
+                          onClick={() => handleExpressInterest(opportunity)}
                         >
-                          Apply Now
+                          Express Interest
                         </Button>
                       )}
                     </div>
@@ -368,7 +368,7 @@ const JobPostingsList = () => {
           opportunity={selectedOpportunity}
           open={applicationOpen}
           onOpenChange={setApplicationOpen}
-          onSuccess={handleApplicationSuccess}
+          onSuccess={handleInterestSuccess}
         />
       )}
     </>

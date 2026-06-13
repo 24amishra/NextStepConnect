@@ -15,7 +15,7 @@ export const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
   useEffect(() => {
     if (authLoading || !currentUser) return;
 
-    checkIsAdmin(currentUser.uid).then(setIsAdmin);
+    checkIsAdmin(currentUser.email || "").then(setIsAdmin);
   }, [authLoading, currentUser]);
 
   if (authLoading || isAdmin === null) {

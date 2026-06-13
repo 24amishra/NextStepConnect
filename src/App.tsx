@@ -15,7 +15,6 @@ import StudentLogin from "./pages/StudentLogin";
 import BusinessSignup from "./pages/BusinessSignup";
 import StudentSignup from "./pages/StudentSignup";
 import BusinessDashboard from "./pages/BusinessDashboard";
-import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentForgotPassword from "./pages/StudentForgotPassword";
@@ -41,14 +40,6 @@ const App = () => (
               element={
                 <BusinessProtectedRoute>
                   <BusinessDashboard />
-                </BusinessProtectedRoute>
-              }
-            />
-            <Route
-              path="/business/applications"
-              element={
-                <BusinessProtectedRoute>
-                  <BusinessApplications />
                 </BusinessProtectedRoute>
               }
             />

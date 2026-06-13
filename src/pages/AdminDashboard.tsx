@@ -16,8 +16,13 @@ import {
   StudentProfile,
   BusinessData,
   getAllActiveOpportunities,
-  Opportunity
+  Opportunity,
+  Application,
+  getAllPendingInterests,
+  dismissInterest,
 } from "@/lib/firestore";
+import { updateDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { sendApprovalEmail, sendRejectionEmail, sendMatchEmail } from "@/lib/emailNotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +49,8 @@ import {
   Award,
   UserPlus,
   Trash2,
+  Heart,
+  FileText,
 } from "lucide-react";
 import {
   Select,
@@ -64,7 +71,9 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"approvals" | "partnerships">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "interests" | "partnerships">("approvals");
+  const [interests, setInterests] = useState<Application[]>([]);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
 
   // Assignment form state
   const [students, setStudents] = useState<StudentProfile[]>([]);
@@ -98,6 +107,26 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error("Error fetching assignments:", err);
       setError("Failed to load assignments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchInterests = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getAllPendingInterests();
+      // Sort by most recent first
+      data.sort((a, b) => {
+        const dateA = a.appliedAt?.toDate ? a.appliedAt.toDate() : new Date(a.appliedAt);
+        const dateB = b.appliedAt?.toDate ? b.appliedAt.toDate() : new Date(b.appliedAt);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setInterests(data);
+    } catch (err) {
+      console.error("Error fetching interests:", err);
+      setError("Failed to load interests");
     } finally {
       setLoading(false);
     }
@@ -199,10 +228,65 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAssignFromInterest = async (interest: Application) => {
+    if (!interest.id || !interest.opportunityId) return;
+
+    try {
+      setDismissingId(interest.id);
+      setError("");
+
+      // Assign student to the opportunity
+      await assignStudentToOpportunity(
+        interest.opportunityId,
+        interest.studentId,
+        interest.id,
+        currentUser?.email || "admin",
+        `Assigned from interest on ${new Date().toLocaleDateString()}`
+      );
+
+      // Update interest status to accepted
+      await updateDoc(doc(db, "applications", interest.id), {
+        status: "accepted",
+        acceptedAt: new Date(),
+      });
+
+      // Send match notification email
+      sendMatchEmail({
+        studentEmail: interest.studentEmail,
+        studentName: interest.studentName,
+        companyName: interest.businessName,
+      }).catch(console.error);
+
+      // Refresh
+      await fetchInterests();
+    } catch (err) {
+      console.error("Error assigning from interest:", err);
+      setError("Failed to assign student");
+    } finally {
+      setDismissingId(null);
+    }
+  };
+
+  const handleDismissInterest = async (id: string) => {
+    try {
+      setDismissingId(id);
+      setError("");
+      await dismissInterest(id, currentUser?.email || "admin");
+      await fetchInterests();
+    } catch (err) {
+      console.error("Error dismissing interest:", err);
+      setError("Failed to dismiss interest");
+    } finally {
+      setDismissingId(null);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && currentUser) {
       if (activeTab === "approvals") {
         fetchPendingBusinesses();
+      } else if (activeTab === "interests") {
+        fetchInterests();
       } else {
         fetchStudentsBusinessesAndOpportunities();
       }
@@ -305,7 +389,7 @@ const AdminDashboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={activeTab === "approvals" ? fetchPendingBusinesses : fetchStudentsBusinessesAndOpportunities}
+              onClick={activeTab === "approvals" ? fetchPendingBusinesses : activeTab === "interests" ? fetchInterests : fetchStudentsBusinessesAndOpportunities}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
@@ -332,6 +416,17 @@ const AdminDashboard = () => {
             >
               <AlertCircle className="h-4 w-4 inline mr-2" />
               Pending Approvals
+            </button>
+            <button
+              onClick={() => setActiveTab("interests")}
+              className={`px-6 py-3 font-medium transition-all ${
+                activeTab === "interests"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Heart className="h-4 w-4 inline mr-2" />
+              Interest Requests
             </button>
             <button
               onClick={() => setActiveTab("partnerships")}
@@ -561,6 +656,161 @@ const AdminDashboard = () => {
             </>
           )}
 
+          {/* Interests Tab */}
+          {activeTab === "interests" && (
+            <>
+              {/* Summary Card */}
+              <Card className="border-primary/20 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Heart className="h-5 w-5 text-primary" />
+                    Interest Requests
+                  </CardTitle>
+                  <CardDescription>
+                    Review student interest submissions and assign them to opportunities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-lg px-4 py-2">
+                      {interests.length} Pending
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Error Alert */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Interest Cards */}
+              {interests.length === 0 ? (
+                <Card className="border-primary/20">
+                  <CardContent className="py-12 text-center">
+                    <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium text-foreground">No pending interests</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Student interest requests will appear here
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {interests.map((interest) => (
+                    <Card key={interest.id} className="border-primary/20 shadow-lg">
+                      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-foreground">
+                              <User className="h-5 w-5 text-primary" />
+                              {interest.studentName}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              <Mail className="h-3 w-3 inline mr-1" />
+                              {interest.studentEmail}
+                            </CardDescription>
+                          </div>
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/30">
+                            Pending
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        {/* Opportunity Info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <Briefcase className="h-4 w-4 text-primary" />
+                            Opportunity
+                          </div>
+                          <p className="text-base font-semibold text-foreground">
+                            {interest.opportunityTitle || "General Interest"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            <Building2 className="h-3 w-3 inline mr-1" />
+                            {interest.businessName}
+                          </p>
+                        </div>
+
+                        {/* Custom Question Answers */}
+                        {interest.answers && Object.keys(interest.answers).length > 0 && (
+                          <>
+                            <Separator className="bg-primary/20" />
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                <FileText className="h-4 w-4 text-primary" />
+                                Responses
+                              </div>
+                              {Object.entries(interest.answers).map(([question, answer]) => (
+                                <div key={question} className="bg-muted/30 p-3 rounded-lg space-y-1">
+                                  <p className="text-xs font-medium text-muted-foreground">{question}</p>
+                                  <p className="text-sm text-foreground">{answer}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        <Separator className="bg-primary/20" />
+
+                        {/* Date */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {interest.appliedAt?.toDate
+                            ? new Date(interest.appliedAt.toDate()).toLocaleDateString()
+                            : new Date(interest.appliedAt).toLocaleDateString()}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-4 border-t border-primary/20">
+                          <Button
+                            variant="default"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleAssignFromInterest(interest)}
+                            disabled={dismissingId === interest.id}
+                          >
+                            {dismissingId === interest.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Assign
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => handleDismissInterest(interest.id!)}
+                            disabled={dismissingId === interest.id}
+                          >
+                            {dismissingId === interest.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Dismiss
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
           {/* Partnerships Tab */}
           {activeTab === "partnerships" && (
             <>
@@ -620,11 +870,6 @@ const AdminDashboard = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      {selectedStudent && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {students.find(s => s.userId === selectedStudent)?.skills?.length || 0} skills
-                        </div>
-                      )}
                     </div>
 
                     {/* Select Opportunity (grouped by business) */}
@@ -665,23 +910,198 @@ const AdminDashboard = () => {
                           })}
                         </SelectContent>
                       </Select>
-                      {selectedOpportunity && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {selectedOpportunity.startsWith("business-") ? (
-                            <span className="italic">
-                              Legacy business-level assignment (not tied to specific opportunity)
-                            </span>
-                          ) : (
-                            <span>
-                              {opportunities.find(o => o.id === selectedOpportunity)?.description?.substring(0, 80)}
-                              {opportunities.find(o => o.id === selectedOpportunity)?.description &&
-                               opportunities.find(o => o.id === selectedOpportunity)!.description.length > 80 && "..."}
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
+
+                  {/* Selected Student Detail Panel */}
+                  {selectedStudent && (() => {
+                    const student = students.find(s => s.userId === selectedStudent);
+                    if (!student) return null;
+                    return (
+                      <div className="border-2 border-blue-200 bg-blue-50/50 rounded-lg p-5 space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
+                          <User className="h-4 w-4" />
+                          Student Details
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Name</p>
+                            <p className="text-sm font-semibold text-foreground">{student.name}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Email</p>
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3 text-primary" />
+                              {student.email}
+                            </p>
+                          </div>
+                          {student.linkedinUrl && (
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">LinkedIn</p>
+                              <a href={student.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                                <Link2 className="h-3 w-3" />
+                                {student.linkedinUrl}
+                              </a>
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Open to Matching</p>
+                            <p className="text-sm font-semibold text-foreground">{student.openToMatching !== false ? "Yes" : "No"}</p>
+                          </div>
+                        </div>
+                        {student.bio && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Bio</p>
+                            <p className="text-sm text-foreground bg-white/60 p-3 rounded-md">{student.bio}</p>
+                          </div>
+                        )}
+                        {student.skills && student.skills.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Skills</p>
+                            <div className="flex flex-wrap gap-1">
+                              {student.skills.map((skill) => (
+                                <Badge key={skill} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {student.desiredRoles && student.desiredRoles.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Desired Roles</p>
+                            <div className="flex flex-wrap gap-1">
+                              {student.desiredRoles.map((role) => (
+                                <Badge key={role} variant="outline" className="text-xs border-primary/30 text-foreground">
+                                  {role}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Selected Business/Opportunity Detail Panel */}
+                  {selectedOpportunity && (() => {
+                    const isBusinessLevel = selectedOpportunity.startsWith("business-");
+                    const businessId = isBusinessLevel
+                      ? selectedOpportunity.replace("business-", "")
+                      : opportunities.find(o => o.id === selectedOpportunity)?.businessId;
+                    const business = businesses.find(b => b.userId === businessId);
+                    const opportunity = !isBusinessLevel ? opportunities.find(o => o.id === selectedOpportunity) : null;
+
+                    if (!business) return null;
+                    return (
+                      <div className="border-2 border-green-200 bg-green-50/50 rounded-lg p-5 space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-green-800">
+                          <Building2 className="h-4 w-4" />
+                          Business Details
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Company Name</p>
+                            <p className="text-sm font-semibold text-foreground">{business.companyName}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Industry</p>
+                            <p className="text-sm font-semibold text-foreground">{business.industry}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Location</p>
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-primary" />
+                              {business.location}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Contact Person</p>
+                            <p className="text-sm font-semibold text-foreground">{business.contactPersonName}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Email</p>
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3 text-primary" />
+                              {business.email}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Phone</p>
+                            <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                              <Phone className="h-3 w-3 text-primary" />
+                              {business.phone}
+                            </p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Preferred Contact</p>
+                            <p className="text-sm font-semibold text-foreground">{business.preferredContactMethod}</p>
+                          </div>
+                        </div>
+                        {business.potentialProblems && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Project Needs</p>
+                            <p className="text-sm text-foreground bg-white/60 p-3 rounded-md whitespace-pre-wrap">{business.potentialProblems}</p>
+                          </div>
+                        )}
+                        {business.categories && business.categories.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">Categories</p>
+                            <div className="flex flex-wrap gap-1">
+                              {business.categories.map((cat) => (
+                                <Badge key={cat} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                  {cat}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Opportunity details if a specific one is selected */}
+                        {opportunity && (
+                          <>
+                            <Separator className="bg-green-200" />
+                            <div className="flex items-center gap-2 text-sm font-semibold text-green-800">
+                              <Briefcase className="h-4 w-4" />
+                              Opportunity Details
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Title</p>
+                                <p className="text-sm font-semibold text-foreground">{opportunity.title}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Status</p>
+                                <Badge variant="secondary" className="text-xs">{opportunity.status}</Badge>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Description</p>
+                              <p className="text-sm text-foreground bg-white/60 p-3 rounded-md whitespace-pre-wrap">{opportunity.description}</p>
+                            </div>
+                            {opportunity.categories && opportunity.categories.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Opportunity Categories</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {opportunity.categories.map((cat) => (
+                                    <Badge key={cat} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                                      {cat}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {opportunity.applicationCount !== undefined && (
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground">Interest Count</p>
+                                <p className="text-sm font-semibold text-foreground">{opportunity.applicationCount}</p>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Notes */}
                   <div className="space-y-2">

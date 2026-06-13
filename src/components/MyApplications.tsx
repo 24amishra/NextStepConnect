@@ -75,7 +75,7 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
         return (
           <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700">
             <Clock className="h-3 w-3 mr-1" />
-            Pending Review
+            Under Review
           </Badge>
         );
       case "accepted":
@@ -100,6 +100,13 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
           </Badge>
         );
       case "rejected":
+        return (
+          <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-destructive">
+            <XCircle className="h-3 w-3 mr-1" />
+            Not Selected
+          </Badge>
+        );
+      case "dismissed":
         return (
           <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-destructive">
             <XCircle className="h-3 w-3 mr-1" />
@@ -152,16 +159,16 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
         <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
           <CardTitle className="flex items-center gap-2 text-foreground">
             <FileText className="h-5 w-5 text-primary" />
-            My Applications
+            My Interests
           </CardTitle>
-          <CardDescription>Track the status of your applications</CardDescription>
+          <CardDescription>Track the status of your interests</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="text-center py-8">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-            <p className="text-muted-foreground mb-1">No applications yet</p>
+            <p className="text-muted-foreground mb-1">No interests expressed yet</p>
             <p className="text-sm text-muted-foreground">
-              Browse opportunities and apply to get started
+              Browse opportunities and express interest to get started
             </p>
           </div>
         </CardContent>
@@ -174,10 +181,10 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
       <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
         <CardTitle className="flex items-center gap-2 text-foreground">
           <FileText className="h-5 w-5 text-primary" />
-          My Applications
+          My Interests
         </CardTitle>
         <CardDescription>
-          You have {applications.length} {applications.length === 1 ? 'application' : 'applications'}
+          You have {applications.length} {applications.length === 1 ? 'interest' : 'interests'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -210,7 +217,7 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span>Applied: {formatDate(app.appliedAt)}</span>
+                    <span>Expressed: {formatDate(app.appliedAt)}</span>
                   </div>
                   {app.business?.industry && (
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -225,7 +232,7 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
                   <Alert className="bg-amber-500/5 border-amber-500/20">
                     <Clock className="h-4 w-4 text-amber-600" />
                     <AlertDescription className="text-sm">
-                      Your application is being reviewed. We'll notify you once there's an update.
+                      Your interest is under review by our team.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -233,7 +240,7 @@ const MyApplications = ({ studentId }: MyApplicationsProps) => {
                   <Alert className="bg-green-600/5 border-green-600/20">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-sm font-medium">
-                      Congratulations! This business has accepted your application. Check the Opportunities Dashboard for additional details.
+                      You've been matched! Check the Opportunities Dashboard for details.
                     </AlertDescription>
                   </Alert>
                 )}

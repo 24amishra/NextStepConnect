@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Opportunity, saveApplication, CustomQuestion, getStudentProfile } from "@/lib/firestore";
+import { Opportunity, saveInterest, CustomQuestion, getStudentProfile } from "@/lib/firestore";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
       // Check if this is a legacy opportunity (backward compatibility)
       const isLegacy = (opportunity as any)._isLegacy;
 
-      await saveApplication({
+      await saveInterest({
         studentId: currentUser.uid,
         studentName: studentName,
         studentEmail: currentUser.email || "",
@@ -112,7 +112,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
         <DialogHeader>
           <DialogTitle className="text-2xl font-heading">{opportunity.title}</DialogTitle>
           <DialogDescription>
-            {opportunity.businessName} • Submit your application below
+            {opportunity.businessName} • Express your interest below
           </DialogDescription>
         </DialogHeader>
 
@@ -128,7 +128,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
             <Alert className="bg-green-50 border-green-200">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                Application submitted successfully!
+                Interest submitted! Our team will review it.
               </AlertDescription>
             </Alert>
           )}
@@ -141,7 +141,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
               <Input value={currentUser?.email || ""} disabled className="bg-background" />
             </div>
             <div className="text-sm text-muted-foreground">
-              This information will be shared with {opportunity.businessName}
+              This information will be reviewed by our team
             </div>
           </div>
 
@@ -185,7 +185,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
 
           {(!opportunity.customQuestions || opportunity.customQuestions.length === 0) && (
             <div className="text-sm text-muted-foreground text-center py-4">
-              No additional questions required. Click submit to apply.
+              No additional questions required. Click submit to express your interest.
             </div>
           )}
 
@@ -211,10 +211,10 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
               ) : success ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Submitted!
+                  Sent!
                 </>
               ) : (
-                "Submit Application"
+                "Express Interest"
               )}
             </Button>
           </DialogFooter>
