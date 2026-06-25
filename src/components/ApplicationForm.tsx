@@ -93,6 +93,7 @@ const ApplicationForm = ({ opportunity, open, onOpenChange, onSuccess }: Applica
         if (onSuccess) onSuccess();
       }, 2000);
     } catch (err) {
+      console.error("Application submission error:", err);
       setError("Failed to submit application. Please try again.");
     } finally {
       setLoading(false);
