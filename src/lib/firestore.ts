@@ -371,11 +371,14 @@ export const getApplicationsForOpportunity = async (opportunityId: string): Prom
 export const saveApplication = async (application: Omit<Application, "id">): Promise<string> => {
   try {
     const applicationsRef = collection(db, "applications");
-    const docRef = await addDoc(applicationsRef, {
+    // Filter out undefined values — Firestore rejects them
+    const data: Record<string, any> = {
       ...application,
       appliedAt: new Date(),
       status: "pending", // pending, accepted, completed, rejected, rated
-    });
+    };
+    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    const docRef = await addDoc(applicationsRef, data);
 
     // Increment opportunity application count (fire-and-forget so it can't fail the submission)
     if (application.opportunityId) {
@@ -391,12 +394,15 @@ export const saveApplication = async (application: Omit<Application, "id">): Pro
 export const saveInterest = async (interest: Omit<Application, "id">): Promise<string> => {
   try {
     const applicationsRef = collection(db, "applications");
-    const docRef = await addDoc(applicationsRef, {
+    // Filter out undefined values — Firestore rejects them
+    const data: Record<string, any> = {
       ...interest,
       appliedAt: new Date(),
       status: "pending",
       type: "interest",
-    });
+    };
+    Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
+    const docRef = await addDoc(applicationsRef, data);
 
     if (interest.opportunityId) {
       incrementOpportunityApplicationCount(interest.opportunityId).catch(console.error);
