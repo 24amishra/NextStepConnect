@@ -8,36 +8,34 @@
 
 @layer base {
   :root {
-    /* NextStep Brand Colors - Exact RGB Values */
-    /* Soft Ember - RGB(215, 100, 90) - Hover states */
+    /* NextStep Brand Colors */
+    /* Soft Ember - Hover states */
     --nextstep-ember: 4 59% 60%;
 
-    /* NextStep Red - RGB(190, 60, 50) - Main brand color */
+    /* NextStep Red - Main brand color */
     --nextstep-red: 5 58% 47%;
 
-    /* Brick Shadow - RGB(140, 45, 35) - Pressed states, dark accents */
+    /* Brick Shadow - Pressed states, dark accents */
     --nextstep-brick: 6 60% 34%;
 
-    /* Muted Clay - RGB(240, 235, 225) - Card backgrounds */
-    --nextstep-clay: 40 43% 91%;
+    /* White + Red Theme */
+    --nextstep-clay: 0 0% 100%;
+    --nextstep-offwhite: 0 0% 97%;
 
-    /* Off-White - RGB(228, 222, 212) - Page background */
-    --nextstep-offwhite: 40 27% 86%;
-
-    /* Core Colors - Clean, Minimal, Warm */
+    /* Core Colors - White + Red */
     --background: var(--nextstep-offwhite);
-    --foreground: 20 10% 15%;
+    --foreground: 0 0% 10%;
 
-    /* Cards use Muted Clay - no harsh white */
+    /* Cards use pure white */
     --card: var(--nextstep-clay);
-    --card-foreground: 20 10% 15%;
+    --card-foreground: 0 0% 10%;
 
     --popover: var(--nextstep-clay);
-    --popover-foreground: 20 10% 15%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Primary - NextStep Red (sparingly used) */
+    /* Primary - NextStep Red */
     --primary: var(--nextstep-red);
-    --primary-foreground: var(--nextstep-offwhite);
+    --primary-foreground: 0 0% 100%;
 
     /* Hover state - Soft Ember */
     --primary-hover: var(--nextstep-ember);
@@ -45,22 +43,22 @@
     /* Pressed state - Brick Shadow */
     --primary-pressed: var(--nextstep-brick);
 
-    /* Secondary buttons - Muted Clay with Brick Shadow text */
-    --secondary: var(--nextstep-clay);
+    /* Secondary buttons */
+    --secondary: 0 0% 95%;
     --secondary-foreground: var(--nextstep-brick);
 
     /* Muted states */
-    --muted: 40 20% 88%;
-    --muted-foreground: 20 8% 40%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
 
     --accent: var(--nextstep-ember);
-    --accent-foreground: var(--nextstep-offwhite);
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: var(--nextstep-offwhite);
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 85%;
-    --input: var(--nextstep-clay);
+    --border: 0 0% 90%;
+    --input: 0 0% 100%;
     --ring: var(--nextstep-red);
 
     /* Generous radius for friendly, approachable feel */
@@ -70,11 +68,11 @@
     --font-heading: 'Sora', sans-serif;
     --font-body: 'Inter', 'DM Sans', sans-serif;
 
-    /* Warm-toned shadows using Brick Shadow */
-    --shadow-sm: 0 1px 2px 0 rgba(140, 45, 35, 0.04);
-    --shadow-md: 0 4px 8px -2px rgba(140, 45, 35, 0.08);
-    --shadow-lg: 0 12px 24px -4px rgba(140, 45, 35, 0.12);
-    --shadow-warm: 0 8px 20px -4px rgba(140, 45, 35, 0.15);
+    /* Subtle red-tinted shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+    --shadow-warm: 0 8px 20px -4px rgba(190, 60, 50, 0.1);
   }
 }
 

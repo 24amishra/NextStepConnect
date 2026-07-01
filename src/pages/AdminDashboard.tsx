@@ -20,6 +20,7 @@ import {
   Application,
   getAllPendingInterests,
   dismissInterest,
+  uploadContractPdf,
 } from "@/lib/firestore";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -51,6 +52,7 @@ import {
   Trash2,
   Heart,
   FileText,
+  Upload,
 } from "lucide-react";
 import {
   Select,
@@ -83,6 +85,7 @@ const AdminDashboard = () => {
   const [selectedOpportunity, setSelectedOpportunity] = useState<string>("");
   const [assignmentNotes, setAssignmentNotes] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [uploadingPdfFor, setUploadingPdfFor] = useState<string | null>(null);
 
   const fetchPendingBusinesses = async () => {
     try {
@@ -225,6 +228,22 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error("Error removing assignment:", err);
       setError("Failed to remove assignment");
+    }
+  };
+
+  const handlePdfUpload = async (opportunityId: string, studentId: string, file: File) => {
+    const key = `${opportunityId}-${studentId}`;
+    try {
+      setUploadingPdfFor(key);
+      setError("");
+      await uploadContractPdf(opportunityId, studentId, file);
+      // Refresh assignments to show the uploaded PDF
+      await fetchStudentsBusinessesAndOpportunities();
+    } catch (err) {
+      console.error("Error uploading contract PDF:", err);
+      setError("Failed to upload contract PDF. Make sure it's a valid PDF file.");
+    } finally {
+      setUploadingPdfFor(null);
     }
   };
 
@@ -1296,6 +1315,72 @@ const AdminDashboard = () => {
                             Assigned by: {assignment.assignedBy}
                           </div>
                         )}
+
+                        {/* Contract PDF Upload/View */}
+                        <Separator className="bg-primary/20" />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <FileText className="h-4 w-4" />
+                            Contract PDF
+                          </div>
+                          {assignment.contractPdfUrl ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  PDF Uploaded
+                                </Badge>
+                                <a
+                                  href={assignment.contractPdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  View PDF
+                                </a>
+                              </div>
+                              <label className="cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept=".pdf"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePdfUpload(assignment.opportunityId, assignment.studentId, file);
+                                  }}
+                                />
+                                <span className="text-xs text-muted-foreground hover:text-primary cursor-pointer underline">
+                                  Replace PDF
+                                </span>
+                              </label>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept=".pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handlePdfUpload(assignment.opportunityId, assignment.studentId, file);
+                                }}
+                              />
+                              {uploadingPdfFor === `${assignment.opportunityId}-${assignment.studentId}` ? (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Uploading...
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2 border-2 border-dashed border-primary/30 rounded-lg p-3 hover:border-primary/60 hover:bg-primary/5 transition-all">
+                                  <Upload className="h-4 w-4 text-primary" />
+                                  <span className="text-sm text-muted-foreground">
+                                    Drop or click to upload contract PDF
+                                  </span>
+                                </div>
+                              )}
+                            </label>
+                          )}
+                        </div>
 
                         {/* Remove Assignment Button */}
                         <div className="pt-4 border-t border-primary/10">

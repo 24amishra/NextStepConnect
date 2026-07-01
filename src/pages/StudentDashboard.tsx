@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText } from "lucide-react";
+import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText, Handshake, Building2, MapPin } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import JobPostingsList from "@/components/JobPostingsList";
-import { getStudentProfile, updateStudentProfile, updateMatchingPreference } from "@/lib/firestore";
+import { getStudentProfile, updateStudentProfile, updateMatchingPreference, getStudentPartnershipAssignments, OpportunityAssignment } from "@/lib/firestore";
 import emailjs from '@emailjs/browser';
 import logo from "@/assets/NextStepLogo.png";
 
@@ -30,7 +30,7 @@ const StudentDashboard = () => {
   const [openToMatching, setOpenToMatching] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [updatingPreference, setUpdatingPreference] = useState(false);
-  const [activeSection, setActiveSection] = useState<"opportunities" | "applications" | "profile" | "matching" | "questions">("opportunities");
+  const [activeSection, setActiveSection] = useState<"opportunities" | "applications" | "profile" | "matching" | "questions" | "partnership">("opportunities");
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -56,6 +56,8 @@ const StudentDashboard = () => {
     message: "",
   });
   const [sendingQuestion, setSendingQuestion] = useState(false);
+  const [partnershipAssignments, setPartnershipAssignments] = useState<OpportunityAssignment[]>([]);
+  const [loadingPartnerships, setLoadingPartnerships] = useState(false);
 
   // Load student profile
   useEffect(() => {
@@ -92,6 +94,25 @@ const StudentDashboard = () => {
 
     loadProfile();
   }, [currentUser?.uid, currentUser?.email]);
+
+  // Load partnership assignments on mount and when tab is active
+  useEffect(() => {
+    const loadPartnerships = async () => {
+      if (currentUser?.uid) {
+        try {
+          setLoadingPartnerships(true);
+          const assignments = await getStudentPartnershipAssignments(currentUser.uid);
+          setPartnershipAssignments(assignments);
+        } catch (error) {
+          console.error("Error loading partnerships:", error);
+        } finally {
+          setLoadingPartnerships(false);
+        }
+      }
+    };
+
+    loadPartnerships();
+  }, [currentUser?.uid]);
 
   const handleLogout = async () => {
     try {
@@ -338,7 +359,18 @@ const StudentDashboard = () => {
                     <FileText className="h-5 w-5" />
                     My Interests
                   </button>
-                  
+                  <button
+                    onClick={() => setActiveSection("partnership")}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
+                      activeSection === "partnership"
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Handshake className="h-5 w-5" />
+                    Current Partnership
+                  </button>
+
                   <button
                     onClick={() => setActiveSection("profile")}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
@@ -399,6 +431,124 @@ const StudentDashboard = () => {
                   </p>
                 </div>
                 {currentUser?.uid && <MyApplications studentId={currentUser.uid} />}
+              </div>
+            )}
+
+            {/* Current Partnership Section */}
+            {activeSection === "partnership" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-3xl font-bold font-heading mb-2">Current Partnership</h2>
+                  <p className="text-muted-foreground">
+                    View your active partnership details and contract
+                  </p>
+                </div>
+
+                {loadingPartnerships ? (
+                  <Card className="border-0 shadow-warm-md bg-card">
+                    <CardContent className="py-12">
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : partnershipAssignments.length === 0 ? (
+                  <Card className="border-0 shadow-warm-md bg-card">
+                    <CardContent className="py-12 text-center">
+                      <Handshake className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium text-foreground">No active partnerships</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        When you're matched with a business, your partnership details will appear here.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  partnershipAssignments.map((assignment) => (
+                    <Card key={`${assignment.opportunityId}-${assignment.studentId}`} className="border-0 shadow-warm-md bg-card">
+                      <CardHeader className="border-b border-border/50">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-xl">
+                              <Building2 className="h-5 w-5 text-primary" />
+                              {assignment.business?.companyName || "Business Partner"}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              {assignment.opportunity?.title || "General Partnership"}
+                            </CardDescription>
+                          </div>
+                          <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                            Active
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-6 space-y-6">
+                        {/* Partnership Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {assignment.business?.location && (
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Location</p>
+                              <p className="text-sm font-semibold flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-primary" />
+                                {assignment.business.location}
+                              </p>
+                            </div>
+                          )}
+                          {assignment.business?.industry && (
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground">Industry</p>
+                              <p className="text-sm font-semibold">{assignment.business.industry}</p>
+                            </div>
+                          )}
+                          {(assignment.opportunity?.description || assignment.business?.potentialProblems) && (
+                            <div className="space-y-1 md:col-span-2">
+                              <p className="text-xs text-muted-foreground">Project Description</p>
+                              <p className="text-sm text-foreground bg-muted/30 p-3 rounded-lg">
+                                {assignment.opportunity?.description || assignment.business?.potentialProblems}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Contract PDF Viewer */}
+                        {assignment.contractPdfUrl ? (
+                          <>
+                            <Separator />
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold text-foreground">Partnership Contract</h3>
+                              </div>
+                              <div className="border rounded-lg overflow-hidden bg-muted/20">
+                                <iframe
+                                  src={assignment.contractPdfUrl}
+                                  className="w-full"
+                                  style={{ height: "600px" }}
+                                  title="Partnership Contract"
+                                />
+                              </div>
+                              <a
+                                href={assignment.contractPdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                              >
+                                <FileText className="h-4 w-4" />
+                                Open PDF in new tab
+                              </a>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Separator />
+                            <div className="text-center py-4 text-sm text-muted-foreground">
+                              No contract document has been uploaded yet. Check back soon.
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             )}
 

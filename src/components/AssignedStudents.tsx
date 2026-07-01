@@ -15,7 +15,8 @@ import {
   Sparkles,
   AlertCircle,
   CheckCircle2,
-  Target
+  Target,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -245,6 +246,33 @@ const AssignedStudents = ({ businessId }: AssignedStudentsProps) => {
                               </div>
                             )}
                           </div>
+
+                          {/* Contract PDF */}
+                          {oppData.contractPdfUrls?.[student.userId] && (
+                            <div className="space-y-2 bg-card p-4 rounded-lg border border-primary/10">
+                              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <FileText className="h-4 w-4 text-primary" />
+                                Partnership Contract
+                              </div>
+                              <div className="border rounded-lg overflow-hidden bg-muted/20">
+                                <iframe
+                                  src={oppData.contractPdfUrls[student.userId]}
+                                  className="w-full"
+                                  style={{ height: "500px" }}
+                                  title="Partnership Contract"
+                                />
+                              </div>
+                              <a
+                                href={oppData.contractPdfUrls[student.userId]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                              >
+                                <FileText className="h-4 w-4" />
+                                Open PDF in new tab
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

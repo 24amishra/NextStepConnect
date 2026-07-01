@@ -1,5 +1,6 @@
-import { db } from "./firebase";
+import { db, storage } from "./firebase";
 import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export interface CustomQuestion {
   question: string;
@@ -787,11 +788,26 @@ export const getAssignedStudentsGroupedByOpportunity = async (businessId: string
 
     const opportunitiesWithStudents: OpportunityWithStudents[] = [];
 
-    // For each opportunity, get assigned students
+    // For each opportunity, get assigned students and contract PDFs
     for (const opportunity of opportunities) {
       if (!opportunity.id) continue;
 
-      const students = await getAssignedStudentsForOpportunity(opportunity.id);
+      const assignedStudentsRef = collection(db, "opportunities", opportunity.id, "assignedStudents");
+      const querySnapshot = await getDocs(assignedStudentsRef);
+
+      const students: StudentProfile[] = [];
+      const contractPdfUrls: { [studentId: string]: string } = {};
+
+      for (const assignmentDoc of querySnapshot.docs) {
+        const data = assignmentDoc.data();
+        const studentProfile = await getStudentProfile(data.studentId);
+        if (studentProfile) {
+          students.push(studentProfile);
+          if (data.contractPdfUrl) {
+            contractPdfUrls[data.studentId] = data.contractPdfUrl;
+          }
+        }
+      }
 
       // Only include opportunities that have assigned students
       if (students.length > 0) {
@@ -799,6 +815,7 @@ export const getAssignedStudentsGroupedByOpportunity = async (businessId: string
           opportunity,
           students,
           assignmentCount: students.length,
+          contractPdfUrls: Object.keys(contractPdfUrls).length > 0 ? contractPdfUrls : undefined,
         });
       }
     }
@@ -888,6 +905,7 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
           assignedBy: assignmentData.assignedBy,
           notes: assignmentData.notes,
           applicationId: assignmentData.applicationId,
+          contractPdfUrl: assignmentData.contractPdfUrl,
         });
       }
     }
@@ -913,15 +931,16 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
         // Create a pseudo-assignment with a special opportunityId to indicate it's business-level
         assignments.push({
           studentId: assignmentData.studentId,
-          opportunityId: `business-${businessDoc.id}`, // Special ID to indicate legacy assignment
+          opportunityId: `business-${businessDoc.id}`, // Special ID to indicate legacy/general assignment
           businessId: businessDoc.id,
           student: studentProfile || undefined,
-          opportunity: undefined, // No specific opportunity for legacy assignments
+          opportunity: undefined, // No specific opportunity for general assignments
           business: { ...businessData, businessId: businessDoc.id },
           assignedAt: assignmentData.assignedAt,
           assignedBy: assignmentData.assignedBy,
           notes: assignmentData.notes,
           applicationId: undefined,
+          contractPdfUrl: assignmentData.contractPdfUrl,
         });
       }
     }
@@ -1160,12 +1179,14 @@ export interface OpportunityAssignment {
   assignedBy?: string;
   notes?: string;
   applicationId?: string; // Reference to application that created this
+  contractPdfUrl?: string; // URL to the partnership contract PDF
 }
 
 export interface OpportunityWithStudents {
   opportunity: Opportunity;
   students: StudentProfile[];
   assignmentCount: number;
+  contractPdfUrls?: { [studentId: string]: string }; // Map of studentId to contract PDF URL
 }
 
 /**
@@ -1303,6 +1324,141 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
 
     return approvedBusinesses;
   } catch (error) {
+    throw error;
+  }
+};
+
+// ============================================
+// CONTRACT PDF MANAGEMENT
+// ============================================
+
+/**
+ * Upload a contract PDF for a partnership assignment.
+ * Stores the file in Firebase Storage and saves the download URL
+ * in the assignment document.
+ */
+export const uploadContractPdf = async (
+  opportunityId: string,
+  studentId: string,
+  file: File
+): Promise<string> => {
+  try {
+    // Validate file type
+    if (file.type !== "application/pdf") {
+      throw new Error("Only PDF files are allowed");
+    }
+
+    // Upload to Firebase Storage
+    const storageRef = ref(storage, `contracts/${opportunityId}_${studentId}.pdf`);
+    await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(storageRef);
+
+    // Update the assignment document with the PDF URL
+    // Handle both general (business-level) and opportunity-level assignments
+    if (opportunityId.startsWith("business-")) {
+      const businessId = opportunityId.replace("business-", "");
+      const assignmentRef = doc(db, "businesses", businessId, "assignedStudents", studentId);
+      await updateDoc(assignmentRef, {
+        contractPdfUrl: downloadUrl,
+      });
+    } else {
+      const assignmentRef = doc(db, "opportunities", opportunityId, "assignedStudents", studentId);
+      await updateDoc(assignmentRef, {
+        contractPdfUrl: downloadUrl,
+      });
+    }
+
+    return downloadUrl;
+  } catch (error) {
+    console.error("Error uploading contract PDF:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get partnership assignments for a student that have contract PDFs.
+ * Used by the student dashboard to display the "Current Partnership" tab.
+ */
+export const getStudentPartnershipAssignments = async (studentId: string): Promise<OpportunityAssignment[]> => {
+  try {
+    const assignments: OpportunityAssignment[] = [];
+
+    // 1. Fetch opportunity-level assignments
+    const allOpportunities = await getDocs(collection(db, "opportunities"));
+    for (const oppDoc of allOpportunities.docs) {
+      try {
+        const assignmentDocRef = doc(db, "opportunities", oppDoc.id, "assignedStudents", studentId);
+        const assignmentSnap = await getDoc(assignmentDocRef);
+
+        if (assignmentSnap.exists()) {
+          const assignmentData = assignmentSnap.data();
+          const opportunity = { id: oppDoc.id, ...oppDoc.data() } as Opportunity;
+
+          let businessData: PublicBusinessData | undefined;
+          if (opportunity.businessId) {
+            const businessDoc = await getDoc(doc(db, "businesses", opportunity.businessId));
+            if (businessDoc.exists()) {
+              businessData = { ...businessDoc.data(), businessId: businessDoc.id } as PublicBusinessData;
+            }
+          }
+
+          assignments.push({
+            studentId,
+            opportunityId: oppDoc.id,
+            businessId: assignmentData.businessId,
+            opportunity,
+            business: businessData,
+            assignedAt: assignmentData.assignedAt,
+            assignedBy: assignmentData.assignedBy,
+            notes: assignmentData.notes,
+            applicationId: assignmentData.applicationId,
+            contractPdfUrl: assignmentData.contractPdfUrl,
+          });
+        }
+      } catch (innerErr) {
+        // Permission denied for this opportunity's assignment doc — skip it
+      }
+    }
+
+    // 2. Fetch general (business-level) assignments
+    const allBusinesses = await getDocs(collection(db, "businesses"));
+    for (const businessDoc of allBusinesses.docs) {
+      try {
+        const assignmentDocRef = doc(db, "businesses", businessDoc.id, "assignedStudents", studentId);
+        const assignmentSnap = await getDoc(assignmentDocRef);
+
+        if (assignmentSnap.exists()) {
+          const assignmentData = assignmentSnap.data();
+          const businessData = { ...businessDoc.data(), businessId: businessDoc.id } as PublicBusinessData;
+
+          assignments.push({
+            studentId,
+            opportunityId: `business-${businessDoc.id}`,
+            businessId: businessDoc.id,
+            opportunity: undefined,
+            business: businessData,
+            assignedAt: assignmentData.assignedAt,
+            assignedBy: assignmentData.assignedBy,
+            notes: assignmentData.notes,
+            applicationId: assignmentData.applicationId,
+            contractPdfUrl: assignmentData.contractPdfUrl,
+          });
+        }
+      } catch (innerErr) {
+        // Permission denied — skip
+      }
+    }
+
+    // Sort by most recent first
+    assignments.sort((a, b) => {
+      const dateA = a.assignedAt?.toDate ? a.assignedAt.toDate() : new Date(a.assignedAt);
+      const dateB = b.assignedAt?.toDate ? b.assignedAt.toDate() : new Date(b.assignedAt);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    return assignments;
+  } catch (error) {
+    console.error("Error fetching student partnership assignments:", error);
     throw error;
   }
 };
