@@ -1,0 +1,31 @@
+{
+  "uid": "NextStepFirebaseSync_app",
+  "type": "app",
+  "config": {
+    "description": "Syncs new NextStepConnect student and business signups from Firebase into HubSpot as contacts and companies.",
+    "name": "NextStep Firebase Sync",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "agastyamishra2006@gmail.com"
+    }
+  }
+}

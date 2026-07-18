@@ -1,5 +1,23 @@
-import { ImageIcon } from "lucide-react";
+import { Linkedin, Globe, User } from "lucide-react";
 import Reveal from "@/components/Reveal";
+
+// Replace names, links, and photo placeholders with real ones.
+const founders = [
+  {
+    name: "Agastya Mishra",
+    role: "Co-founder",
+    linkedin: "#",
+    website: "#",
+    photo: null, // import a headshot and set it here
+  },
+  {
+    name: "Co-founder Name",
+    role: "Co-founder",
+    linkedin: "#",
+    website: "#",
+    photo: null,
+  },
+];
 
 const AboutUs = () => {
   return (
@@ -37,15 +55,52 @@ const AboutUs = () => {
             </div>
           </Reveal>
 
-          {/* Right: photo placeholder */}
-          <Reveal delay={0.15}>
-            <div className="aspect-[4/5] sm:aspect-square md:aspect-[4/5] border border-border rounded-md bg-card flex flex-col items-center justify-center gap-3 text-muted-foreground/60">
-              <ImageIcon className="w-8 h-8" />
-              <p className="font-mono text-[11px] uppercase tracking-[0.15em]">
-                Photo of the founders
-              </p>
-            </div>
-          </Reveal>
+          {/* Right: founder cards */}
+          <div className="space-y-4 sm:space-y-5">
+            {founders.map((founder, i) => (
+              <Reveal key={founder.name} delay={0.15 + i * 0.1} className="flat-card flex items-center gap-5 sm:gap-6">
+                {founder.photo ? (
+                  <img
+                    src={founder.photo}
+                    alt={`Headshot of ${founder.name}`}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-md border border-border bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground/50">
+                    <User className="w-8 h-8" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <h3 className="text-lg sm:text-xl font-medium font-heading text-foreground">
+                    {founder.name}
+                  </h3>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground mt-1 mb-3">
+                    {founder.role}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={founder.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-md border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+                      aria-label={`${founder.name} on LinkedIn`}
+                    >
+                      <Linkedin className="w-4 h-4" />
+                    </a>
+                    <a
+                      href={founder.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-md border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+                      aria-label={`${founder.name}'s personal website`}
+                    >
+                      <Globe className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </div>
     </section>

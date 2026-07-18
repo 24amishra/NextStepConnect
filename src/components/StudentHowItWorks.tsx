@@ -25,11 +25,26 @@ const steps = [
   },
 ];
 
-const gains = [
-  { title: "Professional Portfolio", description: "Real client work and measurable results to showcase" },
-  { title: "Industry Connections", description: "Network with local business leaders and professionals" },
-  { title: "Interview Stories", description: "Concrete examples of impact and problem-solving" },
-  { title: "Practical Skills", description: "Apply classroom theory to real-world challenges" },
+// Placeholder testimonials — replace quotes, names, and roles with real ones.
+const testimonials = [
+  {
+    quote:
+      "Working with a real client changed how I think about my major. I have actual results to talk about in interviews now.",
+    name: "Student Name",
+    role: "Student · Placeholder University",
+  },
+  {
+    quote:
+      "The students cleared a backlog we'd been putting off for over a year. Fresh eyes, real energy, real results.",
+    name: "Owner Name",
+    role: "Owner · Placeholder Business",
+  },
+  {
+    quote:
+      "NextStep gave me a project I actually own end-to-end. That's something no classroom assignment ever did.",
+    name: "Student Name",
+    role: "Student · Placeholder University",
+  },
 ];
 
 import Reveal from "@/components/Reveal";
@@ -64,23 +79,28 @@ const StudentHowItWorks = () => {
           ))}
         </div>
 
-        {/* What You'll Gain — structured 2x2 grid */}
+        {/* Testimonials */}
         <div className="mt-14 sm:mt-16">
           <Reveal className="max-w-2xl mx-auto text-center mb-8 sm:mb-10">
-            <p className="eyebrow mb-3">The payoff</p>
+            <p className="eyebrow mb-3">What people say</p>
             <h3 className="text-2xl sm:text-3xl font-medium font-heading text-foreground tracking-tight">
-              What You'll Gain
+              Hear It From Them
             </h3>
           </Reveal>
-          <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
-            {gains.map((gain, i) => (
-              <Reveal key={gain.title} delay={i * 0.08} className="flat-card flex gap-4 items-start">
-                <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-primary mt-2"></span>
-                <div>
-                  <h4 className="font-medium font-heading text-sm sm:text-base text-foreground mb-1">
-                    {gain.title}
-                  </h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{gain.description}</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {testimonials.map((testimonial, i) => (
+              <Reveal key={testimonial.quote} delay={i * 0.1} className="flat-card flex flex-col">
+                <p className="font-heading text-2xl text-primary leading-none select-none mb-3">
+                  &ldquo;
+                </p>
+                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-6">
+                  {testimonial.quote}
+                </p>
+                <div className="mt-auto pt-4 border-t border-border">
+                  <p className="text-sm font-semibold text-foreground">{testimonial.name}</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground mt-1">
+                    {testimonial.role}
+                  </p>
                 </div>
               </Reveal>
             ))}
