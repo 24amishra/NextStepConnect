@@ -1,4 +1,5 @@
 import { Client } from "@hubspot/api-client";
+import { AssociationSpecAssociationCategoryEnum } from "@hubspot/api-client/lib/codegen/crm/associations/v4/models/AssociationSpec";
 import * as logger from "firebase-functions/logger";
 
 let client: Client | null = null;
@@ -130,7 +131,12 @@ export async function associateContactWithCompany(
       contactId,
       "companies",
       companyId,
-      [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 1 }]
+      [
+        {
+          associationCategory: AssociationSpecAssociationCategoryEnum.HubspotDefined,
+          associationTypeId: 1,
+        },
+      ]
     );
     logger.info("HubSpot contact-company association created", {
       contactId,

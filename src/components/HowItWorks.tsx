@@ -1,107 +1,65 @@
-import { Search, Users, CheckCircle } from "lucide-react";
-
 const phases = [
   {
     number: "01",
     title: "Discovery",
-    icon: Search,
     description:
       "You tell us what projects or tasks your business needs help with.",
   },
   {
     number: "02",
     title: "Connection",
-    icon: Users,
     description:
       "We match you with a motivated student whose skills and goals align with your needs.",
   },
   {
     number: "03",
     title: "Execution",
-    icon: CheckCircle,
     description:
       "The student completes the project using our professional frameworks and educational resources.",
   },
 ];
 
+import Reveal from "@/components/Reveal";
+
 const HowItWorks = () => {
   return (
-    <section className="relative py-16 sm:py-20 md:py-28 bg-background">
-      {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 overflow-hidden">
-        <svg
-          className="absolute top-0 w-full h-full"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,32 C360,16 720,16 1080,32 C1200,48 1320,48 1440,32 L1440,0 L0,0 Z"
-            fill="rgb(240, 235, 225)"
-            opacity="0.3"
-          />
-          <path
-            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
-            fill="rgb(215, 100, 90)"
-            opacity="0.1"
-          />
-        </svg>
-      </div>
-
-      <div className="container relative z-10 px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="text-center mb-12 sm:mb-16 md:mb-20">
-          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
-            Process
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
-            How It Works
+    <section className="py-16 sm:py-20 md:py-24 bg-background border-b border-border">
+      <div className="container px-4 sm:px-6">
+        <Reveal className="max-w-2xl mx-auto text-center mb-10 sm:mb-14">
+          <p className="eyebrow mb-3">For businesses</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium font-heading text-foreground mb-3 sm:mb-4 tracking-tight">
+            Three phases. Zero friction.
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
-            A simple three-phase process designed for seamless collaboration.
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+            A simple three-phase process designed for seamless collaboration with your business.
           </p>
-        </div>
+        </Reveal>
 
-        {/* Phase Cards */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
-          {phases.map((phase, index) => (
-            <div
-              key={index}
-              className="relative bg-card p-6 sm:p-8 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
-            >
-              {/* Phase Number Badge */}
-              <div className="absolute -top-3 sm:-top-4 left-6 sm:left-8 bg-primary text-primary-foreground text-xs sm:text-sm font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-warm-sm">
-                Phase {phase.number}
-              </div>
-
-              <div className="mt-3 sm:mt-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-nextstep-brick rounded-xl flex items-center justify-center mb-4 sm:mb-5 shadow-warm-sm">
-                  <phase.icon className="w-5 h-5 sm:w-6 sm:h-6 text-card" />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-2 sm:mb-3">
-                  {phase.title}
-                </h3>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {phase.description}
-                </p>
-              </div>
-            </div>
+        <div className="grid sm:grid-cols-3 gap-4 sm:gap-5">
+          {phases.map((phase, i) => (
+            <Reveal key={phase.number} delay={i * 0.1} className="flat-card">
+              <p className="font-mono text-xs uppercase tracking-[0.15em] text-primary mb-4">
+                Step {phase.number}
+              </p>
+              <h3 className="text-lg sm:text-xl font-medium font-heading text-foreground mb-2">
+                {phase.title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {phase.description}
+              </p>
+            </Reveal>
           ))}
         </div>
 
-        {/* Payment Flexibility Note */}
-        <div className="mt-12 sm:mt-16 max-w-3xl mx-auto text-center">
-          <div className="bg-nextstep-clay/40 border-0 rounded-2xl p-6 sm:p-8 shadow-warm-md">
-            <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
-              Flexible Compensation
-            </h3>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Compensation is entirely up to you. Many organizations work with students on a volunteer basis,
-              while others choose to offer payment or stipends. Students join NextStep to gain real-world
-              experience and build their portfolios, so both paid and unpaid opportunities are welcome.
-            </p>
-          </div>
-        </div>
+        <Reveal className="mt-4 sm:mt-5 border border-border rounded-md p-6 sm:p-7 grid md:grid-cols-[auto_1fr] gap-3 md:gap-10 items-start bg-card">
+          <h3 className="text-base sm:text-lg font-medium font-heading text-foreground whitespace-nowrap">
+            Flexible Compensation
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Compensation is up to you. Both paid and volunteer opportunities are welcome —
+            students join to gain experience and build their portfolios.
+          </p>
+        </Reveal>
       </div>
     </section>
   );

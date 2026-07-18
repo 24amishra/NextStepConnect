@@ -19,6 +19,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentForgotPassword from "./pages/StudentForgotPassword";
 import BusinessForgotPassword from "./pages/BusinessForgotPassword";
+import SignupChoice from "./pages/SignupChoice";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/signup" element={<SignupChoice />} />
             <Route path="/business/login" element={<BusinessLogin />} />
             <Route path="/business/signup" element={<BusinessSignup />} />
             <Route path="/business/forgot-password" element={<BusinessForgotPassword />} />
