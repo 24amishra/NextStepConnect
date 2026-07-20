@@ -1,9 +1,15 @@
-import { Linkedin, Mail, ArrowRight, Instagram } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, Instagram, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTypingAnimation } from "@/hooks/useTypingAnimation";
 import Reveal from "@/components/Reveal";
-import logo from "@/assets/NextStepLogo.png";
+import logo from "@/assets/images/NextStepLogo.png";
 
 const words = ["content", "websites", "value"];
 
@@ -17,18 +23,22 @@ const Hero = () => {
         <div className="container flex items-center justify-between px-4 sm:px-6">
           <img src={logo} alt="NextStep Logo" className="h-8 sm:h-10 w-auto" />
           <div className="flex items-center gap-1 sm:gap-2">
-            <Link to="/student/login">
-              <Button variant="ghost" size="sm" className="text-background hover:bg-background/10 text-xs sm:text-sm px-2 sm:px-3">
-                <span className="hidden sm:inline">Student Login</span>
-                <span className="sm:hidden">Student</span>
-              </Button>
-            </Link>
-            <Link to="/business/login">
-              <Button variant="ghost" size="sm" className="text-background hover:bg-background/10 text-xs sm:text-sm px-2 sm:px-3">
-                <span className="hidden sm:inline">Business Login</span>
-                <span className="sm:hidden">Business</span>
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-background hover:bg-background/10 text-xs sm:text-sm px-2 sm:px-3 gap-1">
+                  Log In
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/student/login">Student Login</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/business/login">Business Login</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Link to="/signup">
               <Button size="sm" className="text-xs sm:text-sm px-3 sm:px-4">
                 Sign Up

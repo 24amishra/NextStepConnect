@@ -11,7 +11,7 @@ const founders = [
     photo: null, // import a headshot and set it here
   },
   {
-    name: "Co-founder Name",
+    name: "Nikhil Kasam",
     role: "Co-founder",
     linkedin: "#",
     website: "#",

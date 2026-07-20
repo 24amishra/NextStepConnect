@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Newsreader', 'Georgia', 'serif'],
+        heading: ['"Plus Jakarta Sans"', '-apple-system', 'sans-serif'],
         body: ['Fustat', 'sans-serif'],
         mono: ['"DM Mono"', 'monospace'],
       },

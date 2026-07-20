@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Linkedin, Mail, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Reveal from "@/components/Reveal";
-import logo from "@/assets/NextStepLogo.png";
+import logo from "@/assets/images/NextStepLogo.png";
 
 const Footer = () => {
   return (

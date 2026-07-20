@@ -19,7 +19,7 @@
 
     /* White + Red Theme */
     --nextstep-clay: 0 0% 100%;
-    --nextstep-offwhite: 0 0% 97%;
+    --nextstep-offwhite: 0 0% 100%;
 
     /* Core Colors - White + Red */
     --background: var(--nextstep-offwhite);
@@ -62,8 +62,8 @@
 
     --radius: 0.5rem;
 
-    /* Typography - Newsreader serif headings (Granola-style), Fustat body, DM Mono labels */
-    --font-heading: 'Newsreader', Georgia, serif;
+    /* Typography - Plus Jakarta Sans headings, Fustat body, DM Mono labels */
+    --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
     --font-body: 'Fustat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'DM Mono', ui-monospace, monospace;
 

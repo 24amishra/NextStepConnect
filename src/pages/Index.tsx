@@ -2,8 +2,8 @@ import Hero from "@/components/Hero";
 import FirstCohortPartners from "@/components/FirstCohortPartners";
 import WhatIsNextStep from "@/components/WhatIsNextStep";
 import HowItWorks from "@/components/HowItWorks";
-import StudentHowItWorks from "@/components/StudentHowItWorks";
 import AboutUs from "@/components/AboutUs";
+import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 import Disclaimer from "@/components/Disclaimer";
 
@@ -17,8 +17,8 @@ const Index = () => {
       <FirstCohortPartners />
       <WhatIsNextStep />
       <HowItWorks />
-      <StudentHowItWorks />
       <AboutUs />
+      <FAQ />
       <Footer />
     </main>
   );

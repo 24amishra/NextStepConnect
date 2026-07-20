@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import JobPostingsList from "@/components/JobPostingsList";
 import { getStudentProfile, updateStudentProfile, updateMatchingPreference, getStudentPartnershipAssignments, OpportunityAssignment } from "@/lib/firestore";
 import emailjs from '@emailjs/browser';
-import logo from "@/assets/NextStepLogo.png";
+import logo from "@/assets/images/NextStepLogo.png";
 
 import Disclaimer from "@/components/Disclaimer";
 import StudentRatings from "@/components/StudentRatings";
