@@ -2,6 +2,14 @@ import { db, storage } from "./firebase";
 import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// Sentinel uid used only by src/pages/DevDashboardPreview.tsx (dev-only, import.meta.env.DEV)
+// to render dashboards with realistic fixture data instead of hitting Firestore with a
+// fake session. Real Firebase uids are never this string, so this can't collide.
+const DEV_PREVIEW_UID = "dev-preview-uid";
+
+// Flipped on by DevDashboardPreview.tsx for list-style reads (no uid to key off of).
+export const devPreviewState = { active: false };
+
 export interface CustomQuestion {
   question: string;
   required: boolean;
@@ -85,6 +93,24 @@ export const saveBusinessData = async (businessData: BusinessData): Promise<void
 };
 
 export const getBusinessData = async (userId: string): Promise<BusinessData | null> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return {
+      businessId: userId,
+      userId,
+      companyName: "Blue Sky Coffee Co.",
+      location: "Columbus, OH",
+      industry: "We're a specialty coffee roaster and cafe looking to modernize our online ordering and grow our local following.",
+      contactPersonName: "Jordan Blake",
+      email: "jordan@blueskycoffee.example",
+      phone: "(614) 555-0148",
+      preferredContactMethod: "Email",
+      potentialProblems: "We need help redesigning our online ordering flow, running a social media content calendar, and setting up basic sales reporting.",
+      categories: ["Marketing", "Web Design", "Data Analysis"],
+      approvalStatus: "approved",
+      createdAt: new Date("2025-09-12"),
+    };
+  }
+
   try {
     const docRef = doc(db, "businesses", userId);
     const docSnap = await getDoc(docRef);
@@ -191,6 +217,20 @@ export const saveStudentProfile = async (profile: StudentProfile): Promise<void>
 };
 
 export const getStudentProfile = async (userId: string): Promise<StudentProfile | null> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return {
+      userId,
+      name: "Karina Chen",
+      email: "preview@example.com",
+      skills: ["Figma", "React", "User Research"],
+      desiredRoles: ["Product Design", "Frontend Development"],
+      bio: "Junior studying UX design. I like turning messy workflows into simple, usable products.",
+      linkedinUrl: "https://linkedin.com/in/example",
+      openToMatching: true,
+      createdAt: new Date("2025-10-03"),
+    };
+  }
+
   try {
     const docRef = doc(db, "students", userId);
     const docSnap = await getDoc(docRef);
@@ -322,6 +362,41 @@ export const getOpportunitiesForBusiness = async (businessId: string): Promise<O
 };
 
 export const getAllActiveOpportunities = async (): Promise<Opportunity[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        id: "dev-opp-1",
+        businessId: "dev-biz-1",
+        businessName: "Blue Sky Coffee Co.",
+        title: "Redesign online ordering flow",
+        description: "We need a cleaner, faster checkout for our online ordering site. You'd audit the current flow, propose wireframes, and help implement the redesign with our team.",
+        categories: ["Web Design", "UX Research"],
+        status: "active",
+        createdAt: new Date("2026-06-20"),
+      },
+      {
+        id: "dev-opp-2",
+        businessId: "dev-biz-2",
+        businessName: "Maple & Co. Bookkeeping",
+        title: "Build a social media content calendar",
+        description: "Looking for a student to plan and design a month of Instagram and LinkedIn posts to help us reach more local small-business clients.",
+        categories: ["Marketing"],
+        status: "active",
+        createdAt: new Date("2026-06-18"),
+      },
+      {
+        id: "dev-opp-3",
+        businessId: "dev-biz-3",
+        businessName: "Riverside Bike Shop",
+        title: "Basic sales dashboard",
+        description: "We track sales in spreadsheets and want a simple dashboard to visualize monthly trends and best-selling products.",
+        categories: ["Data Analysis", "Web Design"],
+        status: "active",
+        createdAt: new Date("2026-06-10"),
+      },
+    ] as Opportunity[];
+  }
+
   const q = query(collection(db, "opportunities"), where("status", "==", "active"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
@@ -572,6 +647,37 @@ export const saveRating = async (rating: Omit<Rating, "id" | "createdAt">): Prom
 };
 
 export const getRatingsForStudent = async (studentId: string): Promise<Rating[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        id: "dev-1",
+        businessId: DEV_PREVIEW_UID,
+        studentId,
+        applicationId: "dev-app-1",
+        overallRating: 5,
+        communicationRating: 5,
+        professionalismRating: 5,
+        skillQualityRating: 4,
+        feedback: "Karina redesigned our checkout flow in two weeks and completions went up right away. Clear communicator, easy to work with.",
+        createdAt: new Date("2026-05-02"),
+        projectCompletedAt: new Date("2026-05-01"),
+      },
+      {
+        id: "dev-2",
+        businessId: DEV_PREVIEW_UID,
+        studentId,
+        applicationId: "dev-app-2",
+        overallRating: 4,
+        communicationRating: 4,
+        professionalismRating: 5,
+        skillQualityRating: 4,
+        feedback: "Great eye for detail on our style guide. Would happily work with her again.",
+        createdAt: new Date("2026-02-14"),
+        projectCompletedAt: new Date("2026-02-10"),
+      },
+    ];
+  }
+
   try {
     const ratingsRef = collection(db, "ratings");
     const q = query(ratingsRef, where("studentId", "==", studentId));
@@ -663,6 +769,10 @@ const incrementCompletedProjects = async (businessId: string): Promise<void> => 
 };
 
 export const getBadgeStatus = async (businessId: string): Promise<BadgeStatus> => {
+  if (businessId === DEV_PREVIEW_UID) {
+    return { completedProjects: 3, badge: "returning" };
+  }
+
   try {
     const badgeDocRef = doc(db, "businesses", businessId, "private", "badge");
     const badgeDoc = await getDoc(badgeDocRef);
@@ -684,6 +794,24 @@ export const getBadgeStatus = async (businessId: string): Promise<BadgeStatus> =
 
 // Get badge statuses for all businesses (for displaying in listings)
 export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData & { badge: BadgeStatus["badge"] })[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        businessId: "dev-biz-4",
+        companyName: "Corner Deli & Market",
+        location: "Columbus, OH",
+        industry: "We're a neighborhood deli looking for general help with our online presence.",
+        contactPersonName: "Sam Rivera",
+        email: "sam@cornerdeli.example",
+        preferredContactMethod: "Email",
+        potentialProblems: "We don't have a website yet and would love help getting a simple one online, plus setting up Google Business listings.",
+        categories: ["Web Design"],
+        approvalStatus: "approved",
+        badge: "none",
+      },
+    ];
+  }
+
   try {
     const businesses = await getAllBusinesses();
 

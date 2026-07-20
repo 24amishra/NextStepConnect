@@ -34,9 +34,18 @@ import {
   Users,
   Menu,
   ChevronLeft,
+  Calendar,
+  Trophy,
+  Handshake,
 } from "lucide-react";
 
 type ActiveSection = "profile" | "opportunities" | "students";
+
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms)),
+  ]);
 
 const BusinessDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
@@ -51,6 +60,13 @@ const BusinessDashboard = () => {
   const [badgeStatus, setBadgeStatus] = useState<BadgeStatus>({ completedProjects: 0, badge: "none" });
   const [activeSection, setActiveSection] = useState<ActiveSection>("profile");
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const businessInitials = (businessData?.companyName || currentUser?.email || "B")
+    .split(" ")
+    .map((part: string) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -79,7 +95,7 @@ const BusinessDashboard = () => {
       try {
         setLoading(true);
         setError("");
-        const data = await getBusinessData(currentUser.uid);
+        const data = await withTimeout(getBusinessData(currentUser.uid), 8000);
         setBusinessData(data);
         setFetchedUserId(currentUser.uid);
         if (data) {
@@ -360,12 +376,43 @@ const BusinessDashboard = () => {
                 {/* Profile Section */}
                 {activeSection === "profile" && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-3xl font-bold font-heading mb-2">Company Profile</h2>
-                      <p className="text-muted-foreground">
-                        Manage your business information and details
-                      </p>
-                    </div>
+                    {/* Profile header */}
+                    <Card className="border-0 shadow-warm-md bg-card overflow-hidden">
+                      <div className="h-16 sm:h-20 bg-gradient-to-r from-primary to-nextstep-ember" />
+                      <CardContent className="pt-4 sm:pt-5 pb-5 sm:pb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 -mt-8 sm:-mt-10 rounded-full bg-primary text-primary-foreground border-4 border-card flex items-center justify-center text-xl sm:text-2xl font-bold font-heading flex-shrink-0">
+                              {businessInitials}
+                            </div>
+                            <div>
+                              <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">
+                                {businessData.companyName}
+                              </h2>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1.5">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {businessData.location}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                  <Mail className="h-3.5 w-3.5" />
+                                  {businessData.email}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {!isEditing && (
+                            <Button variant="outline" size="sm" onClick={handleEdit} className="flex-shrink-0">
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Edit Profile
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="grid lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 space-y-6">
 
                     <Card className="border-0 shadow-warm-md bg-card">
                       <CardHeader className="border-b border-border/50">
@@ -373,16 +420,11 @@ const BusinessDashboard = () => {
                           <div>
                             <CardTitle className="flex items-center gap-2 text-foreground">
                               <Building2 className="h-5 w-5 text-primary" />
-                              Company Information
+                              About
                             </CardTitle>
                             <CardDescription className="mt-1">Your business profile details</CardDescription>
                           </div>
-                          {!isEditing ? (
-                            <Button variant="outline" size="sm" onClick={handleEdit}>
-                              <Edit2 className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                          ) : (
+                          {isEditing && (
                             <div className="flex gap-2">
                               <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                                 <X className="h-4 w-4 mr-2" />
@@ -752,21 +794,62 @@ const BusinessDashboard = () => {
                 )}
               </CardContent>
                     </Card>
+                      </div>
 
-                    {businessData.createdAt && (
-                      <Card className="border-0 shadow-warm-md bg-card">
-                        <CardHeader>
-                          <CardTitle>Account Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground">
-                            Profile created: {businessData.createdAt?.toDate
-                              ? new Date(businessData.createdAt.toDate()).toLocaleDateString()
-                              : new Date(businessData.createdAt).toLocaleDateString()}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                      {/* Sidebar: partner status */}
+                      <div className="space-y-6">
+                        <Card className="border-0 shadow-warm-md bg-card">
+                          <CardContent className="pt-6 text-center">
+                            {badgeStatus.badge === "frequent" ? (
+                              <>
+                                <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
+                                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+                                  Frequent Partner
+                                </Badge>
+                              </>
+                            ) : badgeStatus.badge === "returning" ? (
+                              <>
+                                <Handshake className="h-10 w-10 text-primary mx-auto mb-2" />
+                                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+                                  Returning Partner
+                                </Badge>
+                              </>
+                            ) : (
+                              <>
+                                <Handshake className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+                                <Badge variant="secondary">New Partner</Badge>
+                              </>
+                            )}
+                            <div className="text-3xl font-bold font-heading text-foreground mt-4">
+                              {badgeStatus.completedProjects}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {badgeStatus.completedProjects === 1 ? "Completed project" : "Completed projects"}
+                            </p>
+                          </CardContent>
+                          {businessData.createdAt && (
+                            <>
+                              <Separator />
+                              <CardContent className="pt-5">
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  Member since{" "}
+                                  {businessData.createdAt?.toDate
+                                    ? new Date(businessData.createdAt.toDate()).toLocaleDateString(undefined, {
+                                        month: "long",
+                                        year: "numeric",
+                                      })
+                                    : new Date(businessData.createdAt).toLocaleDateString(undefined, {
+                                        month: "long",
+                                        year: "numeric",
+                                      })}
+                                </div>
+                              </CardContent>
+                            </>
+                          )}
+                        </Card>
+                      </div>
+                    </div>
                   </div>
                 )}
 

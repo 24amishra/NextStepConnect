@@ -1,5 +1,6 @@
 import type { User } from "firebase/auth";
 import { AuthContext } from "@/contexts/AuthContext";
+import { devPreviewState } from "@/lib/firestore";
 import StudentDashboard from "./StudentDashboard";
 import BusinessDashboard from "./BusinessDashboard";
 
@@ -24,14 +25,20 @@ const mockAuthValue = {
   resetPassword: async () => {},
 };
 
-export const DevStudentDashboardPreview = () => (
-  <AuthContext.Provider value={mockAuthValue}>
-    <StudentDashboard />
-  </AuthContext.Provider>
-);
+export const DevStudentDashboardPreview = () => {
+  devPreviewState.active = true;
+  return (
+    <AuthContext.Provider value={mockAuthValue}>
+      <StudentDashboard />
+    </AuthContext.Provider>
+  );
+};
 
-export const DevBusinessDashboardPreview = () => (
-  <AuthContext.Provider value={mockAuthValue}>
-    <BusinessDashboard />
-  </AuthContext.Provider>
-);
+export const DevBusinessDashboardPreview = () => {
+  devPreviewState.active = true;
+  return (
+    <AuthContext.Provider value={mockAuthValue}>
+      <BusinessDashboard />
+    </AuthContext.Provider>
+  );
+};

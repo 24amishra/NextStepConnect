@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText, Handshake, Building2, MapPin } from "lucide-react";
+import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Award, TrendingUp, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText, Handshake, Building2, MapPin, ArrowLeft, ChevronDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import JobPostingsList from "@/components/JobPostingsList";
 import { getStudentProfile, updateStudentProfile, updateMatchingPreference, getStudentPartnershipAssignments, OpportunityAssignment } from "@/lib/firestore";
-import emailjs from '@emailjs/browser';
+import { sendContactMessage } from "@/lib/emailNotifications";
 import logo from "@/assets/images/NextStepLogo.png";
 
 import Disclaimer from "@/components/Disclaimer";
-import StudentRatings from "@/components/StudentRatings";
 import MatchedOpportunities from "@/components/MatchedOpportunities";
 import MyApplications from "@/components/MyApplications";
 import CurrentProjects from "@/components/CurrentProjects";
@@ -58,6 +64,13 @@ const StudentDashboard = () => {
   const [sendingQuestion, setSendingQuestion] = useState(false);
   const [partnershipAssignments, setPartnershipAssignments] = useState<OpportunityAssignment[]>([]);
   const [loadingPartnerships, setLoadingPartnerships] = useState(false);
+  const studentInitials = (studentProfile?.name || currentUser?.email || "S")
+    .split(" ")
+    .map((part: string) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   // Load student profile
   useEffect(() => {
@@ -242,33 +255,31 @@ const StudentDashboard = () => {
     try {
       setSendingQuestion(true);
 
-      // Initialize EmailJS (you'll need to replace these with your actual values)
-      emailjs.init('YOUR_PUBLIC_KEY'); // Replace with your EmailJS public key
-
-      await emailjs.send(
-        'YOUR_SERVICE_ID', // Replace with your EmailJS service ID
-        'YOUR_TEMPLATE_ID', // Replace with your EmailJS template ID
-        {
-          from_name: questionForm.name,
-          from_email: questionForm.email,
-          subject: questionForm.subject,
-          message: questionForm.message,
-          to_email: 'nextstep.connects@gmail.com', // Your support email
-        }
-      );
-
-      toast({
-        title: "Message Sent",
-        description: "Your question has been sent. We'll get back to you soon!",
-        variant: "default",
+      const sent = await sendContactMessage({
+        fromName: questionForm.name,
+        fromEmail: questionForm.email,
+        subject: questionForm.subject,
+        message: questionForm.message,
       });
 
-      // Reset form
-      setQuestionForm({
-        ...questionForm,
-        subject: "",
-        message: "",
-      });
+      if (sent) {
+        toast({
+          title: "Message Sent",
+          description: "Your question has been sent. We'll get back to you soon!",
+          variant: "default",
+        });
+        setQuestionForm({
+          ...questionForm,
+          subject: "",
+          message: "",
+        });
+      } else {
+        toast({
+          title: "Contact form isn't set up yet",
+          description: "Please email us directly at nextstep.connects@gmail.com in the meantime.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Send Failed",
@@ -282,126 +293,74 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-muted/30" style={{ fontFamily: 'Arimo, sans-serif' }}>
-      {/* Dark Header - Matching dashboard.png */}
+      {/* Dark Header */}
       <header className="bg-nextstep-brick sticky top-0 z-50 shadow-warm-md">
         <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveSection("opportunities")}
+            className="flex items-center gap-3"
+          >
             <img src={logo} alt="NextStep Logo" className="h-8 w-auto" />
             <h1 className="text-xl font-bold text-white">Student Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-white/70 hidden md:inline">{currentUser?.email}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/10"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </Button>
-          </div>
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full transition-colors ${
+                  activeSection === "profile" ? "bg-white/15" : "hover:bg-white/10"
+                }`}
+              >
+                <span className="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {studentInitials}
+                </span>
+                <span className="text-sm text-white/90 hidden md:inline">
+                  {studentProfile?.name || currentUser?.email}
+                </span>
+                <ChevronDown className="h-4 w-4 text-white/70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setActiveSection("applications")}>
+                <FileText className="h-4 w-4 mr-2" />
+                My Interests
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveSection("partnership")}>
+                <Handshake className="h-4 w-4 mr-2" />
+                Current Partnership
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveSection("questions")}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Questions
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setActiveSection("profile")}>
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      {/* Main Layout - Two Column like dashboard.png */}
       <div className="container py-8">
-        <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-          {/* Left Sidebar */}
-          <aside className="space-y-6">
-            {/* Profile Card */}
-            <Card className="border-0 shadow-warm-md bg-card">
-              <CardContent className="pt-6 text-center">
-                <div className="w-24 h-24 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <User className="w-12 h-12 text-muted-foreground" />
-                </div>
-                <h2 className="font-bold text-lg mb-1">
-                  {studentProfile?.name || "Student"}
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {currentUser?.email}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setActiveSection("profile")}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Navigation Menu */}
-            <Card className="border-0 shadow-warm-md bg-card">
-              <CardContent className="p-4">
-                <nav className="space-y-1">
-                  <button
-                    onClick={() => setActiveSection("opportunities")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "opportunities"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Briefcase className="h-5 w-5" />
-                    Opportunities
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("applications")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "applications"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <FileText className="h-5 w-5" />
-                    My Interests
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("partnership")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "partnership"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Handshake className="h-5 w-5" />
-                    Current Partnership
-                  </button>
-
-                  <button
-                    onClick={() => setActiveSection("profile")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "profile"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <User className="h-5 w-5" />
-                    Profile & Ratings
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("questions")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "questions"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <HelpCircle className="h-5 w-5" />
-                    Questions
-                  </button>
-                </nav>
-              </CardContent>
-            </Card>
-          </aside>
-
-          {/* Main Content Area */}
           <main className="space-y-6">
             {/* Disclaimer */}
             <Disclaimer />
+
+            {activeSection === "profile" && (
+              <button
+                onClick={() => setActiveSection("opportunities")}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to dashboard
+              </button>
+            )}
 
             {/* Opportunities Section */}
             {activeSection === "opportunities" && (
@@ -649,30 +608,58 @@ const StudentDashboard = () => {
 
             {/* Profile Section */}
             {activeSection === "profile" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Profile Information</h2>
-                  <p className="text-muted-foreground">
-                    Manage your personal information and view your ratings
-                  </p>
-                </div>
+              <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
+                {/* Identity card */}
+                <Card className="border-0 shadow-warm-md bg-card">
+                  <CardContent className="pt-8 pb-6 text-center">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-4xl font-bold font-heading mx-auto mb-4">
+                      {studentInitials}
+                    </div>
+                    <h2 className="text-xl font-bold font-heading text-foreground">
+                      {studentProfile?.name || "Student"}
+                    </h2>
+                    {!isEditing && (
+                      <button
+                        onClick={handleEdit}
+                        className="text-sm text-primary font-semibold hover:underline mt-1"
+                      >
+                        Edit basic info
+                      </button>
+                    )}
+
+                    <Separator className="my-5" />
+
+                    <div className="space-y-4 text-left">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="text-sm font-medium text-foreground break-all">{currentUser?.email}</p>
+                      </div>
+                      {currentUser?.metadata.creationTime && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Member since</p>
+                          <p className="text-sm font-medium text-foreground">
+                            {new Date(currentUser.metadata.creationTime).toLocaleDateString(undefined, {
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Profile Details Card with Edit Functionality */}
                 <Card className="border-0 shadow-warm-md bg-card">
                   <CardHeader className="border-b border-border/50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-xl">Profile Details</CardTitle>
+                        <CardTitle className="text-xl">About</CardTitle>
                         <CardDescription>
                           Your professional information
                         </CardDescription>
                       </div>
-                      {!isEditing ? (
-                        <Button variant="outline" size="sm" onClick={handleEdit}>
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      ) : (
+                      {isEditing && (
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                             <X className="h-4 w-4 mr-2" />
@@ -858,36 +845,21 @@ const StudentDashboard = () => {
                           </div>
                         </div>
                       </form>
+                    ) : !studentProfile?.skills?.length &&
+                      !studentProfile?.desiredRoles?.length &&
+                      !studentProfile?.bio &&
+                      !studentProfile?.linkedinUrl ? (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Your profile is empty. Add your skills, interests, and a short bio so businesses know who you are.
+                        </p>
+                        <Button variant="outline" size="sm" onClick={handleEdit}>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Complete your profile
+                        </Button>
+                      </div>
                     ) : (
                       <div className="space-y-8">
-                        {/* Personal Information Section */}
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
-                            <User className="h-5 w-5 text-primary" />
-                            <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
-                          </div>
-                          <div className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">Name</Label>
-                              <p className="font-semibold text-foreground">{studentProfile?.name || "Not set"}</p>
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">Email</Label>
-                              <p className="font-semibold text-foreground break-all">{currentUser?.email}</p>
-                            </div>
-                            {currentUser?.metadata.creationTime && (
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Member Since</Label>
-                                <p className="font-semibold text-foreground">
-                                  {new Date(currentUser.metadata.creationTime).toLocaleDateString()}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <Separator className="bg-primary/20" />
-
                         {/* Skills Section */}
                         {studentProfile?.skills && studentProfile.skills.length > 0 && (
                           <>
@@ -969,8 +941,6 @@ const StudentDashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* Ratings */}
-                <StudentRatings />
               </div>
             )}
 
@@ -1083,7 +1053,6 @@ const StudentDashboard = () => {
               </div>
             )}
           </main>
-        </div>
       </div>
     </div>
   );

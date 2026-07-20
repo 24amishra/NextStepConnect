@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { getAllBusinessesWithBadges, getAllActiveOpportunities, getApplicationsForStudent, Application, Opportunity } from "@/lib/firestore";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import CategorySelector from "./CategorySelector";
 import {
   Briefcase,
@@ -14,11 +14,10 @@ import {
   Building2,
   FileText,
   Loader2,
-  Mail,
-  Phone,
   Search,
-  Award,
-  X
+  SlidersHorizontal,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import ApplicationForm from "./ApplicationForm";
 
@@ -35,7 +34,6 @@ const JobPostingsList = () => {
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(true);
 
   useEffect(() => {
     const fetchOpportunities = async () => {
@@ -123,6 +121,19 @@ const JobPostingsList = () => {
     setFilteredOpportunities(filtered);
   }, [searchQuery, selectedCategories, allOpportunities]);
 
+  // Keep a valid opportunity selected as the list/filters change
+  useEffect(() => {
+    if (filteredOpportunities.length === 0) {
+      setSelectedOpportunity(null);
+      return;
+    }
+    const stillPresent = selectedOpportunity && filteredOpportunities.some((opp) => opp.id === selectedOpportunity.id);
+    if (!stillPresent) {
+      setSelectedOpportunity(filteredOpportunities[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredOpportunities]);
+
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedCategories([]);
@@ -157,7 +168,7 @@ const JobPostingsList = () => {
 
   if (loading) {
     return (
-      <Card className="border-primary/20">
+      <Card className="border-0 shadow-warm-md bg-card">
         <CardContent className="py-8">
           <div className="flex justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -169,12 +180,9 @@ const JobPostingsList = () => {
 
   if (error) {
     return (
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle className="text-destructive">Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{error}</p>
+      <Card className="border-0 shadow-warm-md bg-card">
+        <CardContent className="py-8 text-center">
+          <p className="text-sm text-destructive">{error}</p>
         </CardContent>
       </Card>
     );
@@ -182,23 +190,14 @@ const JobPostingsList = () => {
 
   const hasActiveFilters = searchQuery.trim() !== "" || selectedCategories.length > 0;
 
-  if (allOpportunities.length === 0 && !loading) {
+  if (allOpportunities.length === 0) {
     return (
-      <Card className="border-primary/20">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Briefcase className="h-5 w-5 text-primary" />
-            Available Opportunities
-          </CardTitle>
-          <CardDescription>Current opportunities from businesses</CardDescription>
-        </CardHeader>
-        <CardContent className="py-8">
-          <div className="text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground">
-              No opportunities available at the moment. Check back soon!
-            </p>
-          </div>
+      <Card className="border-0 shadow-warm-md bg-card">
+        <CardContent className="py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <p className="text-muted-foreground">
+            No opportunities available at the moment. Check back soon!
+          </p>
         </CardContent>
       </Card>
     );
@@ -206,120 +205,144 @@ const JobPostingsList = () => {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filter Panel */}
-        <Card className="border-primary/20 h-fit lg:sticky lg:top-24">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Filters</CardTitle>
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="h-8 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            {/* Search */}
-            <div className="space-y-2">
-              <Label htmlFor="search">
-                <Search className="h-4 w-4 inline mr-1" />
-                Search
-              </Label>
-              <Input
-                id="search"
-                type="text"
-                placeholder="Company, location, needs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <Separator className="bg-primary/20" />
-
-            {/* Categories */}
-            <div className="space-y-2">
-              <Label>Categories</Label>
+      <div className="space-y-4">
+        {/* Search + filter bar */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by title, company, or keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-card"
+            />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-shrink-0 bg-card">
+                <SlidersHorizontal className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Categories</span>
+                {selectedCategories.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary">
+                    {selectedCategories.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72">
+              <p className="text-sm font-semibold mb-3">Filter by category</p>
               <CategorySelector
                 selectedCategories={selectedCategories}
                 onChange={setSelectedCategories}
                 mode="filter"
               />
-            </div>
-          </CardContent>
-        </Card>
+            </PopoverContent>
+          </Popover>
+          {hasActiveFilters && (
+            <Button variant="ghost" onClick={clearFilters} className="flex-shrink-0">
+              <X className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Clear</span>
+            </Button>
+          )}
+        </div>
 
-        {/* Opportunities List */}
-        <div className="lg:col-span-3">
-          <Card className="border-primary/20 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Briefcase className="h-5 w-5 text-primary" />
-                Available Opportunities
-              </CardTitle>
-              <CardDescription>
-                {filteredOpportunities.length} {filteredOpportunities.length === 1 ? "opportunity" : "opportunities"} found
-                {hasActiveFilters && " (filtered)"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              {filteredOpportunities.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                  <p className="text-muted-foreground mb-2">
-                    No opportunities match your filters
-                  </p>
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
-                </div>
-              ) : (
-                filteredOpportunities.map((opportunity, index) => (
-                  <div
+        <p className="text-sm text-muted-foreground">
+          {filteredOpportunities.length} {filteredOpportunities.length === 1 ? "opportunity" : "opportunities"} found
+          {hasActiveFilters && " (filtered)"}
+        </p>
+
+        {filteredOpportunities.length === 0 ? (
+          <Card className="border-0 shadow-warm-md bg-card">
+            <CardContent className="py-12 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-muted-foreground mb-4">No opportunities match your filters</p>
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid lg:grid-cols-[380px_1fr] gap-5 items-start">
+            {/* Compact list */}
+            <div className="space-y-2.5 lg:max-h-[calc(100vh-260px)] lg:overflow-y-auto lg:pr-1">
+              {filteredOpportunities.map((opportunity, index) => {
+                const isSelected = selectedOpportunity?.id === opportunity.id;
+                const interested = hasExpressedInterest(opportunity.id!);
+                return (
+                  <button
                     key={opportunity.id || `opp-${index}`}
-                    className="border border-primary/20 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all bg-card"
+                    onClick={() => setSelectedOpportunity(opportunity)}
+                    className={`w-full text-left p-4 rounded-lg border transition-colors bg-card ${
+                      isSelected
+                        ? "border-primary ring-1 ring-primary/30"
+                        : "border-border hover:border-primary/40"
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="text-lg font-semibold text-foreground">{opportunity.title}</h3>
-                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                            Active
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-semibold text-foreground leading-snug">
+                        {opportunity.title}
+                      </h3>
+                      {interested && <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {opportunity.businessName}
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                      {opportunity.description}
+                    </p>
+                    {opportunity.categories && opportunity.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {opportunity.categories.slice(0, 2).map((category) => (
+                          <Badge key={category} variant="outline" className="text-[10px] bg-primary/5 border-primary/20">
+                            {category}
                           </Badge>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          <span>{opportunity.businessName}</span>
-                        </div>
+                        ))}
+                        {opportunity.categories.length > 2 && (
+                          <Badge variant="outline" className="text-[10px] bg-muted border-border">
+                            +{opportunity.categories.length - 2}
+                          </Badge>
+                        )}
                       </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Detail panel */}
+            <div className="lg:sticky lg:top-24">
+              {selectedOpportunity ? (
+                <Card className="border-0 shadow-warm-md bg-card">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-4 mb-1">
+                      <h2 className="text-xl font-semibold text-foreground">{selectedOpportunity.title}</h2>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex-shrink-0">
+                        Active
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      {selectedOpportunity.businessName}
                     </div>
 
-                    <Separator className="bg-primary/20 my-3" />
+                    <Separator className="mb-4" />
 
-                    <div className="space-y-3 mb-4">
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
-                        <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-4">
-                          {opportunity.description}
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {selectedOpportunity.description}
                         </p>
                       </div>
 
-                      {opportunity.categories && opportunity.categories.length > 0 && (
+                      {selectedOpportunity.categories && selectedOpportunity.categories.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">Categories:</p>
+                          <p className="text-sm font-medium text-muted-foreground mb-1">Categories</p>
                           <div className="flex flex-wrap gap-1">
-                            {opportunity.categories.map((category: string) => (
-                              <Badge
-                                key={category}
-                                variant="outline"
-                                className="text-xs bg-primary/5 border-primary/20"
-                              >
+                            {selectedOpportunity.categories.map((category: string) => (
+                              <Badge key={category} variant="outline" className="text-xs bg-primary/5 border-primary/20">
                                 {category}
                               </Badge>
                             ))}
@@ -327,40 +350,45 @@ const JobPostingsList = () => {
                         </div>
                       )}
 
-                      {opportunity.customQuestions && opportunity.customQuestions.length > 0 && (
+                      {selectedOpportunity.customQuestions && selectedOpportunity.customQuestions.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <FileText className="h-3 w-3" />
-                          <span>{opportunity.customQuestions.length} custom question{opportunity.customQuestions.length > 1 ? 's' : ''}</span>
+                          {selectedOpportunity.customQuestions.length} custom question
+                          {selectedOpportunity.customQuestions.length > 1 ? "s" : ""}
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-end pt-2">
-                      {hasExpressedInterest(opportunity.id!) ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled
-                          className="border-primary/50 text-primary"
-                        >
-                          ✓ Interest Sent
+                    <div className="pt-6">
+                      {hasExpressedInterest(selectedOpportunity.id!) ? (
+                        <Button disabled variant="outline" className="w-full border-primary/50 text-primary">
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Interest Sent
                         </Button>
                       ) : (
                         <Button
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90"
-                          onClick={() => handleExpressInterest(opportunity)}
+                          className="w-full bg-primary hover:bg-primary/90"
+                          onClick={() => handleExpressInterest(selectedOpportunity)}
                         >
                           Express Interest
                         </Button>
                       )}
                     </div>
-                  </div>
-                ))
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-0 shadow-warm-md bg-card">
+                  <CardContent className="py-16 text-center">
+                    <Briefcase className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      Select an opportunity to see details
+                    </p>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {selectedOpportunity && (
