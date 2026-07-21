@@ -1,21 +1,23 @@
 import { Linkedin, Globe, User } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import OhioMap from "@/components/OhioMap";
+import agastyaHeadshot from "@/assets/images/agastya_headshot.jpeg";
+import nikhilHeadshot from "@/assets/images/3-NikhilKasam.jpg";
 
-// Replace names, links, and photo placeholders with real ones.
 const founders = [
   {
     name: "Agastya Mishra",
     role: "Co-founder",
-    linkedin: "#",
-    website: "#",
-    photo: null, // import a headshot and set it here
+    linkedin: "https://www.linkedin.com/in/agastya-mishra-osu/",
+    website: "https://www.agastyamishra.xyz/",
+    photo: agastyaHeadshot,
   },
   {
     name: "Nikhil Kasam",
     role: "Co-founder",
-    linkedin: "#",
-    website: "#",
-    photo: null,
+    linkedin: "https://www.linkedin.com/in/nikhil-kasam",
+    website: "https://www.nikhilkasam.xyz",
+    photo: nikhilHeadshot,
   },
 ];
 
@@ -53,6 +55,9 @@ const AboutUs = () => {
                 at a time.
               </p>
             </div>
+            <div className="mt-6 max-w-[280px]">
+              <OhioMap />
+            </div>
           </Reveal>
 
           {/* Right: founder cards */}
@@ -63,10 +68,10 @@ const AboutUs = () => {
                   <img
                     src={founder.photo}
                     alt={`Headshot of ${founder.name}`}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover flex-shrink-0"
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-md object-cover object-top flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-md border border-border bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground/50">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-md border border-border bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground/50">
                     <User className="w-8 h-8" />
                   </div>
                 )}
