@@ -1,21 +1,25 @@
 import Reveal from "@/components/Reveal";
 
-// Placeholder partners — swap `logo` in for an imported image per partner when available.
 const partners = [
-  { name: "Partner One" },
-  { name: "Partner Two" },
-  { name: "Partner Three" },
-  { name: "Partner Four" },
-  { name: "Partner Five" },
-  { name: "Partner Six" },
+  { name: "MadLab", logo: "/logos/images%20(1).jpeg", url: "http://madlab.net/index.html" },
+  { name: "Glass Rooster Cannery", logo: "/logos/images%20(1).png", url: "https://www.glassroostercannery.com/" },
+  { name: "Belle's Bread", logo: "/logos/images%20(2).png", url: "https://bellesbread.japanmarketplace.com/" },
+  { name: "Columbus Dry Cleaning & Laundry Services", logo: "/logos/images.jpeg", url: "https://www.columbuscleaning.com/" },
 ];
 
-const LogoTile = ({ name }: { name: string }) => (
-  <div className="flex-shrink-0 w-40 h-16 mx-3 border border-border rounded-md bg-card flex items-center justify-center">
-    <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground/60">
-      {name}
-    </span>
-  </div>
+const LogoTile = ({ name, logo, url }: { name: string; logo: string; url: string }) => (
+  <a
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex-shrink-0 w-40 h-16 mx-3 border border-border rounded-md bg-white flex items-center justify-center overflow-hidden p-2 transition-opacity hover:opacity-75"
+  >
+    <img
+      src={logo}
+      alt={name}
+      className="max-h-full max-w-full object-contain"
+    />
+  </a>
 );
 
 const FirstCohortPartners = () => {
@@ -25,7 +29,7 @@ const FirstCohortPartners = () => {
         <Reveal className="text-center mb-8 sm:mb-10">
           <p className="eyebrow mb-3">First cohort</p>
           <h2 className="text-2xl sm:text-3xl font-medium font-heading text-foreground tracking-tight">
-            Our first cohort of partners
+            Our founding cohort of partners
           </h2>
         </Reveal>
       </div>
@@ -39,7 +43,7 @@ const FirstCohortPartners = () => {
             {[0, 1].map((copy) => (
               <div key={copy} className="flex" aria-hidden={copy === 1}>
                 {partners.map((partner) => (
-                  <LogoTile key={`${copy}-${partner.name}`} name={partner.name} />
+                  <LogoTile key={`${copy}-${partner.name}`} name={partner.name} logo={partner.logo} url={partner.url} />
                 ))}
               </div>
             ))}

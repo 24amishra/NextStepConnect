@@ -36,14 +36,14 @@ const AboutUs = () => {
               <p>
                 We're two lifelong Central Ohioans who started NextStep after
                 uncovering a potential synergy between local students and businesses. 
-                We saw students at our school were high-energy, eager, and looking for opportunities to build high-impact projects with real metrics + business value.
+                We saw students at our school were high-energy, ambitious, and looking for opportunities to build high-impact projects with real metrics + business value.
                 
                 
               </p>
               <p>
                 At the same time, we watched local businesses around us struggle
                 with backlogs that had grown immensely. We decided to build a platform to harness this energy and create a win-win for both students and businesses.
-                . Students build high-impact projects
+                 Students build high-impact projects
                 that actually matter, and businesses get the extra hands they
                 need. 
               </p>

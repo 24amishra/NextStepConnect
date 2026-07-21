@@ -12,7 +12,6 @@ const Index = () => {
     <main className="bg-background min-h-screen">
       <Hero />
       <div className="container py-4 sm:py-6 px-4 sm:px-6">
-        <Disclaimer />
       </div>
       <FirstCohortPartners />
       <WhatIsNextStep />
