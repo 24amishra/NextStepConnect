@@ -1,5 +1,5 @@
 import { db, storage } from "./firebase";
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Sentinel uid used only by src/pages/DevDashboardPreview.tsx (dev-only, import.meta.env.DEV)
@@ -200,6 +200,9 @@ export interface StudentProfile {
   bio?: string; // Strengths, characteristics, about me
   linkedinUrl?: string; // Optional LinkedIn
   openToMatching?: boolean; // Whether student wants to be matched to opportunities
+  matchingCategories?: string[]; // Categories the student is interested in for their next match
+  matchingNote?: string; // Optional note about availability/preferences for the next match
+  matchingRequestedAt?: Date | any; // When the student last asked to be matched
   createdAt: Date | any;
   updatedAt?: Date | any;
 }
@@ -249,6 +252,10 @@ export const getStudentProfile = async (userId: string): Promise<StudentProfile 
 };
 
 export const updateStudentProfile = async (userId: string, profile: Partial<StudentProfile>): Promise<void> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return;
+  }
+
   try {
     await setDoc(doc(db, "students", userId), {
       ...profile,
@@ -267,7 +274,66 @@ export const updateMatchingPreference = async (userId: string, openToMatching: b
   }
 };
 
+/** Student taps "+" to ask NextStep to find them a partnership. */
+export const requestMatching = async (
+  userId: string,
+  categories: string[],
+  note?: string
+): Promise<void> => {
+  await updateStudentProfile(userId, {
+    openToMatching: true,
+    matchingCategories: categories,
+    matchingNote: note || "",
+    matchingRequestedAt: new Date(),
+  });
+};
+
+/** Student is matched or wants to stop being considered for now. */
+export const cancelMatchingRequest = async (userId: string): Promise<void> => {
+  await updateStudentProfile(userId, { openToMatching: false });
+};
+
+/** All students currently asking to be matched — for admin to review and pair. */
+export const getStudentsSeekingMatch = async (): Promise<StudentProfile[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        userId: "dev-student-seeking-1",
+        name: "Marcus Webb",
+        email: "marcus@example.com",
+        skills: ["Video Editing", "Canva", "Copywriting"],
+        desiredRoles: ["Content Creation"],
+        openToMatching: true,
+        matchingCategories: ["Marketing", "Social Media"],
+        matchingNote: "I have about 5 hours a week free this month and would love a marketing-focused project.",
+        matchingRequestedAt: new Date("2026-07-18"),
+        createdAt: new Date("2025-11-01"),
+      },
+      {
+        userId: "dev-student-seeking-2",
+        name: "Priya Nair",
+        email: "priya@example.com",
+        skills: ["Excel", "SQL", "Data Visualization"],
+        desiredRoles: ["Data Analysis"],
+        openToMatching: true,
+        matchingCategories: ["Data Analysis"],
+        matchingRequestedAt: new Date("2026-07-15"),
+        createdAt: new Date("2026-02-14"),
+      },
+    ];
+  }
+
+  const studentsRef = collection(db, "students");
+  const q = query(studentsRef, where("openToMatching", "==", true));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id } as StudentProfile));
+};
+
 export const getAllStudents = async (): Promise<StudentProfile[]> => {
+  if (devPreviewState.active) {
+    return getStudentsSeekingMatch();
+  }
+
   try {
     const studentsRef = collection(db, "students");
     const querySnapshot = await getDocs(studentsRef);
@@ -607,6 +673,93 @@ export const CATEGORIES = [
 export type Category = typeof CATEGORIES[number];
 
 // ============================================
+// COMMUNITY FEED
+// Admin-posted spotlights on what's happening across NextStep right now.
+// ============================================
+export interface Post {
+  id?: string;
+  authorEmail: string;
+  caption: string;
+  businessName?: string;
+  category?: string;
+  likedBy: string[];
+  createdAt: Date | any;
+}
+
+export const createPost = async (
+  post: Omit<Post, "id" | "createdAt" | "likedBy">
+): Promise<string> => {
+  if (devPreviewState.active) {
+    return "dev-post-id";
+  }
+
+  const postsRef = collection(db, "posts");
+  const data: Record<string, any> = {
+    ...post,
+    likedBy: [],
+    createdAt: new Date(),
+  };
+  Object.keys(data).forEach((key) => data[key] === undefined && delete data[key]);
+  const docRef = await addDoc(postsRef, data);
+  return docRef.id;
+};
+
+export const getAllPosts = async (): Promise<Post[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        id: "dev-post-1",
+        authorEmail: "admin@nextstep.com",
+        caption: "A full checkout redesign just kicked off with Blue Sky Coffee Co. — excited to see this one come together!",
+        businessName: "Blue Sky Coffee Co.",
+        category: "Web Design",
+        likedBy: ["dev-preview-uid"],
+        createdAt: new Date("2026-07-15"),
+      },
+      {
+        id: "dev-post-2",
+        authorEmail: "admin@nextstep.com",
+        caption: "Wrapped up a sales dashboard project with Riverside Bike Shop this week. Great work all around!",
+        businessName: "Riverside Bike Shop",
+        category: "Data Analysis",
+        likedBy: [],
+        createdAt: new Date("2026-07-10"),
+      },
+      {
+        id: "dev-post-3",
+        authorEmail: "admin@nextstep.com",
+        caption: "We've got 3 new local businesses ready to partner this month. If you're open to matching, tap the button on your Partnerships page!",
+        likedBy: ["dev-preview-uid", "dev-student-seeking-1"],
+        createdAt: new Date("2026-07-05"),
+      },
+    ];
+  }
+
+  const postsRef = collection(db, "posts");
+  const querySnapshot = await getDocs(postsRef);
+  const posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
+  posts.sort((a, b) => {
+    const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+    const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+    return dateB.getTime() - dateA.getTime();
+  });
+  return posts;
+};
+
+export const toggleLikePost = async (postId: string, userId: string, isLiked: boolean): Promise<void> => {
+  if (devPreviewState.active) return;
+
+  await updateDoc(doc(db, "posts", postId), {
+    likedBy: isLiked ? arrayRemove(userId) : arrayUnion(userId),
+  });
+};
+
+export const deletePost = async (postId: string): Promise<void> => {
+  if (devPreviewState.active) return;
+  await deleteDoc(doc(db, "posts", postId));
+};
+
+// ============================================
 // RATINGS
 // ============================================
 export interface Rating {
@@ -712,6 +865,22 @@ export const getApplicationsForBusiness = async (businessId: string): Promise<Ap
 };
 
 export const getApplicationsForStudent = async (studentId: string): Promise<Application[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        id: "dev-app-past",
+        studentId,
+        studentName: "Karina Chen",
+        studentEmail: "preview@example.com",
+        businessId: "dev-biz-past",
+        businessName: "Riverside Bike Shop",
+        answers: {},
+        appliedAt: new Date("2026-01-10"),
+        status: "completed",
+      },
+    ];
+  }
+
   try {
     const applicationsRef = collection(db, "applications");
     const q = query(applicationsRef, where("studentId", "==", studentId));
@@ -872,6 +1041,9 @@ export const assignStudentToOpportunity = async (
 
     await setDoc(assignmentRef, assignmentData);
     console.log("✅ Student assigned to opportunity successfully");
+
+    // They've been paired — take them off the "seeking match" list.
+    await cancelMatchingRequest(studentId).catch(console.error);
   } catch (error) {
     console.error("❌ Error in assignStudentToOpportunity:", error);
     throw error;
@@ -993,6 +1165,10 @@ export const getOpportunitiesAssignedToStudent = async (studentId: string): Prom
  * Also includes legacy business-level assignments for backward compatibility
  */
 export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignment[]> => {
+  if (devPreviewState.active) {
+    return getStudentPartnershipAssignments(DEV_PREVIEW_UID);
+  }
+
   try {
     console.log("📋 getAllOpportunityAssignments called");
     const assignments: OpportunityAssignment[] = [];
@@ -1161,6 +1337,9 @@ export const assignStudentToBusiness = async (
     } else {
       console.error("❌ WARNING: Assignment document was NOT found after writing!");
     }
+
+    // They've been paired — take them off the "seeking match" list.
+    await cancelMatchingRequest(studentId).catch(console.error);
   } catch (error) {
     console.error("❌ Error in assignStudentToBusiness:", error);
     if (error instanceof Error) {
@@ -1374,6 +1553,10 @@ export interface BusinessWithApprovalStatus extends BusinessData {
 
 // Get all businesses pending approval
 export const getPendingBusinesses = async (): Promise<BusinessWithApprovalStatus[]> => {
+  if (devPreviewState.active) {
+    return [];
+  }
+
   try {
     const businessesRef = collection(db, "businesses");
     const querySnapshot = await getDocs(businessesRef);
@@ -1426,6 +1609,56 @@ export const rejectBusiness = async (userId: string): Promise<void> => {
 
 // Get all approved businesses (for admin use)
 export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        userId: "dev-biz-current",
+        businessId: "dev-biz-current",
+        companyName: "Blue Sky Coffee Co.",
+        location: "Columbus, OH",
+        industry: "Specialty coffee roaster and cafe",
+        contactPersonName: "Jordan Blake",
+        email: "jordan@blueskycoffee.example",
+        phone: "(614) 555-0148",
+        preferredContactMethod: "Email",
+        potentialProblems: "We need a cleaner, faster checkout for our online ordering site.",
+        categories: ["Web Design", "UX Research"],
+        approvalStatus: "approved",
+        createdAt: new Date("2025-09-12"),
+      },
+      {
+        userId: "dev-biz-past",
+        businessId: "dev-biz-past",
+        companyName: "Riverside Bike Shop",
+        location: "Columbus, OH",
+        industry: "Local bike shop",
+        contactPersonName: "Sam Rivera",
+        email: "sam@riversidebikes.example",
+        phone: "(614) 555-0199",
+        preferredContactMethod: "Email",
+        potentialProblems: "We track sales in spreadsheets and want a simple dashboard.",
+        categories: ["Data Analysis"],
+        approvalStatus: "approved",
+        createdAt: new Date("2025-11-02"),
+      },
+      {
+        userId: "dev-biz-4",
+        businessId: "dev-biz-4",
+        companyName: "Corner Deli & Market",
+        location: "Columbus, OH",
+        industry: "Neighborhood deli",
+        contactPersonName: "Sam Rivera",
+        email: "sam@cornerdeli.example",
+        phone: "(614) 555-0122",
+        preferredContactMethod: "Email",
+        potentialProblems: "We don't have a website yet.",
+        categories: ["Web Design"],
+        approvalStatus: "approved",
+        createdAt: new Date("2026-02-20"),
+      },
+    ];
+  }
+
   try {
     const businessesRef = collection(db, "businesses");
     const querySnapshot = await getDocs(businessesRef);
@@ -1508,6 +1741,67 @@ export const uploadContractPdf = async (
  * Used by the student dashboard to display the "Current Partnership" tab.
  */
 export const getStudentPartnershipAssignments = async (studentId: string): Promise<OpportunityAssignment[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        studentId,
+        opportunityId: "dev-opp-current",
+        businessId: "dev-biz-current",
+        business: {
+          businessId: "dev-biz-current",
+          companyName: "Blue Sky Coffee Co.",
+          location: "Columbus, OH",
+          industry: "Specialty coffee roaster and cafe",
+          contactPersonName: "Jordan Blake",
+          email: "jordan@blueskycoffee.example",
+          preferredContactMethod: "Email",
+          potentialProblems: "We need a cleaner, faster checkout for our online ordering site.",
+        },
+        opportunity: {
+          id: "dev-opp-current",
+          businessId: "dev-biz-current",
+          businessName: "Blue Sky Coffee Co.",
+          title: "Redesign online ordering flow",
+          description: "Audit the current checkout flow, propose wireframes, and help implement the redesign.",
+          categories: ["Web Design", "UX Research"],
+          status: "active",
+          createdAt: new Date("2026-06-01"),
+        },
+        assignedAt: new Date("2026-06-20"),
+        assignedBy: "admin",
+        contractPdfUrl: "https://example.com/dev-preview-contract.pdf",
+      },
+      {
+        studentId,
+        opportunityId: "dev-opp-past",
+        businessId: "dev-biz-past",
+        business: {
+          businessId: "dev-biz-past",
+          companyName: "Riverside Bike Shop",
+          location: "Columbus, OH",
+          industry: "Local bike shop",
+          contactPersonName: "Sam Rivera",
+          email: "sam@riversidebikes.example",
+          preferredContactMethod: "Email",
+          potentialProblems: "We track sales in spreadsheets and want a simple dashboard.",
+        },
+        opportunity: {
+          id: "dev-opp-past",
+          businessId: "dev-biz-past",
+          businessName: "Riverside Bike Shop",
+          title: "Basic sales dashboard",
+          description: "Built a lightweight dashboard to visualize monthly sales trends.",
+          categories: ["Data Analysis"],
+          status: "closed",
+          createdAt: new Date("2025-12-01"),
+        },
+        assignedAt: new Date("2026-01-05"),
+        assignedBy: "admin",
+        applicationId: "dev-app-past",
+      },
+    ];
+  }
+
   try {
     const assignments: OpportunityAssignment[] = [];
 

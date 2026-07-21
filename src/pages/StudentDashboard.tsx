@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Award, TrendingUp, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText, Handshake, Building2, MapPin, ArrowLeft, ChevronDown } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { LogOut, User, Mail, Briefcase, Sparkles, Loader2, Award, Edit2, Save, X, Plus, Link2, HelpCircle, Send, Handshake, ArrowLeft, ChevronDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,24 +18,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import JobPostingsList from "@/components/JobPostingsList";
-import { getStudentProfile, updateStudentProfile, updateMatchingPreference, getStudentPartnershipAssignments, OpportunityAssignment } from "@/lib/firestore";
+import { getStudentProfile, updateStudentProfile } from "@/lib/firestore";
 import { sendContactMessage } from "@/lib/emailNotifications";
 import logo from "@/assets/images/NextStepLogo.png";
 
 import Disclaimer from "@/components/Disclaimer";
-import MatchedOpportunities from "@/components/MatchedOpportunities";
-import MyApplications from "@/components/MyApplications";
-import CurrentProjects from "@/components/CurrentProjects";
+import MyPartnerships from "@/components/MyPartnerships";
+import CommunityFeed from "@/components/CommunityFeed";
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [openToMatching, setOpenToMatching] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [updatingPreference, setUpdatingPreference] = useState(false);
-  const [activeSection, setActiveSection] = useState<"opportunities" | "applications" | "profile" | "matching" | "questions" | "partnership">("opportunities");
+  const [activeSection, setActiveSection] = useState<"feed" | "partnerships" | "profile" | "questions">("feed");
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -62,8 +57,6 @@ const StudentDashboard = () => {
     message: "",
   });
   const [sendingQuestion, setSendingQuestion] = useState(false);
-  const [partnershipAssignments, setPartnershipAssignments] = useState<OpportunityAssignment[]>([]);
-  const [loadingPartnerships, setLoadingPartnerships] = useState(false);
   const studentInitials = (studentProfile?.name || currentUser?.email || "S")
     .split(" ")
     .map((part: string) => part[0])
@@ -81,7 +74,6 @@ const StudentDashboard = () => {
           const profile = await getStudentProfile(currentUser.uid);
           if (profile) {
             setStudentProfile(profile);
-            setOpenToMatching(profile.openToMatching || false);
             // Initialize form data
             setFormData({
               name: profile.name || "",
@@ -108,43 +100,11 @@ const StudentDashboard = () => {
     loadProfile();
   }, [currentUser?.uid, currentUser?.email]);
 
-  // Load partnership assignments on mount and when tab is active
-  useEffect(() => {
-    const loadPartnerships = async () => {
-      if (currentUser?.uid) {
-        try {
-          setLoadingPartnerships(true);
-          const assignments = await getStudentPartnershipAssignments(currentUser.uid);
-          setPartnershipAssignments(assignments);
-        } catch (error) {
-          console.error("Error loading partnerships:", error);
-        } finally {
-          setLoadingPartnerships(false);
-        }
-      }
-    };
-
-    loadPartnerships();
-  }, [currentUser?.uid]);
-
   const handleLogout = async () => {
     try {
       await logout();
       navigate("/");
     } catch (err) {
-    }
-  };
-
-  const handleMatchingToggle = async (checked: boolean) => {
-    if (!currentUser?.uid) return;
-
-    try {
-      setUpdatingPreference(true);
-      await updateMatchingPreference(currentUser.uid, checked);
-      setOpenToMatching(checked);
-    } catch (error) {
-    } finally {
-      setUpdatingPreference(false);
     }
   };
 
@@ -297,7 +257,7 @@ const StudentDashboard = () => {
       <header className="bg-nextstep-brick sticky top-0 z-50 shadow-warm-md">
         <div className="container py-4 flex items-center justify-between">
           <button
-            onClick={() => setActiveSection("opportunities")}
+            onClick={() => setActiveSection("feed")}
             className="flex items-center gap-3"
           >
             <img src={logo} alt="NextStep Logo" className="h-8 w-auto" />
@@ -320,13 +280,13 @@ const StudentDashboard = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setActiveSection("applications")}>
-                <FileText className="h-4 w-4 mr-2" />
-                My Interests
+              <DropdownMenuItem onClick={() => setActiveSection("feed")}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Community Feed
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveSection("partnership")}>
+              <DropdownMenuItem onClick={() => setActiveSection("partnerships")}>
                 <Handshake className="h-4 w-4 mr-2" />
-                Current Partnership
+                My Partnerships
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActiveSection("questions")}>
                 <HelpCircle className="h-4 w-4 mr-2" />
@@ -354,7 +314,7 @@ const StudentDashboard = () => {
 
             {activeSection === "profile" && (
               <button
-                onClick={() => setActiveSection("opportunities")}
+                onClick={() => setActiveSection("feed")}
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -362,249 +322,22 @@ const StudentDashboard = () => {
               </button>
             )}
 
-            {/* Opportunities Section */}
-            {activeSection === "opportunities" && (
-              <div className="space-y-6">
-                {/* Current Projects - Show accepted applications at the very top */}
-                {currentUser?.uid && <CurrentProjects studentId={currentUser.uid} />}
-
-                {/* Matched Opportunities - Show at top if student is assigned to businesses */}
-
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Available Opportunities</h2>
-                  <p className="text-muted-foreground">
-                    Browse and express interest in projects from local businesses
-                  </p>
-                </div>
-                <JobPostingsList />
-              </div>
+            {/* Community Feed Section */}
+            {activeSection === "feed" && currentUser?.uid && (
+              <CommunityFeed studentId={currentUser.uid} />
             )}
 
-            {/* Applications Section */}
-            {activeSection === "applications" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">My Interests</h2>
-                  <p className="text-muted-foreground">
-                    Track your expressed interests
-                  </p>
-                </div>
-                {currentUser?.uid && <MyApplications studentId={currentUser.uid} />}
-              </div>
+            {/* My Partnerships Section */}
+            {activeSection === "partnerships" && currentUser?.uid && (
+              <MyPartnerships
+                studentId={currentUser.uid}
+                studentProfile={studentProfile}
+                onProfileUpdate={(updates) =>
+                  setStudentProfile((prev: any) => ({ ...(prev || {}), ...updates }))
+                }
+              />
             )}
 
-            {/* Current Partnership Section */}
-            {activeSection === "partnership" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Current Partnership</h2>
-                  <p className="text-muted-foreground">
-                    View your active partnership details and contract
-                  </p>
-                </div>
-
-                {loadingPartnerships ? (
-                  <Card className="border-0 shadow-warm-md bg-card">
-                    <CardContent className="py-12">
-                      <div className="flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : partnershipAssignments.length === 0 ? (
-                  <Card className="border-0 shadow-warm-md bg-card">
-                    <CardContent className="py-12 text-center">
-                      <Handshake className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium text-foreground">No active partnerships</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        When you're matched with a business, your partnership details will appear here.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  partnershipAssignments.map((assignment) => (
-                    <Card key={`${assignment.opportunityId}-${assignment.studentId}`} className="border-0 shadow-warm-md bg-card">
-                      <CardHeader className="border-b border-border/50">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                              <Building2 className="h-5 w-5 text-primary" />
-                              {assignment.business?.companyName || "Business Partner"}
-                            </CardTitle>
-                            <CardDescription className="mt-1">
-                              {assignment.opportunity?.title || "General Partnership"}
-                            </CardDescription>
-                          </div>
-                          <Badge className="bg-green-600 hover:bg-green-700 text-white">
-                            Active
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-6 space-y-6">
-                        {/* Partnership Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {assignment.business?.location && (
-                            <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground">Location</p>
-                              <p className="text-sm font-semibold flex items-center gap-1">
-                                <MapPin className="h-3 w-3 text-primary" />
-                                {assignment.business.location}
-                              </p>
-                            </div>
-                          )}
-                          {assignment.business?.industry && (
-                            <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground">Industry</p>
-                              <p className="text-sm font-semibold">{assignment.business.industry}</p>
-                            </div>
-                          )}
-                          {(assignment.opportunity?.description || assignment.business?.potentialProblems) && (
-                            <div className="space-y-1 md:col-span-2">
-                              <p className="text-xs text-muted-foreground">Project Description</p>
-                              <p className="text-sm text-foreground bg-muted/30 p-3 rounded-lg">
-                                {assignment.opportunity?.description || assignment.business?.potentialProblems}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Contract PDF Viewer */}
-                        {assignment.contractPdfUrl ? (
-                          <>
-                            <Separator />
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-primary" />
-                                <h3 className="font-semibold text-foreground">Partnership Contract</h3>
-                              </div>
-                              <div className="border rounded-lg overflow-hidden bg-muted/20">
-                                <iframe
-                                  src={assignment.contractPdfUrl}
-                                  className="w-full"
-                                  style={{ height: "600px" }}
-                                  title="Partnership Contract"
-                                />
-                              </div>
-                              <a
-                                href={assignment.contractPdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                              >
-                                <FileText className="h-4 w-4" />
-                                Open PDF in new tab
-                              </a>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Separator />
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                              No contract document has been uploaded yet. Check back soon.
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Smart Matching Section */}
-            {activeSection === "matching" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Smart Matching</h2>
-                  <p className="text-muted-foreground">
-                  Not finding the perfect match? Enable Smart Matching to allow us to find the opportunities for you without lifting a finger.                  </p>
-                </div>
-
-                {/* Matching Preference Card */}
-                <Card className="border-0 shadow-warm-md bg-card">
-                  <CardHeader className="border-b border-border/50">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-2xl">Matching Preference</CardTitle>
-                        <CardDescription className="text-base">
-                        What we need from you:
-                          </CardDescription>
-                          
-                          </div>
-                      {loadingProfile ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <Switch
-                            id="matching-preference"
-                            checked={openToMatching}
-                            onCheckedChange={handleMatchingToggle}
-                            disabled={updatingPreference}
-                          />
-                          <Label
-                            htmlFor="matching-preference"
-                            className={`text-sm font-semibold cursor-pointer ${
-                              openToMatching ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          >
-                            {openToMatching ? "Enabled" : "Disabled"}
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6 space-y-6">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Updated Profile</p>
-                          <p className="text-sm text-muted-foreground">
-                          Keep your profile updated to receive the best opportunity matches. Your profile is what businesses use to find the best fit for their projects.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Target className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Sit tight</p>
-                          <p className="text-sm text-muted-foreground">
-                          We network with local businesses and find tailored matches for you.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Get to work</p>
-                          <p className="text-sm text-muted-foreground">
-                       We'll notify you if we find a match that you might be interested in. Make sure to check your email for updates once we match you.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {openToMatching && (
-                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                          <p className="text-sm font-semibold text-primary">Smart Matching Active</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Keep your profile updated to receive the best opportunity matches. We'll notify you when businesses are looking for someone with your skillset.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
 
             {/* Profile Section */}
             {activeSection === "profile" && (

@@ -20,7 +20,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import StudentForgotPassword from "./pages/StudentForgotPassword";
 import BusinessForgotPassword from "./pages/BusinessForgotPassword";
 import SignupChoice from "./pages/SignupChoice";
-import { DevStudentDashboardPreview, DevBusinessDashboardPreview } from "./pages/DevDashboardPreview";
+import { DevStudentDashboardPreview, DevBusinessDashboardPreview, DevAdminDashboardPreview } from "./pages/DevDashboardPreview";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +70,7 @@ const App = () => (
               <>
                 <Route path="/dev/student-dashboard" element={<DevStudentDashboardPreview />} />
                 <Route path="/dev/business-dashboard" element={<DevBusinessDashboardPreview />} />
+                <Route path="/dev/admin-dashboard" element={<DevAdminDashboardPreview />} />
               </>
             )}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

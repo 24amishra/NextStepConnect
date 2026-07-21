@@ -3,6 +3,7 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { devPreviewState } from "@/lib/firestore";
 import StudentDashboard from "./StudentDashboard";
 import BusinessDashboard from "./BusinessDashboard";
+import AdminDashboard from "./AdminDashboard";
 
 /**
  * Dev-only: renders the logged-in dashboards with a fake session so they can be
@@ -39,6 +40,15 @@ export const DevBusinessDashboardPreview = () => {
   return (
     <AuthContext.Provider value={mockAuthValue}>
       <BusinessDashboard />
+    </AuthContext.Provider>
+  );
+};
+
+export const DevAdminDashboardPreview = () => {
+  devPreviewState.active = true;
+  return (
+    <AuthContext.Provider value={mockAuthValue}>
+      <AdminDashboard />
     </AuthContext.Provider>
   );
 };
