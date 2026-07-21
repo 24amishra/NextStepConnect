@@ -290,7 +290,7 @@ const BusinessLogin = () => {
         </CardContent>
         <CardFooter className="flex flex-col space-y-3 px-8 pb-8">
           <div className="text-sm text-center text-muted-foreground">
-            Already Have An Account?{" "}
+            Don't Have An Account?{" "}
             <Link to="/business/signup" className="text-primary font-semibold hover:text-primary-hover transition-colors">
               Sign Up
             </Link>

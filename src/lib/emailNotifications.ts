@@ -1,25 +1,113 @@
 /**
  * Email Notification Service
  *
- * This module provides email notification functionality for the approval workflow.
+ * Uses EmailJS for client-side email sending.
+ * Configure your EmailJS account at https://www.emailjs.com/
  *
- * IMPORTANT: To use these functions in production, you need to set up one of the following:
- *
- * Option 1: Firebase Cloud Functions (Recommended)
- * - Create a Firebase Cloud Function that sends emails using a service like SendGrid, Mailgun, or AWS SES
- * - Call the function from the client using Firebase callable functions
- * - See: https://firebase.google.com/docs/functions/callable
- *
- * Option 2: Backend API
- * - Set up a backend API endpoint that sends emails
- * - Call the endpoint from these functions
- *
- * Option 3: Third-party service (e.g., EmailJS)
- * - Use a client-side email service (note: less secure as API keys are exposed)
- * - See: https://www.emailjs.com/
- *
- * For now, these are placeholder functions that log to console.
+ * Required env vars:
+ *   VITE_EMAILJS_SERVICE_ID
+ *   VITE_EMAILJS_WELCOME_TEMPLATE_ID
+ *   VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID
+ *   VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID
+ *   VITE_EMAILJS_CONTACT_TEMPLATE_ID
+ *   VITE_EMAILJS_PUBLIC_KEY
  */
+
+import emailjs from "@emailjs/browser";
+
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID;
+const EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID;
+const EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID;
+const EMAILJS_STUDENT_MATCHED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_STUDENT_MATCHED_TEMPLATE_ID;
+const EMAILJS_CONTACT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+export interface WelcomeEmailData {
+  to_email: string;
+  to_name: string;
+}
+
+/**
+ * Send welcome email to a student after signup via EmailJS.
+ */
+export const sendWelcomeEmail = async (data: WelcomeEmailData): Promise<void> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_WELCOME_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS is not configured. Skipping welcome email.");
+    return;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_WELCOME_TEMPLATE_ID,
+    {
+      to_email: data.to_email,
+      to_name: data.to_name,
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
+};
+
+export interface BusinessWelcomeEmailData {
+  to_email: string;
+  to_name: string;
+  company_name: string;
+}
+
+/**
+ * Send welcome email to a business after signup.
+ * Tells them their account is pending approval.
+ */
+export const sendBusinessWelcomeEmail = async (data: BusinessWelcomeEmailData): Promise<void> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS is not configured. Skipping business welcome email.");
+    return;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID,
+    {
+      to_email: data.to_email,
+      to_name: data.to_name,
+      company_name: data.company_name,
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
+};
+
+export interface ContactMessageData {
+  fromName: string;
+  fromEmail: string;
+  subject: string;
+  message: string;
+}
+
+/**
+ * Send a "Contact support" message (from the dashboard Questions form) to the
+ * NextStep team inbox. Returns false without throwing if EmailJS isn't
+ * configured yet, so callers can tell "not set up" apart from "network error".
+ */
+export const sendContactMessage = async (data: ContactMessageData): Promise<boolean> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_CONTACT_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS contact template is not configured. Skipping contact message.");
+    return false;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_CONTACT_TEMPLATE_ID,
+    {
+      from_name: data.fromName,
+      from_email: data.fromEmail,
+      subject: data.subject,
+      message: data.message,
+      to_email: "nextstep.connects@gmail.com",
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
+  return true;
+};
 
 export interface ApprovalEmailData {
   businessName: string;
@@ -28,53 +116,26 @@ export interface ApprovalEmailData {
 }
 
 /**
- * Send approval notification email
- * @param data Business information for the email
+ * Send approval notification email to a business via EmailJS.
+ * Includes a link to the business login page.
  */
 export const sendApprovalEmail = async (data: ApprovalEmailData): Promise<void> => {
-  try {
-    console.log("===== APPROVAL EMAIL =====");
-    console.log("To:", data.contactEmail);
-    console.log("Subject: Your NextStep Business Account Has Been Approved!");
-    console.log("Body:");
-    console.log(`
-Dear ${data.contactPersonName},
-
-Great news! Your business account for ${data.businessName} has been approved.
-
-You now have full access to:
-- View student profiles and applications
-- Post project opportunities
-- Connect with talented students
-
-Login to your dashboard to get started:
-${window.location.origin}/business/login
-
-Welcome to NextStep!
-
-Best regards,
-The NextStep Team
-    `);
-    console.log("========================");
-
-    // TODO: Replace with actual email sending logic
-    // Example with Firebase Cloud Functions:
-    /*
-    const functions = getFunctions();
-    const sendEmail = httpsCallable(functions, 'sendApprovalEmail');
-    await sendEmail({
-      to: data.contactEmail,
-      businessName: data.businessName,
-      contactPersonName: data.contactPersonName,
-    });
-    */
-
-    // For now, just simulate a delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-  } catch (error) {
-    console.error("Error sending approval email:", error);
-    throw error;
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS is not configured. Skipping approval email.");
+    return;
   }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID,
+    {
+      to_email: data.contactEmail,
+      to_name: data.contactPersonName,
+      company_name: data.businessName,
+      login_url: `${window.location.origin}/business/login`,
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
 };
 
 /**
@@ -107,24 +168,57 @@ The NextStep Team
     `);
     console.log("==========================");
 
-    // TODO: Replace with actual email sending logic
-    // Example with Firebase Cloud Functions:
-    /*
-    const functions = getFunctions();
-    const sendEmail = httpsCallable(functions, 'sendRejectionEmail');
-    await sendEmail({
-      to: data.contactEmail,
-      businessName: data.businessName,
-      contactPersonName: data.contactPersonName,
-    });
-    */
-
-    // For now, just simulate a delay
+    // TODO: Replace with actual EmailJS template when needed
     await new Promise(resolve => setTimeout(resolve, 500));
   } catch (error) {
     console.error("Error sending rejection email:", error);
     throw error;
   }
+};
+
+export interface MatchEmailData {
+  studentEmail: string;
+  studentName: string;
+  companyName: string;
+}
+
+/**
+ * Notify a student that they've been matched to a business/opportunity.
+ */
+export const sendMatchEmail = async (data: MatchEmailData): Promise<void> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_STUDENT_MATCHED_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS student-matched template is not configured. Logging email instead.");
+    console.log("===== STUDENT MATCH EMAIL =====");
+    console.log(`To: ${data.studentEmail}`);
+    console.log(`Subject: You've Been Matched!`);
+    console.log(`
+Dear ${data.studentName},
+
+You've been matched! We're excited to let you know that you have been matched to a business!
+
+The opportunity will be with ${data.companyName}.
+
+Check out your dashboard for more info:
+${window.location.origin}/student/dashboard
+
+Best regards,
+The NextStep Team
+    `);
+    console.log("===============================");
+    return;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_STUDENT_MATCHED_TEMPLATE_ID,
+    {
+      to_email: data.studentEmail,
+      to_name: data.studentName,
+      company_name: data.companyName,
+      dashboard_url: `${window.location.origin}/student/dashboard`,
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
 };
 
 /**
@@ -151,9 +245,7 @@ NextStep Admin System
     `);
     console.log("==============================");
 
-    // TODO: Replace with actual email sending logic
-
-    // For now, just simulate a delay
+    // TODO: Replace with actual EmailJS template when needed
     await new Promise(resolve => setTimeout(resolve, 500));
   } catch (error) {
     console.error("Error sending admin notification:", error);

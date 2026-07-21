@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getBusinessData, updateBusinessData, BusinessData, getBadgeStatus, BadgeStatus, Application, acceptApplication, rejectApplication } from "@/lib/firestore";
+import { getBusinessData, updateBusinessData, BusinessData, getBadgeStatus, BadgeStatus } from "@/lib/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,16 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import CategorySelector from "@/components/CategorySelector";
 import Disclaimer from "@/components/Disclaimer";
 import AssignedStudents from "@/components/AssignedStudents";
 import MyOpportunities from "@/components/MyOpportunities";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { toast as sonnerToast } from "sonner";
 import {
   Loader2,
   LogOut,
@@ -34,18 +29,23 @@ import {
   Edit2,
   Save,
   X,
-  FileText,
   Award,
   Tags,
   Users,
   Menu,
   ChevronLeft,
-  ThumbsUp,
-  ExternalLink,
-  Clock
+  Calendar,
+  Trophy,
+  Handshake,
 } from "lucide-react";
 
 type ActiveSection = "profile" | "opportunities" | "students";
+
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms)),
+  ]);
 
 const BusinessDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
@@ -60,8 +60,13 @@ const BusinessDashboard = () => {
   const [badgeStatus, setBadgeStatus] = useState<BadgeStatus>({ completedProjects: 0, badge: "none" });
   const [activeSection, setActiveSection] = useState<ActiveSection>("profile");
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loadingApplications, setLoadingApplications] = useState(false);
+  const businessInitials = (businessData?.companyName || currentUser?.email || "B")
+    .split(" ")
+    .map((part: string) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -90,7 +95,7 @@ const BusinessDashboard = () => {
       try {
         setLoading(true);
         setError("");
-        const data = await getBusinessData(currentUser.uid);
+        const data = await withTimeout(getBusinessData(currentUser.uid), 8000);
         setBusinessData(data);
         setFetchedUserId(currentUser.uid);
         if (data) {
@@ -122,84 +127,6 @@ const BusinessDashboard = () => {
 
     fetchBusinessData();
   }, [currentUser?.uid, authLoading, fetchedUserId, navigate]);
-
-  // Fetch applications
-  useEffect(() => {
-    const fetchApplications = async () => {
-      if (!currentUser?.uid) return;
-
-      try {
-        setLoadingApplications(true);
-        const applicationsRef = collection(db, "applications");
-        const q = query(applicationsRef, where("businessId", "==", currentUser.uid));
-        const querySnapshot = await getDocs(q);
-
-        const apps: Application[] = [];
-        querySnapshot.forEach((doc) => {
-          apps.push({
-            id: doc.id,
-            ...doc.data(),
-          } as Application);
-        });
-
-        // Sort by applied date (newest first)
-        apps.sort((a, b) => {
-          const dateA = a.appliedAt?.toDate ? a.appliedAt.toDate() : new Date(a.appliedAt);
-          const dateB = b.appliedAt?.toDate ? b.appliedAt.toDate() : new Date(b.appliedAt);
-          return dateB.getTime() - dateA.getTime();
-        });
-
-        setApplications(apps);
-      } catch (error) {
-        console.error("Error fetching applications:", error);
-      } finally {
-        setLoadingApplications(false);
-      }
-    };
-
-    fetchApplications();
-  }, [currentUser?.uid]);
-
-  const handleAcceptApplication = async (application: Application) => {
-    if (!application.id) return;
-
-    try {
-      await acceptApplication(application.id);
-      sonnerToast.success("Application accepted! Student will appear in Assigned Students.");
-
-      // Refresh applications
-      setApplications((prev) =>
-        prev.map((app) =>
-          app.id === application.id ? { ...app, status: "accepted" } : app
-        )
-      );
-    } catch (error) {
-      console.error("Error accepting application:", error);
-      sonnerToast.error("Failed to accept application");
-    }
-  };
-
-  const handleRejectApplication = async (application: Application) => {
-    if (!application.id) return;
-
-    if (!confirm("Are you sure you want to reject this application?")) {
-      return;
-    }
-
-    try {
-      await rejectApplication(application.id);
-      sonnerToast.success("Application rejected");
-
-      // Refresh applications
-      setApplications((prev) =>
-        prev.map((app) =>
-          app.id === application.id ? { ...app, status: "rejected" } : app
-        )
-      );
-    } catch (error) {
-      sonnerToast.error("Failed to reject application");
-    }
-  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -295,142 +222,6 @@ const BusinessDashboard = () => {
             <h1 className="text-xl font-bold text-white">Business Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
-            {/* Applications Popover */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10 hidden md:flex relative"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Applications
-                  {applications.filter(app => !app.status || app.status === "pending").length > 0 && (
-                    <Badge className="ml-2 bg-red-500 hover:bg-red-600 h-5 min-w-5 px-1.5 text-xs">
-                      {applications.filter(app => !app.status || app.status === "pending").length}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0" align="end">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                  <div>
-                    <h3 className="font-semibold text-sm">Applications</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {applications.filter(app => !app.status || app.status === "pending").length} pending
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate("/business/applications")}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    View All
-                  </Button>
-                </div>
-
-                <ScrollArea className="h-[400px]">
-                  {loadingApplications ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : applications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                      <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                      <p className="text-sm font-medium text-foreground">No applications yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Applications will appear here when students apply
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {applications.slice(0, 10).map((application) => (
-                        <div key={application.id} className="p-4 hover:bg-muted/50 transition-colors">
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-primary flex-shrink-0" />
-                                  <span className="font-medium text-sm truncate">
-                                    {application.studentName || "Student"}
-                                  </span>
-                                </div>
-                                {application.opportunityTitle && (
-                                  <p className="text-xs text-muted-foreground mt-1 truncate">
-                                    For: {application.opportunityTitle}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                  <Clock className="h-3 w-3" />
-                                  {application.appliedAt?.toDate
-                                    ? new Date(application.appliedAt.toDate()).toLocaleDateString()
-                                    : new Date(application.appliedAt).toLocaleDateString()}
-                                </div>
-                              </div>
-                              <div className="flex-shrink-0">
-                                {(application as any).status === "accepted" && (
-                                  <Badge variant="secondary" className="bg-green-600/10 text-green-700 text-xs">
-                                    Accepted
-                                  </Badge>
-                                )}
-                                {(application as any).status === "rejected" && (
-                                  <Badge variant="secondary" className="bg-destructive/10 text-destructive text-xs">
-                                    Rejected
-                                  </Badge>
-                                )}
-                                {(!((application as any).status) || (application as any).status === "pending") && (
-                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 text-xs">
-                                    Pending
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Quick Actions for pending applications */}
-                            {(!((application as any).status) || (application as any).status === "pending") && (
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleRejectApplication(application)}
-                                  className="flex-1 h-7 text-xs border-destructive/20 text-destructive hover:bg-destructive/10"
-                                >
-                                  <X className="h-3 w-3 mr-1" />
-                                  Reject
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleAcceptApplication(application)}
-                                  className="flex-1 h-7 text-xs bg-green-600 hover:bg-green-700"
-                                >
-                                  <ThumbsUp className="h-3 w-3 mr-1" />
-                                  Accept
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-
-                {applications.length > 10 && (
-                  <div className="p-3 border-t border-border text-center">
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => navigate("/business/applications")}
-                      className="text-xs"
-                    >
-                      View all {applications.length} applications
-                    </Button>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
-
             <span className="text-sm text-white/70 hidden md:inline">{currentUser?.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/10">
               <LogOut className="h-4 w-4 mr-2" />
@@ -585,12 +376,43 @@ const BusinessDashboard = () => {
                 {/* Profile Section */}
                 {activeSection === "profile" && (
                   <div className="space-y-6">
-                    <div>
-                      <h2 className="text-3xl font-bold font-heading mb-2">Company Profile</h2>
-                      <p className="text-muted-foreground">
-                        Manage your business information and details
-                      </p>
-                    </div>
+                    {/* Profile header */}
+                    <Card className="border-0 shadow-warm-md bg-card overflow-hidden">
+                      <div className="h-16 sm:h-20 bg-gradient-to-r from-primary to-nextstep-ember" />
+                      <CardContent className="pt-4 sm:pt-5 pb-5 sm:pb-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 -mt-8 sm:-mt-10 rounded-full bg-primary text-primary-foreground border-4 border-card flex items-center justify-center text-xl sm:text-2xl font-bold font-heading flex-shrink-0">
+                              {businessInitials}
+                            </div>
+                            <div>
+                              <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">
+                                {businessData.companyName}
+                              </h2>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1.5">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {businessData.location}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                  <Mail className="h-3.5 w-3.5" />
+                                  {businessData.email}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {!isEditing && (
+                            <Button variant="outline" size="sm" onClick={handleEdit} className="flex-shrink-0">
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Edit Profile
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="grid lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 space-y-6">
 
                     <Card className="border-0 shadow-warm-md bg-card">
                       <CardHeader className="border-b border-border/50">
@@ -598,16 +420,11 @@ const BusinessDashboard = () => {
                           <div>
                             <CardTitle className="flex items-center gap-2 text-foreground">
                               <Building2 className="h-5 w-5 text-primary" />
-                              Company Information
+                              About
                             </CardTitle>
                             <CardDescription className="mt-1">Your business profile details</CardDescription>
                           </div>
-                          {!isEditing ? (
-                            <Button variant="outline" size="sm" onClick={handleEdit}>
-                              <Edit2 className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                          ) : (
+                          {isEditing && (
                             <div className="flex gap-2">
                               <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                                 <X className="h-4 w-4 mr-2" />
@@ -977,21 +794,62 @@ const BusinessDashboard = () => {
                 )}
               </CardContent>
                     </Card>
+                      </div>
 
-                    {businessData.createdAt && (
-                      <Card className="border-0 shadow-warm-md bg-card">
-                        <CardHeader>
-                          <CardTitle>Account Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground">
-                            Profile created: {businessData.createdAt?.toDate
-                              ? new Date(businessData.createdAt.toDate()).toLocaleDateString()
-                              : new Date(businessData.createdAt).toLocaleDateString()}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                      {/* Sidebar: partner status */}
+                      <div className="space-y-6">
+                        <Card className="border-0 shadow-warm-md bg-card">
+                          <CardContent className="pt-6 text-center">
+                            {badgeStatus.badge === "frequent" ? (
+                              <>
+                                <Trophy className="h-10 w-10 text-primary mx-auto mb-2" />
+                                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+                                  Frequent Partner
+                                </Badge>
+                              </>
+                            ) : badgeStatus.badge === "returning" ? (
+                              <>
+                                <Handshake className="h-10 w-10 text-primary mx-auto mb-2" />
+                                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
+                                  Returning Partner
+                                </Badge>
+                              </>
+                            ) : (
+                              <>
+                                <Handshake className="h-10 w-10 text-muted-foreground/40 mx-auto mb-2" />
+                                <Badge variant="secondary">New Partner</Badge>
+                              </>
+                            )}
+                            <div className="text-3xl font-bold font-heading text-foreground mt-4">
+                              {badgeStatus.completedProjects}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {badgeStatus.completedProjects === 1 ? "Completed project" : "Completed projects"}
+                            </p>
+                          </CardContent>
+                          {businessData.createdAt && (
+                            <>
+                              <Separator />
+                              <CardContent className="pt-5">
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  Member since{" "}
+                                  {businessData.createdAt?.toDate
+                                    ? new Date(businessData.createdAt.toDate()).toLocaleDateString(undefined, {
+                                        month: "long",
+                                        year: "numeric",
+                                      })
+                                    : new Date(businessData.createdAt).toLocaleDateString(undefined, {
+                                        month: "long",
+                                        year: "numeric",
+                                      })}
+                                </div>
+                              </CardContent>
+                            </>
+                          )}
+                        </Card>
+                      </div>
+                    </div>
                   </div>
                 )}
 

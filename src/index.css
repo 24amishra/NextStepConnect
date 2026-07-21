@@ -2,42 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Arimo:wght@400;500;600;700&display=swap');
 
 /* NextStep Design System - Warm, Inviting, Education-Focused */
 
 @layer base {
   :root {
-    /* NextStep Brand Colors - Exact RGB Values */
-    /* Soft Ember - RGB(215, 100, 90) - Hover states */
+    /* NextStep Brand Colors */
+    /* Soft Ember - Hover states */
     --nextstep-ember: 4 59% 60%;
 
-    /* NextStep Red - RGB(190, 60, 50) - Main brand color */
+    /* NextStep Red - Main brand color */
     --nextstep-red: 5 58% 47%;
 
-    /* Brick Shadow - RGB(140, 45, 35) - Pressed states, dark accents */
+    /* Brick Shadow - Pressed states, dark accents */
     --nextstep-brick: 6 60% 34%;
 
-    /* Muted Clay - RGB(240, 235, 225) - Card backgrounds */
-    --nextstep-clay: 40 43% 91%;
+    /* White + Red Theme */
+    --nextstep-clay: 0 0% 100%;
+    --nextstep-offwhite: 0 0% 100%;
 
-    /* Off-White - RGB(228, 222, 212) - Page background */
-    --nextstep-offwhite: 40 27% 86%;
-
-    /* Core Colors - Clean, Minimal, Warm */
+    /* Core Colors - White + Red */
     --background: var(--nextstep-offwhite);
-    --foreground: 20 10% 15%;
+    --foreground: 0 0% 10%;
 
-    /* Cards use Muted Clay - no harsh white */
+    /* Cards use pure white */
     --card: var(--nextstep-clay);
-    --card-foreground: 20 10% 15%;
+    --card-foreground: 0 0% 10%;
 
     --popover: var(--nextstep-clay);
-    --popover-foreground: 20 10% 15%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Primary - NextStep Red (sparingly used) */
+    /* Primary - NextStep Red */
     --primary: var(--nextstep-red);
-    --primary-foreground: var(--nextstep-offwhite);
+    --primary-foreground: 0 0% 100%;
 
     /* Hover state - Soft Ember */
     --primary-hover: var(--nextstep-ember);
@@ -45,36 +42,36 @@
     /* Pressed state - Brick Shadow */
     --primary-pressed: var(--nextstep-brick);
 
-    /* Secondary buttons - Muted Clay with Brick Shadow text */
-    --secondary: var(--nextstep-clay);
+    /* Secondary buttons */
+    --secondary: 0 0% 95%;
     --secondary-foreground: var(--nextstep-brick);
 
     /* Muted states */
-    --muted: 40 20% 88%;
-    --muted-foreground: 20 8% 40%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
 
     --accent: var(--nextstep-ember);
-    --accent-foreground: var(--nextstep-offwhite);
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: var(--nextstep-offwhite);
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 85%;
-    --input: var(--nextstep-clay);
+    --border: 0 0% 90%;
+    --input: 0 0% 100%;
     --ring: var(--nextstep-red);
 
-    /* Generous radius for friendly, approachable feel */
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* Typography */
-    --font-heading: 'Sora', sans-serif;
-    --font-body: 'Inter', 'DM Sans', sans-serif;
+    /* Typography - Plus Jakarta Sans headings, Fustat body, DM Mono labels */
+    --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-body: 'Fustat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'DM Mono', ui-monospace, monospace;
 
-    /* Warm-toned shadows using Brick Shadow */
-    --shadow-sm: 0 1px 2px 0 rgba(140, 45, 35, 0.04);
-    --shadow-md: 0 4px 8px -2px rgba(140, 45, 35, 0.08);
-    --shadow-lg: 0 12px 24px -4px rgba(140, 45, 35, 0.12);
-    --shadow-warm: 0 8px 20px -4px rgba(140, 45, 35, 0.15);
+    /* Subtle red-tinted shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+    --shadow-warm: 0 8px 20px -4px rgba(190, 60, 50, 0.1);
   }
 }
 
@@ -94,7 +91,7 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     color: hsl(var(--foreground));
-    font-weight: 600;
+    font-weight: 500;
   }
 }
 
@@ -112,20 +109,45 @@
     @apply absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60;
   }
 
-  /* Card styles - Muted Clay background, generous rounding */
   .warm-card {
-    @apply bg-card rounded-2xl shadow-warm border-0;
+    @apply bg-card rounded-lg border-0;
   }
 
-  /* Primary button - NextStep Red, generous padding */
   .btn-primary {
-    @apply bg-primary text-primary-foreground rounded-2xl px-8 py-4 font-semibold shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-pressed))] transition-all duration-200;
+    @apply bg-primary text-primary-foreground rounded-lg px-8 py-4 font-medium hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-pressed))] transition-colors duration-200;
   }
 
-  /* Secondary button - Muted Clay with Brick Shadow text */
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground rounded-2xl px-8 py-4 font-semibold shadow-sm hover:shadow-md transition-all duration-200;
+    @apply bg-secondary text-secondary-foreground rounded-lg px-8 py-4 font-medium hover:bg-muted transition-colors duration-200;
   }
+
+  /* mem0-style uppercase mono eyebrow label above section headings */
+  .eyebrow {
+    @apply font-mono text-xs font-medium uppercase tracking-[0.2em] text-primary;
+  }
+
+  /* Flat bordered card — structure via 1px borders, no shadows */
+  .flat-card {
+    @apply bg-card border border-border rounded-md p-6 sm:p-7;
+  }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink-cursor {
+  animation: blink-cursor 0.75s step-end infinite;
 }
 
 @layer utilities {

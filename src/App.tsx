@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BusinessProtectedRoute } from "@/components/BusinessProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { Analytics } from "@vercel/analytics/react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -16,9 +17,12 @@ import StudentSignup from "./pages/StudentSignup";
 import BusinessForgotPassword from "./pages/BusinessForgotPassword";
 import StudentForgotPassword from "./pages/StudentForgotPassword";
 import BusinessDashboard from "./pages/BusinessDashboard";
-import BusinessApplications from "./pages/BusinessApplications";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import StudentForgotPassword from "./pages/StudentForgotPassword";
+import BusinessForgotPassword from "./pages/BusinessForgotPassword";
+import SignupChoice from "./pages/SignupChoice";
+import { DevStudentDashboardPreview, DevBusinessDashboardPreview, DevAdminDashboardPreview } from "./pages/DevDashboardPreview";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +36,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/signup" element={<SignupChoice />} />
             <Route path="/business/login" element={<BusinessLogin />} />
             <Route path="/business/signup" element={<BusinessSignup />} />
             <Route path="/business/forgot-password" element={<BusinessForgotPassword />} />
@@ -40,14 +45,6 @@ const App = () => (
               element={
                 <BusinessProtectedRoute>
                   <BusinessDashboard />
-                </BusinessProtectedRoute>
-              }
-            />
-            <Route
-              path="/business/applications"
-              element={
-                <BusinessProtectedRoute>
-                  <BusinessApplications />
                 </BusinessProtectedRoute>
               }
             />
@@ -65,11 +62,19 @@ const App = () => (
             <Route
               path="/admin/dashboard"
               element={
-                <ProtectedRoute>
+                <AdminProtectedRoute>
                   <AdminDashboard />
-                </ProtectedRoute>
+                </AdminProtectedRoute>
               }
             />
+            {/* Dev-only: preview logged-in dashboards without real Firebase credentials. Not present in production builds. */}
+            {import.meta.env.DEV && (
+              <>
+                <Route path="/dev/student-dashboard" element={<DevStudentDashboardPreview />} />
+                <Route path="/dev/business-dashboard" element={<DevBusinessDashboardPreview />} />
+                <Route path="/dev/admin-dashboard" element={<DevAdminDashboardPreview />} />
+              </>
+            )}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

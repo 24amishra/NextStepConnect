@@ -31,3 +31,7 @@ dist-ssr
 # Admin Dashboard (excluded from production)
 src/pages/AdminDashboard.tsx
 src/lib/emailNotifications.ts
+
+# Firebase Cloud Functions
+functions/lib
+functions/node_modules

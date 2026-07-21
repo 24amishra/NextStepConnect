@@ -3,34 +3,35 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User, Mail, Calendar, Briefcase, Sparkles, Target, Loader2, Star, Award, TrendingUp, Settings, Edit2, Save, X, Plus, Link2, HelpCircle, Send, FileText } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { LogOut, User, Mail, Briefcase, Sparkles, Loader2, Award, Edit2, Save, X, Plus, Link2, HelpCircle, Send, Handshake, ArrowLeft, ChevronDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import JobPostingsList from "@/components/JobPostingsList";
-import { getStudentProfile, updateStudentProfile, updateMatchingPreference } from "@/lib/firestore";
-import emailjs from '@emailjs/browser';
-import logo from "@/assets/NextStepLogo.png";
+import { getStudentProfile, updateStudentProfile } from "@/lib/firestore";
+import { sendContactMessage } from "@/lib/emailNotifications";
+import logo from "@/assets/images/NextStepLogo.png";
 
 import Disclaimer from "@/components/Disclaimer";
-import StudentRatings from "@/components/StudentRatings";
-import MatchedOpportunities from "@/components/MatchedOpportunities";
-import MyApplications from "@/components/MyApplications";
-import CurrentProjects from "@/components/CurrentProjects";
+import MyPartnerships from "@/components/MyPartnerships";
+import CommunityFeed from "@/components/CommunityFeed";
 
 const StudentDashboard = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [openToMatching, setOpenToMatching] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [updatingPreference, setUpdatingPreference] = useState(false);
-  const [activeSection, setActiveSection] = useState<"opportunities" | "applications" | "profile" | "matching" | "questions">("opportunities");
+  const [activeSection, setActiveSection] = useState<"feed" | "partnerships" | "profile" | "questions">("feed");
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -56,6 +57,13 @@ const StudentDashboard = () => {
     message: "",
   });
   const [sendingQuestion, setSendingQuestion] = useState(false);
+  const studentInitials = (studentProfile?.name || currentUser?.email || "S")
+    .split(" ")
+    .map((part: string) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   // Load student profile
   useEffect(() => {
@@ -66,7 +74,6 @@ const StudentDashboard = () => {
           const profile = await getStudentProfile(currentUser.uid);
           if (profile) {
             setStudentProfile(profile);
-            setOpenToMatching(profile.openToMatching || false);
             // Initialize form data
             setFormData({
               name: profile.name || "",
@@ -98,19 +105,6 @@ const StudentDashboard = () => {
       await logout();
       navigate("/");
     } catch (err) {
-    }
-  };
-
-  const handleMatchingToggle = async (checked: boolean) => {
-    if (!currentUser?.uid) return;
-
-    try {
-      setUpdatingPreference(true);
-      await updateMatchingPreference(currentUser.uid, checked);
-      setOpenToMatching(checked);
-    } catch (error) {
-    } finally {
-      setUpdatingPreference(false);
     }
   };
 
@@ -221,33 +215,31 @@ const StudentDashboard = () => {
     try {
       setSendingQuestion(true);
 
-      // Initialize EmailJS (you'll need to replace these with your actual values)
-      emailjs.init('YOUR_PUBLIC_KEY'); // Replace with your EmailJS public key
-
-      await emailjs.send(
-        'YOUR_SERVICE_ID', // Replace with your EmailJS service ID
-        'YOUR_TEMPLATE_ID', // Replace with your EmailJS template ID
-        {
-          from_name: questionForm.name,
-          from_email: questionForm.email,
-          subject: questionForm.subject,
-          message: questionForm.message,
-          to_email: 'nextstep.connects@gmail.com', // Your support email
-        }
-      );
-
-      toast({
-        title: "Message Sent",
-        description: "Your question has been sent. We'll get back to you soon!",
-        variant: "default",
+      const sent = await sendContactMessage({
+        fromName: questionForm.name,
+        fromEmail: questionForm.email,
+        subject: questionForm.subject,
+        message: questionForm.message,
       });
 
-      // Reset form
-      setQuestionForm({
-        ...questionForm,
-        subject: "",
-        message: "",
-      });
+      if (sent) {
+        toast({
+          title: "Message Sent",
+          description: "Your question has been sent. We'll get back to you soon!",
+          variant: "default",
+        });
+        setQuestionForm({
+          ...questionForm,
+          subject: "",
+          message: "",
+        });
+      } else {
+        toast({
+          title: "Contact form isn't set up yet",
+          description: "Please email us directly at nextstep.connects@gmail.com in the meantime.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Send Failed",
@@ -261,269 +253,146 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-muted/30" style={{ fontFamily: 'Arimo, sans-serif' }}>
-      {/* Dark Header - Matching dashboard.png */}
+      {/* Dark Header */}
       <header className="bg-nextstep-brick sticky top-0 z-50 shadow-warm-md">
         <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveSection("feed")}
+            className="flex items-center gap-3"
+          >
             <img src={logo} alt="NextStep Logo" className="h-8 w-auto" />
             <h1 className="text-xl font-bold text-white">Student Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-white/70 hidden md:inline">{currentUser?.email}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/10"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign out
-            </Button>
-          </div>
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-full transition-colors ${
+                  activeSection === "profile" ? "bg-white/15" : "hover:bg-white/10"
+                }`}
+              >
+                <span className="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {studentInitials}
+                </span>
+                <span className="text-sm text-white/90 hidden md:inline">
+                  {studentProfile?.name || currentUser?.email}
+                </span>
+                <ChevronDown className="h-4 w-4 text-white/70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setActiveSection("feed")}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Community Feed
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveSection("partnerships")}>
+                <Handshake className="h-4 w-4 mr-2" />
+                My Partnerships
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveSection("questions")}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Questions
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setActiveSection("profile")}>
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      {/* Main Layout - Two Column like dashboard.png */}
       <div className="container py-8">
-        <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-          {/* Left Sidebar */}
-          <aside className="space-y-6">
-            {/* Profile Card */}
-            <Card className="border-0 shadow-warm-md bg-card">
-              <CardContent className="pt-6 text-center">
-                <div className="w-24 h-24 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <User className="w-12 h-12 text-muted-foreground" />
-                </div>
-                <h2 className="font-bold text-lg mb-1">
-                  {studentProfile?.name || "Student"}
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {currentUser?.email}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setActiveSection("profile")}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Navigation Menu */}
-            <Card className="border-0 shadow-warm-md bg-card">
-              <CardContent className="p-4">
-                <nav className="space-y-1">
-                  <button
-                    onClick={() => setActiveSection("opportunities")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "opportunities"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <Briefcase className="h-5 w-5" />
-                    Opportunities
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("applications")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "applications"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <FileText className="h-5 w-5" />
-                    My Applications
-                  </button>
-                  
-                  <button
-                    onClick={() => setActiveSection("profile")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "profile"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <User className="h-5 w-5" />
-                    Profile & Ratings
-                  </button>
-                  <button
-                    onClick={() => setActiveSection("questions")}
-                    className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-200 flex items-center gap-3 ${
-                      activeSection === "questions"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <HelpCircle className="h-5 w-5" />
-                    Questions
-                  </button>
-                </nav>
-              </CardContent>
-            </Card>
-          </aside>
-
-          {/* Main Content Area */}
           <main className="space-y-6">
             {/* Disclaimer */}
             <Disclaimer />
 
-            {/* Opportunities Section */}
-            {activeSection === "opportunities" && (
-              <div className="space-y-6">
-                {/* Current Projects - Show accepted applications at the very top */}
-                {currentUser?.uid && <CurrentProjects studentId={currentUser.uid} />}
-
-                {/* Matched Opportunities - Show at top if student is assigned to businesses */}
-                {currentUser?.uid && <MatchedOpportunities studentId={currentUser.uid} />}
-
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Available Opportunities</h2>
-                  <p className="text-muted-foreground">
-                    Browse and apply to projects from local businesses
-                  </p>
-                </div>
-                <JobPostingsList />
-              </div>
+            {activeSection === "profile" && (
+              <button
+                onClick={() => setActiveSection("feed")}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to dashboard
+              </button>
             )}
 
-            {/* Applications Section */}
-            {activeSection === "applications" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">My Applications</h2>
-                  <p className="text-muted-foreground">
-                    Track the status of your submitted applications
-                  </p>
-                </div>
-                {currentUser?.uid && <MyApplications studentId={currentUser.uid} />}
-              </div>
+            {/* Community Feed Section */}
+            {activeSection === "feed" && currentUser?.uid && (
+              <CommunityFeed studentId={currentUser.uid} />
             )}
 
-            {/* Smart Matching Section */}
-            {activeSection === "matching" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Smart Matching</h2>
-                  <p className="text-muted-foreground">
-                  Not finding the perfect match? Enable Smart Matching to allow us to find the opportunities for you without lifting a finger.                  </p>
-                </div>
-
-                {/* Matching Preference Card */}
-                <Card className="border-0 shadow-warm-md bg-card">
-                  <CardHeader className="border-b border-border/50">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-2xl">Matching Preference</CardTitle>
-                        <CardDescription className="text-base">
-                        What we need from you:
-                          </CardDescription>
-                          
-                          </div>
-                      {loadingProfile ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <Switch
-                            id="matching-preference"
-                            checked={openToMatching}
-                            onCheckedChange={handleMatchingToggle}
-                            disabled={updatingPreference}
-                          />
-                          <Label
-                            htmlFor="matching-preference"
-                            className={`text-sm font-semibold cursor-pointer ${
-                              openToMatching ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          >
-                            {openToMatching ? "Enabled" : "Disabled"}
-                          </Label>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6 space-y-6">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Updated Profile</p>
-                          <p className="text-sm text-muted-foreground">
-                          Keep your profile updated to receive the best opportunity matches. Your profile is what businesses use to find the best fit for their projects.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Target className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Sit tight</p>
-                          <p className="text-sm text-muted-foreground">
-                          We network with local businesses and find tailored matches for you.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <TrendingUp className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground mb-1">Get to work</p>
-                          <p className="text-sm text-muted-foreground">
-                       We'll notify you if we find a match that you might be interested in. Make sure to check your email for updates once we match you.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {openToMatching && (
-                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                          <p className="text-sm font-semibold text-primary">Smart Matching Active</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Keep your profile updated to receive the best opportunity matches. We'll notify you when businesses are looking for someone with your skillset.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+            {/* My Partnerships Section */}
+            {activeSection === "partnerships" && currentUser?.uid && (
+              <MyPartnerships
+                studentId={currentUser.uid}
+                studentProfile={studentProfile}
+                onProfileUpdate={(updates) =>
+                  setStudentProfile((prev: any) => ({ ...(prev || {}), ...updates }))
+                }
+              />
             )}
+
 
             {/* Profile Section */}
             {activeSection === "profile" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-3xl font-bold font-heading mb-2">Profile Information</h2>
-                  <p className="text-muted-foreground">
-                    Manage your personal information and view your ratings
-                  </p>
-                </div>
+              <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
+                {/* Identity card */}
+                <Card className="border-0 shadow-warm-md bg-card">
+                  <CardContent className="pt-8 pb-6 text-center">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-4xl font-bold font-heading mx-auto mb-4">
+                      {studentInitials}
+                    </div>
+                    <h2 className="text-xl font-bold font-heading text-foreground">
+                      {studentProfile?.name || "Student"}
+                    </h2>
+                    {!isEditing && (
+                      <button
+                        onClick={handleEdit}
+                        className="text-sm text-primary font-semibold hover:underline mt-1"
+                      >
+                        Edit basic info
+                      </button>
+                    )}
+
+                    <Separator className="my-5" />
+
+                    <div className="space-y-4 text-left">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="text-sm font-medium text-foreground break-all">{currentUser?.email}</p>
+                      </div>
+                      {currentUser?.metadata.creationTime && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Member since</p>
+                          <p className="text-sm font-medium text-foreground">
+                            {new Date(currentUser.metadata.creationTime).toLocaleDateString(undefined, {
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Profile Details Card with Edit Functionality */}
                 <Card className="border-0 shadow-warm-md bg-card">
                   <CardHeader className="border-b border-border/50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-xl">Profile Details</CardTitle>
+                        <CardTitle className="text-xl">About</CardTitle>
                         <CardDescription>
                           Your professional information
                         </CardDescription>
                       </div>
-                      {!isEditing ? (
-                        <Button variant="outline" size="sm" onClick={handleEdit}>
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
-                      ) : (
+                      {isEditing && (
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                             <X className="h-4 w-4 mr-2" />
@@ -709,36 +578,21 @@ const StudentDashboard = () => {
                           </div>
                         </div>
                       </form>
+                    ) : !studentProfile?.skills?.length &&
+                      !studentProfile?.desiredRoles?.length &&
+                      !studentProfile?.bio &&
+                      !studentProfile?.linkedinUrl ? (
+                      <div className="text-center py-6">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Your profile is empty. Add your skills, interests, and a short bio so businesses know who you are.
+                        </p>
+                        <Button variant="outline" size="sm" onClick={handleEdit}>
+                          <Edit2 className="h-4 w-4 mr-2" />
+                          Complete your profile
+                        </Button>
+                      </div>
                     ) : (
                       <div className="space-y-8">
-                        {/* Personal Information Section */}
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
-                            <User className="h-5 w-5 text-primary" />
-                            <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
-                          </div>
-                          <div className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">Name</Label>
-                              <p className="font-semibold text-foreground">{studentProfile?.name || "Not set"}</p>
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">Email</Label>
-                              <p className="font-semibold text-foreground break-all">{currentUser?.email}</p>
-                            </div>
-                            {currentUser?.metadata.creationTime && (
-                              <div className="space-y-2">
-                                <Label className="text-sm text-muted-foreground">Member Since</Label>
-                                <p className="font-semibold text-foreground">
-                                  {new Date(currentUser.metadata.creationTime).toLocaleDateString()}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <Separator className="bg-primary/20" />
-
                         {/* Skills Section */}
                         {studentProfile?.skills && studentProfile.skills.length > 0 && (
                           <>
@@ -820,8 +674,6 @@ const StudentDashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* Ratings */}
-                <StudentRatings />
               </div>
             )}
 
@@ -934,7 +786,6 @@ const StudentDashboard = () => {
               </div>
             )}
           </main>
-        </div>
       </div>
     </div>
   );
