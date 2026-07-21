@@ -28,6 +28,7 @@ import {
   createPost,
   deletePost,
   Post,
+  setMidpointMeeting,
 } from "@/lib/firestore";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -64,6 +65,8 @@ import {
   Tags,
   Sparkles,
   Search,
+  CalendarClock,
+  AlarmClock,
 } from "lucide-react";
 import {
   Select,
@@ -76,6 +79,54 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type MidpointStatus = "overdue" | "soon" | "unscheduled" | "scheduled" | "completed";
+
+const midpointStatusOrder: Record<MidpointStatus, number> = {
+  overdue: 0,
+  soon: 1,
+  unscheduled: 2,
+  scheduled: 3,
+  completed: 4,
+};
+
+const midpointStatusMeta: Record<MidpointStatus, { label: string; dot: string; badge: string }> = {
+  overdue: { label: "Overdue", dot: "bg-red-500", badge: "bg-red-50 text-red-700 border-red-200" },
+  soon: { label: "This week", dot: "bg-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200" },
+  unscheduled: { label: "Needs a date", dot: "bg-slate-300", badge: "bg-slate-100 text-slate-600 border-slate-200" },
+  scheduled: { label: "Scheduled", dot: "bg-blue-500", badge: "bg-blue-50 text-blue-700 border-blue-200" },
+  completed: { label: "Done", dot: "bg-green-500", badge: "bg-green-50 text-green-700 border-green-200" },
+};
+
+const getMidpointStatus = (assignment: OpportunityAssignment): MidpointStatus => {
+  if (assignment.midpointMeetingCompleted) return "completed";
+  if (!assignment.midpointMeetingDate) return "unscheduled";
+  const date = assignment.midpointMeetingDate?.toDate
+    ? assignment.midpointMeetingDate.toDate()
+    : new Date(assignment.midpointMeetingDate);
+  const daysUntil = Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (daysUntil < 0) return "overdue";
+  if (daysUntil <= 7) return "soon";
+  return "scheduled";
+};
+
+const toDateInputValue = (value: Date | any): string => {
+  if (!value) return "";
+  const date = value?.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const formatMidpointDate = (value: Date | any): string => {
+  if (!value) return "";
+  const date = value?.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+};
 
 const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
@@ -106,6 +157,7 @@ const AdminDashboard = () => {
   const [assignmentNotes, setAssignmentNotes] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [uploadingPdfFor, setUploadingPdfFor] = useState<string | null>(null);
+  const [savingMidpointFor, setSavingMidpointFor] = useState<string | null>(null);
   const [businessSearch, setBusinessSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
 
@@ -191,8 +243,8 @@ const AdminDashboard = () => {
 
   const handleStartAssignFromMatchRequest = (studentId: string) => {
     setSelectedStudent(studentId);
-    setActiveTab("partnerships");
     fetchStudentsBusinessesAndOpportunities();
+    document.getElementById("assign-partnership-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const fetchPosts = async () => {
@@ -358,6 +410,37 @@ const AdminDashboard = () => {
       setError("Failed to upload contract PDF. Make sure it's a valid PDF file.");
     } finally {
       setUploadingPdfFor(null);
+    }
+  };
+
+  const handleSetMidpointDate = async (opportunityId: string, studentId: string, value: string) => {
+    const key = `${opportunityId}-${studentId}`;
+    try {
+      setSavingMidpointFor(key);
+      setError("");
+      const date = value ? new Date(`${value}T12:00:00`) : null;
+      await setMidpointMeeting(opportunityId, studentId, { date });
+      await fetchStudentsBusinessesAndOpportunities();
+    } catch (err) {
+      console.error("Error setting midpoint meeting date:", err);
+      setError("Failed to save the midpoint meeting date");
+    } finally {
+      setSavingMidpointFor(null);
+    }
+  };
+
+  const handleToggleMidpointCompleted = async (opportunityId: string, studentId: string, completed: boolean) => {
+    const key = `${opportunityId}-${studentId}`;
+    try {
+      setSavingMidpointFor(key);
+      setError("");
+      await setMidpointMeeting(opportunityId, studentId, { completed });
+      await fetchStudentsBusinessesAndOpportunities();
+    } catch (err) {
+      console.error("Error updating midpoint meeting status:", err);
+      setError("Failed to update the midpoint meeting");
+    } finally {
+      setSavingMidpointFor(null);
     }
   };
 
@@ -984,284 +1067,8 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : matchRequests.length === 0 ? (
-                <Card className="border-primary/20">
-                  <CardContent className="py-12 text-center">
-                    <Handshake className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium text-foreground">No one's waiting right now</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Students who tap "+" on their dashboard to request a partnership will show up here.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-6">
-                  {matchRequests.map((student) => (
-                    <Card key={student.userId} className="border-primary/20 shadow-lg">
-                      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="flex items-center gap-2 text-foreground">
-                              <User className="h-5 w-5 text-primary" />
-                              {student.name}
-                            </CardTitle>
-                            <CardDescription className="mt-1">
-                              <Mail className="h-3 w-3 inline mr-1" />
-                              {student.email}
-                            </CardDescription>
-                          </div>
-                          {student.matchingRequestedAt && (
-                            <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/30">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {student.matchingRequestedAt?.toDate
-                                ? new Date(student.matchingRequestedAt.toDate()).toLocaleDateString()
-                                : new Date(student.matchingRequestedAt).toLocaleDateString()}
-                            </Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4 pt-6">
-                        {student.matchingCategories && student.matchingCategories.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                              <Tags className="h-4 w-4 text-primary" />
-                              Interested in
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {student.matchingCategories.map((category) => (
-                                <Badge key={category} variant="secondary" className="bg-primary/10 text-primary">
-                                  {category}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {student.matchingNote && (
-                          <div className="bg-muted/30 p-3 rounded-lg">
-                            <p className="text-sm text-foreground italic">"{student.matchingNote}"</p>
-                          </div>
-                        )}
-
-                        {student.skills && student.skills.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                              <Award className="h-4 w-4 text-primary" />
-                              Skills
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {student.skills.map((skill) => (
-                                <Badge key={skill} variant="outline" className="text-xs">
-                                  {skill}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex gap-3 pt-4 border-t border-primary/20">
-                          <Button
-                            variant="default"
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            onClick={() => handleStartAssignFromMatchRequest(student.userId)}
-                            disabled={processingMatchId === student.userId}
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Assign a partnership
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() => handleDismissMatchRequest(student.userId)}
-                            disabled={processingMatchId === student.userId}
-                          >
-                            {processingMatchId === student.userId ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Processing...
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-4 w-4 mr-2" />
-                                Dismiss
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Partnerships Tab */}
-          {activeTab === "partnerships" && (
-            <>
-              {/* Overview stat cards */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="rounded-xl bg-primary text-white p-5">
-                  <Handshake className="h-5 w-5 mb-3 opacity-80" />
-                  <p className="text-3xl font-bold font-heading leading-none">{assignments.length}</p>
-                  <p className="text-sm opacity-80 mt-2">Active Partnerships</p>
-                </div>
-                <div className="rounded-xl bg-green-600 text-white p-5">
-                  <Building2 className="h-5 w-5 mb-3 opacity-80" />
-                  <p className="text-3xl font-bold font-heading leading-none">{businesses.length}</p>
-                  <p className="text-sm opacity-80 mt-2">Approved Businesses</p>
-                </div>
-                <div className="rounded-xl bg-blue-600 text-white p-5">
-                  <Users className="h-5 w-5 mb-3 opacity-80" />
-                  <p className="text-3xl font-bold font-heading leading-none">{students.length}</p>
-                  <p className="text-sm opacity-80 mt-2">Total Students</p>
-                </div>
-                <button
-                  onClick={() => setActiveTab("matchRequests")}
-                  className="rounded-xl bg-amber-500 text-white p-5 text-left hover:bg-amber-500/90 transition-colors"
-                >
-                  <Sparkles className="h-5 w-5 mb-3 opacity-80" />
-                  <p className="text-3xl font-bold font-heading leading-none">{matchRequests.length}</p>
-                  <p className="text-sm opacity-80 mt-2">Pending Match Requests</p>
-                </button>
-              </div>
-
-              {/* Businesses & Students directories */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card className="border-primary/20 shadow-lg">
-                  <CardHeader className="border-b border-primary/10">
-                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      Businesses
-                      <Badge variant="secondary" className="ml-auto font-normal">
-                        {businesses.length}
-                      </Badge>
-                    </CardTitle>
-                    <div className="relative pt-2">
-                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={businessSearch}
-                        onChange={(e) => setBusinessSearch(e.target.value)}
-                        placeholder="Search businesses..."
-                        className="pl-9"
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
-                    {businesses
-                      .filter((b) =>
-                        `${b.companyName} ${b.location} ${b.industry}`
-                          .toLowerCase()
-                          .includes(businessSearch.toLowerCase())
-                      )
-                      .map((business) => (
-                        <div
-                          key={business.userId}
-                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {business.companyName?.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate">
-                              {business.companyName}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {business.location} &middot; {business.industry}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    {businesses.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">No approved businesses yet</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-primary/20 shadow-lg">
-                  <CardHeader className="border-b border-primary/10">
-                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                      <Users className="h-4 w-4 text-primary" />
-                      Students
-                      <Badge variant="secondary" className="ml-auto font-normal">
-                        {students.length}
-                      </Badge>
-                    </CardTitle>
-                    <div className="relative pt-2">
-                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={studentSearch}
-                        onChange={(e) => setStudentSearch(e.target.value)}
-                        placeholder="Search students..."
-                        className="pl-9"
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
-                    {students
-                      .filter((s) =>
-                        `${s.name} ${s.email} ${(s.skills || []).join(" ")}`
-                          .toLowerCase()
-                          .includes(studentSearch.toLowerCase())
-                      )
-                      .map((student) => (
-                        <div
-                          key={student.userId}
-                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {student.name?.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {student.skills && student.skills.length > 0
-                                ? student.skills.slice(0, 3).join(", ")
-                                : student.email}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    {students.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">No students yet</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Summary Card */}
-              <Card className="border-primary/20 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Users className="h-5 w-5 text-primary" />
-                    Opportunity Assignments
-                  </CardTitle>
-                  <CardDescription>
-                    All student-opportunity assignments currently active
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-lg px-4 py-2">
-                      {assignments.length} Active
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Assignment Interface */}
-              <Card className="border-primary/20 shadow-lg">
+              <Card id="assign-partnership-form" className="border-primary/20 shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-green-500/10 to-green-500/5 border-b border-primary/20">
                   <CardTitle className="flex items-center gap-2 text-foreground">
                     <UserPlus className="h-5 w-5 text-green-600" />
@@ -1560,6 +1367,384 @@ const AdminDashboard = () => {
                   </Button>
                 </CardContent>
               </Card>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : matchRequests.length === 0 ? (
+                <Card className="border-primary/20">
+                  <CardContent className="py-12 text-center">
+                    <Handshake className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium text-foreground">No one's waiting right now</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Students who tap "+" on their dashboard to request a partnership will show up here.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {matchRequests.map((student) => (
+                    <Card key={student.userId} className="border-primary/20 shadow-lg">
+                      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2 text-foreground">
+                              <User className="h-5 w-5 text-primary" />
+                              {student.name}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              <Mail className="h-3 w-3 inline mr-1" />
+                              {student.email}
+                            </CardDescription>
+                          </div>
+                          {student.matchingRequestedAt && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/30">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {student.matchingRequestedAt?.toDate
+                                ? new Date(student.matchingRequestedAt.toDate()).toLocaleDateString()
+                                : new Date(student.matchingRequestedAt).toLocaleDateString()}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        {student.matchingCategories && student.matchingCategories.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                              <Tags className="h-4 w-4 text-primary" />
+                              Interested in
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {student.matchingCategories.map((category) => (
+                                <Badge key={category} variant="secondary" className="bg-primary/10 text-primary">
+                                  {category}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {student.matchingNote && (
+                          <div className="bg-muted/30 p-3 rounded-lg">
+                            <p className="text-sm text-foreground italic">"{student.matchingNote}"</p>
+                          </div>
+                        )}
+
+                        {student.skills && student.skills.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                              <Award className="h-4 w-4 text-primary" />
+                              Skills
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {student.skills.map((skill) => (
+                                <Badge key={skill} variant="outline" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 pt-4 border-t border-primary/20">
+                          <Button
+                            variant="default"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={() => handleStartAssignFromMatchRequest(student.userId)}
+                            disabled={processingMatchId === student.userId}
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Assign a partnership
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => handleDismissMatchRequest(student.userId)}
+                            disabled={processingMatchId === student.userId}
+                          >
+                            {processingMatchId === student.userId ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Dismiss
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Partnerships Tab */}
+          {activeTab === "partnerships" && (
+            <>
+              {/* Overview stat cards */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <Handshake className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-3xl font-semibold font-heading text-foreground leading-none tracking-tight">{assignments.length}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Active Partnerships</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4">
+                    <Building2 className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <p className="text-3xl font-semibold font-heading text-foreground leading-none tracking-tight">{businesses.length}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Approved Businesses</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                  <div className="w-9 h-9 rounded-lg bg-slate-500/10 flex items-center justify-center mb-4">
+                    <Users className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <p className="text-3xl font-semibold font-heading text-foreground leading-none tracking-tight">{students.length}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Total Students</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab("matchRequests")}
+                  className="rounded-xl border border-border bg-card p-5 shadow-sm text-left hover:border-amber-500/40 hover:shadow-md transition-all"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
+                    <Sparkles className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <p className="text-3xl font-semibold font-heading text-foreground leading-none tracking-tight">{matchRequests.length}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Pending Match Requests</p>
+                </button>
+              </div>
+
+              {/* Businesses & Students directories */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card className="border-primary/20 shadow-lg">
+                  <CardHeader className="border-b border-primary/10">
+                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Businesses
+                      <Badge variant="secondary" className="ml-auto font-normal">
+                        {businesses.length}
+                      </Badge>
+                    </CardTitle>
+                    <div className="relative pt-2">
+                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={businessSearch}
+                        onChange={(e) => setBusinessSearch(e.target.value)}
+                        placeholder="Search businesses..."
+                        className="pl-9"
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
+                    {businesses
+                      .filter((b) =>
+                        `${b.companyName} ${b.location} ${b.industry}`
+                          .toLowerCase()
+                          .includes(businessSearch.toLowerCase())
+                      )
+                      .map((business) => (
+                        <div
+                          key={business.userId}
+                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {business.companyName?.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground truncate">
+                              {business.companyName}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {business.location} &middot; {business.industry}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    {businesses.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-8">No approved businesses yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/20 shadow-lg">
+                  <CardHeader className="border-b border-primary/10">
+                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
+                      <Users className="h-4 w-4 text-primary" />
+                      Students
+                      <Badge variant="secondary" className="ml-auto font-normal">
+                        {students.length}
+                      </Badge>
+                    </CardTitle>
+                    <div className="relative pt-2">
+                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        placeholder="Search students..."
+                        className="pl-9"
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
+                    {students
+                      .filter((s) =>
+                        `${s.name} ${s.email} ${(s.skills || []).join(" ")}`
+                          .toLowerCase()
+                          .includes(studentSearch.toLowerCase())
+                      )
+                      .map((student) => (
+                        <div
+                          key={student.userId}
+                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
+                        >
+                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {student.name?.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {student.skills && student.skills.length > 0
+                                ? student.skills.slice(0, 3).join(", ")
+                                : student.email}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    {students.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-8">No students yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Midpoint Check-ins */}
+              {(() => {
+                const overdueCount = assignments.filter((a) => getMidpointStatus(a) === "overdue").length;
+                const soonCount = assignments.filter((a) => getMidpointStatus(a) === "soon").length;
+                const unscheduledCount = assignments.filter((a) => getMidpointStatus(a) === "unscheduled").length;
+                const sortedAssignments = [...assignments].sort(
+                  (a, b) => midpointStatusOrder[getMidpointStatus(a)] - midpointStatusOrder[getMidpointStatus(b)]
+                );
+
+                return (
+                  <Card className="border-primary/20 shadow-lg overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20">
+                      <CardTitle className="flex items-center gap-2 text-foreground">
+                        <CalendarClock className="h-5 w-5 text-primary" />
+                        Midpoint Check-ins
+                      </CardTitle>
+                      <CardDescription>
+                        Track when each partnership's midpoint meeting is due, straight from the contract.
+                      </CardDescription>
+                      {assignments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          {overdueCount > 0 && (
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                              <AlarmClock className="h-3 w-3 mr-1" />
+                              {overdueCount} overdue
+                            </Badge>
+                          )}
+                          {soonCount > 0 && (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              {soonCount} this week
+                            </Badge>
+                          )}
+                          {unscheduledCount > 0 && (
+                            <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">
+                              {unscheduledCount} need a date
+                            </Badge>
+                          )}
+                          {overdueCount === 0 && soonCount === 0 && unscheduledCount === 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              All caught up
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {assignments.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-10">
+                          Create a partnership below to start tracking midpoint meetings.
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-border">
+                          {sortedAssignments.map((assignment) => {
+                            const status = getMidpointStatus(assignment);
+                            const meta = midpointStatusMeta[status];
+                            const key = `${assignment.opportunityId}-${assignment.studentId}`;
+                            const isSaving = savingMidpointFor === key;
+                            return (
+                              <div key={key} className="flex flex-wrap items-center gap-3 sm:gap-4 px-5 py-4">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${meta.dot}`} />
+                                <div className="min-w-[160px] flex-1">
+                                  <p className="text-sm font-semibold text-foreground truncate">
+                                    {assignment.business?.companyName || "Unknown Business"}
+                                    <span className="text-muted-foreground font-normal"> &times; </span>
+                                    {assignment.student?.name || "Unknown Student"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {assignment.opportunityId.startsWith("business-")
+                                      ? "General assignment"
+                                      : assignment.opportunity?.title || "Opportunity"}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className={`${meta.badge} flex-shrink-0 whitespace-nowrap`}>
+                                  {meta.label}
+                                  {assignment.midpointMeetingDate && (
+                                    <span className="ml-1 opacity-70">
+                                      &middot; {formatMidpointDate(assignment.midpointMeetingDate)}
+                                    </span>
+                                  )}
+                                </Badge>
+                                <Input
+                                  type="date"
+                                  value={toDateInputValue(assignment.midpointMeetingDate)}
+                                  onChange={(e) =>
+                                    handleSetMidpointDate(assignment.opportunityId, assignment.studentId, e.target.value)
+                                  }
+                                  disabled={isSaving}
+                                  className="w-[150px] flex-shrink-0 h-9 text-sm"
+                                />
+                                <label className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0 cursor-pointer">
+                                  <Checkbox
+                                    checked={!!assignment.midpointMeetingCompleted}
+                                    disabled={isSaving}
+                                    onCheckedChange={(checked) =>
+                                      handleToggleMidpointCompleted(
+                                        assignment.opportunityId,
+                                        assignment.studentId,
+                                        checked === true
+                                      )
+                                    }
+                                  />
+                                  Done
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* Error Alert */}
               {error && (
