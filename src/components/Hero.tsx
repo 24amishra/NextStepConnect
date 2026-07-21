@@ -101,7 +101,7 @@ const Hero = () => {
             </div>
 
             <div className="flex items-center justify-center divide-x divide-border pt-3">
-              {["Real projects", "Real clients", "Real impact"].map((item) => (
+              {["Student-led", "Business-valued","Impact-driven"].map((item) => (
                 <span
                   key={item}
                   className="px-3 sm:px-5 font-mono text-[11px] sm:text-xs uppercase tracking-[0.15em] text-muted-foreground"

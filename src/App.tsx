@@ -19,8 +19,6 @@ import StudentForgotPassword from "./pages/StudentForgotPassword";
 import BusinessDashboard from "./pages/BusinessDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
-import StudentForgotPassword from "./pages/StudentForgotPassword";
-import BusinessForgotPassword from "./pages/BusinessForgotPassword";
 import SignupChoice from "./pages/SignupChoice";
 import { DevStudentDashboardPreview, DevBusinessDashboardPreview, DevAdminDashboardPreview } from "./pages/DevDashboardPreview";
 
