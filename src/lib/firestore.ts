@@ -1210,6 +1210,8 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
           notes: assignmentData.notes,
           applicationId: assignmentData.applicationId,
           contractPdfUrl: assignmentData.contractPdfUrl,
+          midpointMeetingDate: assignmentData.midpointMeetingDate,
+          midpointMeetingCompleted: assignmentData.midpointMeetingCompleted,
         });
       }
     }
@@ -1245,6 +1247,8 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
           notes: assignmentData.notes,
           applicationId: undefined,
           contractPdfUrl: assignmentData.contractPdfUrl,
+          midpointMeetingDate: assignmentData.midpointMeetingDate,
+          midpointMeetingCompleted: assignmentData.midpointMeetingCompleted,
         });
       }
     }
@@ -1487,6 +1491,8 @@ export interface OpportunityAssignment {
   notes?: string;
   applicationId?: string; // Reference to application that created this
   contractPdfUrl?: string; // URL to the partnership contract PDF
+  midpointMeetingDate?: Date | any;
+  midpointMeetingCompleted?: boolean;
 }
 
 export interface OpportunityWithStudents {
@@ -1736,6 +1742,38 @@ export const uploadContractPdf = async (
   }
 };
 
+// ============================================
+// MIDPOINT MEETING TRACKING
+// ============================================
+
+/**
+ * Set or update the midpoint meeting date / completion status for a partnership.
+ * Handles both general (business-level) and opportunity-level assignments.
+ */
+export const setMidpointMeeting = async (
+  opportunityId: string,
+  studentId: string,
+  updates: { date?: Date | null; completed?: boolean }
+): Promise<void> => {
+  if (devPreviewState.active) return;
+
+  try {
+    const payload: Record<string, Date | boolean | null> = {};
+    if (updates.date !== undefined) payload.midpointMeetingDate = updates.date;
+    if (updates.completed !== undefined) payload.midpointMeetingCompleted = updates.completed;
+
+    if (opportunityId.startsWith("business-")) {
+      const businessId = opportunityId.replace("business-", "");
+      await updateDoc(doc(db, "businesses", businessId, "assignedStudents", studentId), payload);
+    } else {
+      await updateDoc(doc(db, "opportunities", opportunityId, "assignedStudents", studentId), payload);
+    }
+  } catch (error) {
+    console.error("Error setting midpoint meeting:", error);
+    throw error;
+  }
+};
+
 /**
  * Get partnership assignments for a student that have contract PDFs.
  * Used by the student dashboard to display the "Current Partnership" tab.
@@ -1770,6 +1808,8 @@ export const getStudentPartnershipAssignments = async (studentId: string): Promi
         assignedAt: new Date("2026-06-20"),
         assignedBy: "admin",
         contractPdfUrl: "https://example.com/dev-preview-contract.pdf",
+        midpointMeetingDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        midpointMeetingCompleted: false,
       },
       {
         studentId,
@@ -1798,6 +1838,8 @@ export const getStudentPartnershipAssignments = async (studentId: string): Promi
         assignedAt: new Date("2026-01-05"),
         assignedBy: "admin",
         applicationId: "dev-app-past",
+        midpointMeetingDate: new Date("2026-01-20"),
+        midpointMeetingCompleted: true,
       },
     ];
   }
