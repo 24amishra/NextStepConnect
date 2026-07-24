@@ -1,6 +1,5 @@
 import { Linkedin, Globe, User } from "lucide-react";
 import Reveal from "@/components/Reveal";
-import OhioMap from "@/components/OhioMap";
 import agastyaHeadshot from "@/assets/images/agastya_headshot.jpeg";
 import nikhilHeadshot from "@/assets/images/3-NikhilKasam.jpg";
 
@@ -54,9 +53,6 @@ const AboutUs = () => {
                 chance to give back to the community one project
                 at a time.
               </p>
-            </div>
-            <div className="mt-6 max-w-[280px]">
-              <OhioMap />
             </div>
           </Reveal>
 
