@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Sora', 'sans-serif'],
-        body: ['Inter', 'DM Sans', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', '-apple-system', 'sans-serif'],
+        body: ['Fustat', 'sans-serif'],
+        mono: ['"DM Mono"', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

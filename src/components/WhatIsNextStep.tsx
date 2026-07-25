@@ -1,97 +1,54 @@
-import { Target, BookOpen, Rocket } from "lucide-react";
-
 const features = [
   {
-    icon: Target,
-    title: "Real-World Execution",
+    number: "01",
+    title: "Real-world execution",
     description:
       "We bridge the gap between classroom theory and professional results by placing students directly into projects with local organizations and businesses.",
   },
   {
-    icon: BookOpen,
-    title: "Win-Win Partnership",
+    number: "02",
+    title: "Win-win partnership",
     description:
-      "We create mutually beneficial partnerships where businesses gain fresh perspectives and dedicated support, while students build real-world experience and professional connections. This synergy drives value for both parties, fostering growth and innovation together.",
+      "Businesses gain fresh perspectives and dedicated support, while students build real-world experience and professional connections.",
   },
   {
-    icon: Rocket,
-    title: "The Goal",
+    number: "03",
+    title: "The goal",
     description:
-      "We help students build resumes they are proud of while providing local organizations and businesses with the extra hands and fresh ideas they need to thrive.",
+      "We help students build resumes they're proud of while providing local organizations the extra hands and fresh ideas they need to thrive.",
   },
 ];
 
+import Reveal from "@/components/Reveal";
+
 const WhatIsNextStep = () => {
   return (
-    <section className="relative py-16 sm:py-20 md:py-28 bg-nextstep-clay/30">
-      {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 overflow-hidden">
-        <svg
-          className="absolute top-0 w-full h-full"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
-            fill="rgb(228, 222, 212)"
-          />
-        </svg>
-      </div>
-
-      <div className="container relative z-10 px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="text-center mb-12 sm:mb-16 md:mb-20">
-          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
-            About Us
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
-            What is NextStep?
-          </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
-            We serve as a launchpad for both students and businesses to connect and grow together.
+    <section className="py-16 sm:py-20 md:py-24 bg-nextstep-brick text-background">
+      <div className="container px-4 sm:px-6">
+        <Reveal className="grid md:grid-cols-2 gap-6 md:gap-12 items-end mb-12 sm:mb-16">
+          <div>
+            <p className="eyebrow text-background/60 mb-3">What is NextStep</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium font-heading text-white leading-tight tracking-tight">
+              Backlog cleared.
+              <br />
+              Careers launched.
+            </h2>
+          </div>
+          <p className="text-sm sm:text-base text-background/70 leading-relaxed md:pb-1">
+            We partner with small businesses in the community to help alleviate their backlog,
+            while giving ambitious students the chance to own and deliver real business value.
           </p>
-        </div>
+        </Reveal>
 
-        {/* Card Grid */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="group bg-card p-6 sm:p-8 rounded-2xl border-0 hover:shadow-warm-lg shadow-warm-md transition-all duration-300"
-            >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary rounded-xl flex items-center justify-center mb-5 sm:mb-6 shadow-warm-sm group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary-foreground" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-sm sm:text-[15px] text-muted-foreground leading-relaxed">
-                {feature.description}
-              </p>
+        <Reveal delay={0.1} className="grid sm:grid-cols-3 gap-8 sm:gap-6 sm:divide-x sm:divide-background/15">
+          {features.map((feature) => (
+            <div key={feature.title} className="sm:px-6 first:pl-0">
+              <p className="font-mono text-[11px] text-background/50 mb-3">{feature.number}</p>
+              <h3 className="text-lg font-medium font-heading text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-background/70 leading-relaxed">{feature.description}</p>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Bottom Flowing Divider - Warm Accent */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
-        <svg
-          className="absolute bottom-0 w-full h-full"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,32 C360,80 720,80 1080,32 C1200,16 1320,16 1440,32 L1440,120 L0,120 Z"
-            fill="rgb(228, 222, 212)"
-          />
-          <path
-            d="M0,64 C240,96 480,96 720,64 C960,32 1200,32 1440,64 L1440,120 L0,120 Z"
-            fill="rgb(215, 100, 90)"
-            opacity="0.15"
-          />
-        </svg>
+        </Reveal>
       </div>
     </section>
   );

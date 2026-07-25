@@ -9,6 +9,7 @@
  *   VITE_EMAILJS_WELCOME_TEMPLATE_ID
  *   VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID
  *   VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID
+ *   VITE_EMAILJS_CONTACT_TEMPLATE_ID
  *   VITE_EMAILJS_PUBLIC_KEY
  */
 
@@ -19,6 +20,7 @@ const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLAT
 const EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID;
 const EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID;
 const EMAILJS_STUDENT_MATCHED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_STUDENT_MATCHED_TEMPLATE_ID;
+const EMAILJS_CONTACT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 export interface WelcomeEmailData {
@@ -72,6 +74,39 @@ export const sendBusinessWelcomeEmail = async (data: BusinessWelcomeEmailData): 
     },
     EMAILJS_PUBLIC_KEY,
   );
+};
+
+export interface ContactMessageData {
+  fromName: string;
+  fromEmail: string;
+  subject: string;
+  message: string;
+}
+
+/**
+ * Send a "Contact support" message (from the dashboard Questions form) to the
+ * NextStep team inbox. Returns false without throwing if EmailJS isn't
+ * configured yet, so callers can tell "not set up" apart from "network error".
+ */
+export const sendContactMessage = async (data: ContactMessageData): Promise<boolean> => {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_CONTACT_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    console.warn("EmailJS contact template is not configured. Skipping contact message.");
+    return false;
+  }
+
+  await emailjs.send(
+    EMAILJS_SERVICE_ID,
+    EMAILJS_CONTACT_TEMPLATE_ID,
+    {
+      from_name: data.fromName,
+      from_email: data.fromEmail,
+      subject: data.subject,
+      message: data.message,
+      to_email: "nextstep.connects@gmail.com",
+    },
+    EMAILJS_PUBLIC_KEY,
+  );
+  return true;
 };
 
 export interface ApprovalEmailData {

@@ -1,107 +1,134 @@
-import { Search, Users, CheckCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Reveal from "@/components/Reveal";
 
-const phases = [
+const businessPhases = [
   {
     number: "01",
     title: "Discovery",
-    icon: Search,
-    description:
-      "You tell us what projects or tasks your business needs help with.",
+    description: "You tell us what projects or tasks your business needs help with.",
   },
   {
     number: "02",
     title: "Connection",
-    icon: Users,
-    description:
-      "We match you with a motivated student whose skills and goals align with your needs.",
+    description: "We match you with a motivated student whose skills and goals align with your needs.",
   },
   {
     number: "03",
     title: "Execution",
-    icon: CheckCircle,
-    description:
-      "The student completes the project using our professional frameworks and educational resources.",
+    description: "The student completes the project using our professional frameworks and educational resources.",
   },
 ];
 
+const studentSteps = [
+  {
+    number: "01",
+    title: "Apply",
+    description: "Fill out our quick interest form. Tell us about your major, skills, and what kind of projects excite you.",
+  },
+  {
+    number: "02",
+    title: "Get matched",
+    description: "Meet like-minded students and collaborate on group projects for local businesses of your choice.",
+  },
+  {
+    number: "03",
+    title: "Learn & execute",
+    description: "Collaborate with local businesses on meaningful projects. Gain hands-on experience while delivering real value.",
+  },
+  {
+    number: "04",
+    title: "Grow",
+    description: "Build your resume with tangible accomplishments. Network with professionals. Stand out to future employers.",
+  },
+];
+
+// Placeholder testimonials — replace quotes, names, and roles with real ones.
+const testimonials = [
+  {
+    quote:
+      "Working with a real client changed how I think about my major. I have actual results to talk about in interviews now.",
+    name: "Student Name",
+    role: "Student · Placeholder University",
+  },
+  {
+    quote:
+      "The students cleared a backlog we'd been putting off for over a year. Fresh eyes, real energy, real results.",
+    name: "Owner Name",
+    role: "Owner · Placeholder Business",
+  },
+];
+
+const StepList = ({ steps }: { steps: typeof businessPhases }) => (
+  <div className={`grid gap-4 sm:gap-5 sm:grid-cols-2 ${steps.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+    {steps.map((step) => (
+      <div key={step.number}>
+        <p className="font-mono text-xs uppercase tracking-[0.15em] text-primary mb-3">
+          Step {step.number}
+        </p>
+        <h3 className="text-lg font-medium font-heading text-foreground mb-1.5">{step.title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+      </div>
+    ))}
+  </div>
+);
+
 const HowItWorks = () => {
   return (
-    <section className="relative py-16 sm:py-20 md:py-28 bg-background">
-      {/* Top Flowing Divider */}
-      <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 overflow-hidden">
-        <svg
-          className="absolute top-0 w-full h-full"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,32 C360,16 720,16 1080,32 C1200,48 1320,48 1440,32 L1440,0 L0,0 Z"
-            fill="rgb(240, 235, 225)"
-            opacity="0.3"
-          />
-          <path
-            d="M0,64 C240,32 480,32 720,64 C960,96 1200,96 1440,64 L1440,0 L0,0 Z"
-            fill="rgb(215, 100, 90)"
-            opacity="0.1"
-          />
-        </svg>
-      </div>
-
-      <div className="container relative z-10 px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="text-center mb-12 sm:mb-16 md:mb-20">
-          <span className="inline-block text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary mb-3 sm:mb-4 bg-nextstep-clay border border-primary/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-warm-sm">
-            Process
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold font-heading text-foreground mb-4 sm:mb-6">
-            How It Works
+    <section className="py-16 sm:py-20 md:py-24 bg-background border-b border-border">
+      <div className="container px-4 sm:px-6">
+        <Reveal className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
+          <p className="eyebrow mb-3">How it works</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium font-heading text-foreground mb-3 sm:mb-4 tracking-tight">
+            Simple, from either side.
           </h2>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto px-4">
-            A simple three-phase process designed for seamless collaboration.
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+            A short process, whether you're posting a project or picking one up.
           </p>
-        </div>
+        </Reveal>
 
-        {/* Phase Cards */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
-          {phases.map((phase, index) => (
-            <div
-              key={index}
-              className="relative bg-card p-6 sm:p-8 rounded-2xl border-0 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
-            >
-              {/* Phase Number Badge */}
-              <div className="absolute -top-3 sm:-top-4 left-6 sm:left-8 bg-primary text-primary-foreground text-xs sm:text-sm font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-warm-sm">
-                Phase {phase.number}
-              </div>
+        <Reveal delay={0.1}>
+          <Tabs defaultValue="business" className="w-full">
+            <div className="flex justify-center mb-10 sm:mb-12">
+              <TabsList>
+                <TabsTrigger value="business">For businesses</TabsTrigger>
+                <TabsTrigger value="student">For students</TabsTrigger>
+              </TabsList>
+            </div>
 
-              <div className="mt-3 sm:mt-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-nextstep-brick rounded-xl flex items-center justify-center mb-4 sm:mb-5 shadow-warm-sm">
-                  <phase.icon className="w-5 h-5 sm:w-6 sm:h-6 text-card" />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold font-heading text-foreground mb-2 sm:mb-3">
-                  {phase.title}
+            <TabsContent value="business" className="mt-0">
+              <StepList steps={businessPhases} />
+              <div className="mt-8 sm:mt-10 border-t border-border pt-6 sm:pt-7 grid md:grid-cols-[auto_1fr] gap-2 md:gap-10 items-start">
+                <h3 className="text-base sm:text-lg font-medium font-heading text-foreground whitespace-nowrap">
+                  Flexible compensation
                 </h3>
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  {phase.description}
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Compensation is up to you. Both paid and volunteer opportunities are welcome —
+                  students join to gain experience and build their portfolios.
                 </p>
               </div>
-            </div>
-          ))}
-        </div>
+            </TabsContent>
 
-        {/* Payment Flexibility Note */}
-        <div className="mt-12 sm:mt-16 max-w-3xl mx-auto text-center">
-          <div className="bg-nextstep-clay/40 border-0 rounded-2xl p-6 sm:p-8 shadow-warm-md">
-            <h3 className="text-lg sm:text-xl font-bold font-heading text-foreground mb-2 sm:mb-3">
-              Flexible Compensation
-            </h3>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Compensation is entirely up to you. Many organizations work with students on a volunteer basis,
-              while others choose to offer payment or stipends. Students join NextStep to gain real-world
-              experience and build their portfolios, so both paid and unpaid opportunities are welcome.
-            </p>
+            <TabsContent value="student" className="mt-0">
+              <StepList steps={studentSteps} />
+            </TabsContent>
+          </Tabs>
+        </Reveal>
+
+        <Reveal delay={0.15} className="mt-14 sm:mt-16 max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 gap-8 sm:gap-10">
+            {testimonials.map((testimonial) => (
+              <div key={testimonial.quote} className="border-l-2 border-primary/30 pl-4 sm:pl-5">
+                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-3">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+                <p className="text-sm font-semibold text-foreground">{testimonial.name}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground mt-0.5">
+                  {testimonial.role}
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

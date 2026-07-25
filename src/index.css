@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&family=Arimo:wght@400;500;600;700&display=swap');
 
 /* NextStep Design System - Warm, Inviting, Education-Focused */
 
@@ -20,7 +19,7 @@
 
     /* White + Red Theme */
     --nextstep-clay: 0 0% 100%;
-    --nextstep-offwhite: 0 0% 97%;
+    --nextstep-offwhite: 0 0% 100%;
 
     /* Core Colors - White + Red */
     --background: var(--nextstep-offwhite);
@@ -61,12 +60,12 @@
     --input: 0 0% 100%;
     --ring: var(--nextstep-red);
 
-    /* Generous radius for friendly, approachable feel */
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    /* Typography */
-    --font-heading: 'Sora', sans-serif;
-    --font-body: 'Inter', 'DM Sans', sans-serif;
+    /* Typography - Plus Jakarta Sans headings, Fustat body, DM Mono labels */
+    --font-heading: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-body: 'Fustat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'DM Mono', ui-monospace, monospace;
 
     /* Subtle red-tinted shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
@@ -92,7 +91,7 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     color: hsl(var(--foreground));
-    font-weight: 600;
+    font-weight: 500;
   }
 }
 
@@ -110,20 +109,45 @@
     @apply absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60;
   }
 
-  /* Card styles - Muted Clay background, generous rounding */
   .warm-card {
-    @apply bg-card rounded-2xl shadow-warm border-0;
+    @apply bg-card rounded-lg border-0;
   }
 
-  /* Primary button - NextStep Red, generous padding */
   .btn-primary {
-    @apply bg-primary text-primary-foreground rounded-2xl px-8 py-4 font-semibold shadow-md hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-pressed))] transition-all duration-200;
+    @apply bg-primary text-primary-foreground rounded-lg px-8 py-4 font-medium hover:bg-[hsl(var(--primary-hover))] active:bg-[hsl(var(--primary-pressed))] transition-colors duration-200;
   }
 
-  /* Secondary button - Muted Clay with Brick Shadow text */
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground rounded-2xl px-8 py-4 font-semibold shadow-sm hover:shadow-md transition-all duration-200;
+    @apply bg-secondary text-secondary-foreground rounded-lg px-8 py-4 font-medium hover:bg-muted transition-colors duration-200;
   }
+
+  /* mem0-style uppercase mono eyebrow label above section headings */
+  .eyebrow {
+    @apply font-mono text-xs font-medium uppercase tracking-[0.2em] text-primary;
+  }
+
+  /* Flat bordered card — structure via 1px borders, no shadows */
+  .flat-card {
+    @apply bg-card border border-border rounded-md p-6 sm:p-7;
+  }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink-cursor {
+  animation: blink-cursor 0.75s step-end infinite;
 }
 
 @layer utilities {

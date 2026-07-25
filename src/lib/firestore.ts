@@ -1,6 +1,14 @@
 import { db, storage } from "./firebase";
-import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, getDoc, getDocs, query, where, Timestamp, DocumentData, updateDoc, increment, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+// Sentinel uid used only by src/pages/DevDashboardPreview.tsx (dev-only, import.meta.env.DEV)
+// to render dashboards with realistic fixture data instead of hitting Firestore with a
+// fake session. Real Firebase uids are never this string, so this can't collide.
+const DEV_PREVIEW_UID = "dev-preview-uid";
+
+// Flipped on by DevDashboardPreview.tsx for list-style reads (no uid to key off of).
+export const devPreviewState = { active: false };
 
 export interface CustomQuestion {
   question: string;
@@ -85,6 +93,24 @@ export const saveBusinessData = async (businessData: BusinessData): Promise<void
 };
 
 export const getBusinessData = async (userId: string): Promise<BusinessData | null> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return {
+      businessId: userId,
+      userId,
+      companyName: "Blue Sky Coffee Co.",
+      location: "Columbus, OH",
+      industry: "We're a specialty coffee roaster and cafe looking to modernize our online ordering and grow our local following.",
+      contactPersonName: "Jordan Blake",
+      email: "jordan@blueskycoffee.example",
+      phone: "(614) 555-0148",
+      preferredContactMethod: "Email",
+      potentialProblems: "We need help redesigning our online ordering flow, running a social media content calendar, and setting up basic sales reporting.",
+      categories: ["Marketing", "Web Design", "Data Analysis"],
+      approvalStatus: "approved",
+      createdAt: new Date("2025-09-12"),
+    };
+  }
+
   try {
     const docRef = doc(db, "businesses", userId);
     const docSnap = await getDoc(docRef);
@@ -174,6 +200,9 @@ export interface StudentProfile {
   bio?: string; // Strengths, characteristics, about me
   linkedinUrl?: string; // Optional LinkedIn
   openToMatching?: boolean; // Whether student wants to be matched to opportunities
+  matchingCategories?: string[]; // Categories the student is interested in for their next match
+  matchingNote?: string; // Optional note about availability/preferences for the next match
+  matchingRequestedAt?: Date | any; // When the student last asked to be matched
   createdAt: Date | any;
   updatedAt?: Date | any;
 }
@@ -191,6 +220,20 @@ export const saveStudentProfile = async (profile: StudentProfile): Promise<void>
 };
 
 export const getStudentProfile = async (userId: string): Promise<StudentProfile | null> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return {
+      userId,
+      name: "Karina Chen",
+      email: "preview@example.com",
+      skills: ["Figma", "React", "User Research"],
+      desiredRoles: ["Product Design", "Frontend Development"],
+      bio: "Junior studying UX design. I like turning messy workflows into simple, usable products.",
+      linkedinUrl: "https://linkedin.com/in/example",
+      openToMatching: true,
+      createdAt: new Date("2025-10-03"),
+    };
+  }
+
   try {
     const docRef = doc(db, "students", userId);
     const docSnap = await getDoc(docRef);
@@ -209,6 +252,10 @@ export const getStudentProfile = async (userId: string): Promise<StudentProfile 
 };
 
 export const updateStudentProfile = async (userId: string, profile: Partial<StudentProfile>): Promise<void> => {
+  if (userId === DEV_PREVIEW_UID) {
+    return;
+  }
+
   try {
     await setDoc(doc(db, "students", userId), {
       ...profile,
@@ -227,7 +274,66 @@ export const updateMatchingPreference = async (userId: string, openToMatching: b
   }
 };
 
+/** Student taps "+" to ask NextStep to find them a partnership. */
+export const requestMatching = async (
+  userId: string,
+  categories: string[],
+  note?: string
+): Promise<void> => {
+  await updateStudentProfile(userId, {
+    openToMatching: true,
+    matchingCategories: categories,
+    matchingNote: note || "",
+    matchingRequestedAt: new Date(),
+  });
+};
+
+/** Student is matched or wants to stop being considered for now. */
+export const cancelMatchingRequest = async (userId: string): Promise<void> => {
+  await updateStudentProfile(userId, { openToMatching: false });
+};
+
+/** All students currently asking to be matched — for admin to review and pair. */
+export const getStudentsSeekingMatch = async (): Promise<StudentProfile[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        userId: "dev-student-seeking-1",
+        name: "Marcus Webb",
+        email: "marcus@example.com",
+        skills: ["Video Editing", "Canva", "Copywriting"],
+        desiredRoles: ["Content Creation"],
+        openToMatching: true,
+        matchingCategories: ["Marketing", "Social Media"],
+        matchingNote: "I have about 5 hours a week free this month and would love a marketing-focused project.",
+        matchingRequestedAt: new Date("2026-07-18"),
+        createdAt: new Date("2025-11-01"),
+      },
+      {
+        userId: "dev-student-seeking-2",
+        name: "Priya Nair",
+        email: "priya@example.com",
+        skills: ["Excel", "SQL", "Data Visualization"],
+        desiredRoles: ["Data Analysis"],
+        openToMatching: true,
+        matchingCategories: ["Data Analysis"],
+        matchingRequestedAt: new Date("2026-07-15"),
+        createdAt: new Date("2026-02-14"),
+      },
+    ];
+  }
+
+  const studentsRef = collection(db, "students");
+  const q = query(studentsRef, where("openToMatching", "==", true));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map((doc) => ({ ...doc.data(), userId: doc.id } as StudentProfile));
+};
+
 export const getAllStudents = async (): Promise<StudentProfile[]> => {
+  if (devPreviewState.active) {
+    return getStudentsSeekingMatch();
+  }
+
   try {
     const studentsRef = collection(db, "students");
     const querySnapshot = await getDocs(studentsRef);
@@ -322,6 +428,41 @@ export const getOpportunitiesForBusiness = async (businessId: string): Promise<O
 };
 
 export const getAllActiveOpportunities = async (): Promise<Opportunity[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        id: "dev-opp-1",
+        businessId: "dev-biz-1",
+        businessName: "Blue Sky Coffee Co.",
+        title: "Redesign online ordering flow",
+        description: "We need a cleaner, faster checkout for our online ordering site. You'd audit the current flow, propose wireframes, and help implement the redesign with our team.",
+        categories: ["Web Design", "UX Research"],
+        status: "active",
+        createdAt: new Date("2026-06-20"),
+      },
+      {
+        id: "dev-opp-2",
+        businessId: "dev-biz-2",
+        businessName: "Maple & Co. Bookkeeping",
+        title: "Build a social media content calendar",
+        description: "Looking for a student to plan and design a month of Instagram and LinkedIn posts to help us reach more local small-business clients.",
+        categories: ["Marketing"],
+        status: "active",
+        createdAt: new Date("2026-06-18"),
+      },
+      {
+        id: "dev-opp-3",
+        businessId: "dev-biz-3",
+        businessName: "Riverside Bike Shop",
+        title: "Basic sales dashboard",
+        description: "We track sales in spreadsheets and want a simple dashboard to visualize monthly trends and best-selling products.",
+        categories: ["Data Analysis", "Web Design"],
+        status: "active",
+        createdAt: new Date("2026-06-10"),
+      },
+    ] as Opportunity[];
+  }
+
   const q = query(collection(db, "opportunities"), where("status", "==", "active"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Opportunity));
@@ -532,6 +673,93 @@ export const CATEGORIES = [
 export type Category = typeof CATEGORIES[number];
 
 // ============================================
+// COMMUNITY FEED
+// Admin-posted spotlights on what's happening across NextStep right now.
+// ============================================
+export interface Post {
+  id?: string;
+  authorEmail: string;
+  caption: string;
+  businessName?: string;
+  category?: string;
+  likedBy: string[];
+  createdAt: Date | any;
+}
+
+export const createPost = async (
+  post: Omit<Post, "id" | "createdAt" | "likedBy">
+): Promise<string> => {
+  if (devPreviewState.active) {
+    return "dev-post-id";
+  }
+
+  const postsRef = collection(db, "posts");
+  const data: Record<string, any> = {
+    ...post,
+    likedBy: [],
+    createdAt: new Date(),
+  };
+  Object.keys(data).forEach((key) => data[key] === undefined && delete data[key]);
+  const docRef = await addDoc(postsRef, data);
+  return docRef.id;
+};
+
+export const getAllPosts = async (): Promise<Post[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        id: "dev-post-1",
+        authorEmail: "admin@nextstep.com",
+        caption: "A full checkout redesign just kicked off with Blue Sky Coffee Co. — excited to see this one come together!",
+        businessName: "Blue Sky Coffee Co.",
+        category: "Web Design",
+        likedBy: ["dev-preview-uid"],
+        createdAt: new Date("2026-07-15"),
+      },
+      {
+        id: "dev-post-2",
+        authorEmail: "admin@nextstep.com",
+        caption: "Wrapped up a sales dashboard project with Riverside Bike Shop this week. Great work all around!",
+        businessName: "Riverside Bike Shop",
+        category: "Data Analysis",
+        likedBy: [],
+        createdAt: new Date("2026-07-10"),
+      },
+      {
+        id: "dev-post-3",
+        authorEmail: "admin@nextstep.com",
+        caption: "We've got 3 new local businesses ready to partner this month. If you're open to matching, tap the button on your Partnerships page!",
+        likedBy: ["dev-preview-uid", "dev-student-seeking-1"],
+        createdAt: new Date("2026-07-05"),
+      },
+    ];
+  }
+
+  const postsRef = collection(db, "posts");
+  const querySnapshot = await getDocs(postsRef);
+  const posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
+  posts.sort((a, b) => {
+    const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+    const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+    return dateB.getTime() - dateA.getTime();
+  });
+  return posts;
+};
+
+export const toggleLikePost = async (postId: string, userId: string, isLiked: boolean): Promise<void> => {
+  if (devPreviewState.active) return;
+
+  await updateDoc(doc(db, "posts", postId), {
+    likedBy: isLiked ? arrayRemove(userId) : arrayUnion(userId),
+  });
+};
+
+export const deletePost = async (postId: string): Promise<void> => {
+  if (devPreviewState.active) return;
+  await deleteDoc(doc(db, "posts", postId));
+};
+
+// ============================================
 // RATINGS
 // ============================================
 export interface Rating {
@@ -572,6 +800,37 @@ export const saveRating = async (rating: Omit<Rating, "id" | "createdAt">): Prom
 };
 
 export const getRatingsForStudent = async (studentId: string): Promise<Rating[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        id: "dev-1",
+        businessId: DEV_PREVIEW_UID,
+        studentId,
+        applicationId: "dev-app-1",
+        overallRating: 5,
+        communicationRating: 5,
+        professionalismRating: 5,
+        skillQualityRating: 4,
+        feedback: "Karina redesigned our checkout flow in two weeks and completions went up right away. Clear communicator, easy to work with.",
+        createdAt: new Date("2026-05-02"),
+        projectCompletedAt: new Date("2026-05-01"),
+      },
+      {
+        id: "dev-2",
+        businessId: DEV_PREVIEW_UID,
+        studentId,
+        applicationId: "dev-app-2",
+        overallRating: 4,
+        communicationRating: 4,
+        professionalismRating: 5,
+        skillQualityRating: 4,
+        feedback: "Great eye for detail on our style guide. Would happily work with her again.",
+        createdAt: new Date("2026-02-14"),
+        projectCompletedAt: new Date("2026-02-10"),
+      },
+    ];
+  }
+
   try {
     const ratingsRef = collection(db, "ratings");
     const q = query(ratingsRef, where("studentId", "==", studentId));
@@ -606,6 +865,22 @@ export const getApplicationsForBusiness = async (businessId: string): Promise<Ap
 };
 
 export const getApplicationsForStudent = async (studentId: string): Promise<Application[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        id: "dev-app-past",
+        studentId,
+        studentName: "Karina Chen",
+        studentEmail: "preview@example.com",
+        businessId: "dev-biz-past",
+        businessName: "Riverside Bike Shop",
+        answers: {},
+        appliedAt: new Date("2026-01-10"),
+        status: "completed",
+      },
+    ];
+  }
+
   try {
     const applicationsRef = collection(db, "applications");
     const q = query(applicationsRef, where("studentId", "==", studentId));
@@ -663,6 +938,10 @@ const incrementCompletedProjects = async (businessId: string): Promise<void> => 
 };
 
 export const getBadgeStatus = async (businessId: string): Promise<BadgeStatus> => {
+  if (businessId === DEV_PREVIEW_UID) {
+    return { completedProjects: 3, badge: "returning" };
+  }
+
   try {
     const badgeDocRef = doc(db, "businesses", businessId, "private", "badge");
     const badgeDoc = await getDoc(badgeDocRef);
@@ -684,6 +963,24 @@ export const getBadgeStatus = async (businessId: string): Promise<BadgeStatus> =
 
 // Get badge statuses for all businesses (for displaying in listings)
 export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData & { badge: BadgeStatus["badge"] })[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        businessId: "dev-biz-4",
+        companyName: "Corner Deli & Market",
+        location: "Columbus, OH",
+        industry: "We're a neighborhood deli looking for general help with our online presence.",
+        contactPersonName: "Sam Rivera",
+        email: "sam@cornerdeli.example",
+        preferredContactMethod: "Email",
+        potentialProblems: "We don't have a website yet and would love help getting a simple one online, plus setting up Google Business listings.",
+        categories: ["Web Design"],
+        approvalStatus: "approved",
+        badge: "none",
+      },
+    ];
+  }
+
   try {
     const businesses = await getAllBusinesses();
 
@@ -744,6 +1041,9 @@ export const assignStudentToOpportunity = async (
 
     await setDoc(assignmentRef, assignmentData);
     console.log("✅ Student assigned to opportunity successfully");
+
+    // They've been paired — take them off the "seeking match" list.
+    await cancelMatchingRequest(studentId).catch(console.error);
   } catch (error) {
     console.error("❌ Error in assignStudentToOpportunity:", error);
     throw error;
@@ -865,6 +1165,10 @@ export const getOpportunitiesAssignedToStudent = async (studentId: string): Prom
  * Also includes legacy business-level assignments for backward compatibility
  */
 export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignment[]> => {
+  if (devPreviewState.active) {
+    return getStudentPartnershipAssignments(DEV_PREVIEW_UID);
+  }
+
   try {
     console.log("📋 getAllOpportunityAssignments called");
     const assignments: OpportunityAssignment[] = [];
@@ -906,6 +1210,8 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
           notes: assignmentData.notes,
           applicationId: assignmentData.applicationId,
           contractPdfUrl: assignmentData.contractPdfUrl,
+          midpointMeetingDate: assignmentData.midpointMeetingDate,
+          midpointMeetingCompleted: assignmentData.midpointMeetingCompleted,
         });
       }
     }
@@ -941,6 +1247,8 @@ export const getAllOpportunityAssignments = async (): Promise<OpportunityAssignm
           notes: assignmentData.notes,
           applicationId: undefined,
           contractPdfUrl: assignmentData.contractPdfUrl,
+          midpointMeetingDate: assignmentData.midpointMeetingDate,
+          midpointMeetingCompleted: assignmentData.midpointMeetingCompleted,
         });
       }
     }
@@ -1033,6 +1341,9 @@ export const assignStudentToBusiness = async (
     } else {
       console.error("❌ WARNING: Assignment document was NOT found after writing!");
     }
+
+    // They've been paired — take them off the "seeking match" list.
+    await cancelMatchingRequest(studentId).catch(console.error);
   } catch (error) {
     console.error("❌ Error in assignStudentToBusiness:", error);
     if (error instanceof Error) {
@@ -1180,6 +1491,8 @@ export interface OpportunityAssignment {
   notes?: string;
   applicationId?: string; // Reference to application that created this
   contractPdfUrl?: string; // URL to the partnership contract PDF
+  midpointMeetingDate?: Date | any;
+  midpointMeetingCompleted?: boolean;
 }
 
 export interface OpportunityWithStudents {
@@ -1246,6 +1559,10 @@ export interface BusinessWithApprovalStatus extends BusinessData {
 
 // Get all businesses pending approval
 export const getPendingBusinesses = async (): Promise<BusinessWithApprovalStatus[]> => {
+  if (devPreviewState.active) {
+    return [];
+  }
+
   try {
     const businessesRef = collection(db, "businesses");
     const querySnapshot = await getDocs(businessesRef);
@@ -1298,6 +1615,56 @@ export const rejectBusiness = async (userId: string): Promise<void> => {
 
 // Get all approved businesses (for admin use)
 export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
+  if (devPreviewState.active) {
+    return [
+      {
+        userId: "dev-biz-current",
+        businessId: "dev-biz-current",
+        companyName: "Blue Sky Coffee Co.",
+        location: "Columbus, OH",
+        industry: "Specialty coffee roaster and cafe",
+        contactPersonName: "Jordan Blake",
+        email: "jordan@blueskycoffee.example",
+        phone: "(614) 555-0148",
+        preferredContactMethod: "Email",
+        potentialProblems: "We need a cleaner, faster checkout for our online ordering site.",
+        categories: ["Web Design", "UX Research"],
+        approvalStatus: "approved",
+        createdAt: new Date("2025-09-12"),
+      },
+      {
+        userId: "dev-biz-past",
+        businessId: "dev-biz-past",
+        companyName: "Riverside Bike Shop",
+        location: "Columbus, OH",
+        industry: "Local bike shop",
+        contactPersonName: "Sam Rivera",
+        email: "sam@riversidebikes.example",
+        phone: "(614) 555-0199",
+        preferredContactMethod: "Email",
+        potentialProblems: "We track sales in spreadsheets and want a simple dashboard.",
+        categories: ["Data Analysis"],
+        approvalStatus: "approved",
+        createdAt: new Date("2025-11-02"),
+      },
+      {
+        userId: "dev-biz-4",
+        businessId: "dev-biz-4",
+        companyName: "Corner Deli & Market",
+        location: "Columbus, OH",
+        industry: "Neighborhood deli",
+        contactPersonName: "Sam Rivera",
+        email: "sam@cornerdeli.example",
+        phone: "(614) 555-0122",
+        preferredContactMethod: "Email",
+        potentialProblems: "We don't have a website yet.",
+        categories: ["Web Design"],
+        approvalStatus: "approved",
+        createdAt: new Date("2026-02-20"),
+      },
+    ];
+  }
+
   try {
     const businessesRef = collection(db, "businesses");
     const querySnapshot = await getDocs(businessesRef);
@@ -1375,11 +1742,108 @@ export const uploadContractPdf = async (
   }
 };
 
+// ============================================
+// MIDPOINT MEETING TRACKING
+// ============================================
+
+/**
+ * Set or update the midpoint meeting date / completion status for a partnership.
+ * Handles both general (business-level) and opportunity-level assignments.
+ */
+export const setMidpointMeeting = async (
+  opportunityId: string,
+  studentId: string,
+  updates: { date?: Date | null; completed?: boolean }
+): Promise<void> => {
+  if (devPreviewState.active) return;
+
+  try {
+    const payload: Record<string, Date | boolean | null> = {};
+    if (updates.date !== undefined) payload.midpointMeetingDate = updates.date;
+    if (updates.completed !== undefined) payload.midpointMeetingCompleted = updates.completed;
+
+    if (opportunityId.startsWith("business-")) {
+      const businessId = opportunityId.replace("business-", "");
+      await updateDoc(doc(db, "businesses", businessId, "assignedStudents", studentId), payload);
+    } else {
+      await updateDoc(doc(db, "opportunities", opportunityId, "assignedStudents", studentId), payload);
+    }
+  } catch (error) {
+    console.error("Error setting midpoint meeting:", error);
+    throw error;
+  }
+};
+
 /**
  * Get partnership assignments for a student that have contract PDFs.
  * Used by the student dashboard to display the "Current Partnership" tab.
  */
 export const getStudentPartnershipAssignments = async (studentId: string): Promise<OpportunityAssignment[]> => {
+  if (studentId === DEV_PREVIEW_UID) {
+    return [
+      {
+        studentId,
+        opportunityId: "dev-opp-current",
+        businessId: "dev-biz-current",
+        business: {
+          businessId: "dev-biz-current",
+          companyName: "Blue Sky Coffee Co.",
+          location: "Columbus, OH",
+          industry: "Specialty coffee roaster and cafe",
+          contactPersonName: "Jordan Blake",
+          email: "jordan@blueskycoffee.example",
+          preferredContactMethod: "Email",
+          potentialProblems: "We need a cleaner, faster checkout for our online ordering site.",
+        },
+        opportunity: {
+          id: "dev-opp-current",
+          businessId: "dev-biz-current",
+          businessName: "Blue Sky Coffee Co.",
+          title: "Redesign online ordering flow",
+          description: "Audit the current checkout flow, propose wireframes, and help implement the redesign.",
+          categories: ["Web Design", "UX Research"],
+          status: "active",
+          createdAt: new Date("2026-06-01"),
+        },
+        assignedAt: new Date("2026-06-20"),
+        assignedBy: "admin",
+        contractPdfUrl: "https://example.com/dev-preview-contract.pdf",
+        midpointMeetingDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        midpointMeetingCompleted: false,
+      },
+      {
+        studentId,
+        opportunityId: "dev-opp-past",
+        businessId: "dev-biz-past",
+        business: {
+          businessId: "dev-biz-past",
+          companyName: "Riverside Bike Shop",
+          location: "Columbus, OH",
+          industry: "Local bike shop",
+          contactPersonName: "Sam Rivera",
+          email: "sam@riversidebikes.example",
+          preferredContactMethod: "Email",
+          potentialProblems: "We track sales in spreadsheets and want a simple dashboard.",
+        },
+        opportunity: {
+          id: "dev-opp-past",
+          businessId: "dev-biz-past",
+          businessName: "Riverside Bike Shop",
+          title: "Basic sales dashboard",
+          description: "Built a lightweight dashboard to visualize monthly sales trends.",
+          categories: ["Data Analysis"],
+          status: "closed",
+          createdAt: new Date("2025-12-01"),
+        },
+        assignedAt: new Date("2026-01-05"),
+        assignedBy: "admin",
+        applicationId: "dev-app-past",
+        midpointMeetingDate: new Date("2026-01-20"),
+        midpointMeetingCompleted: true,
+      },
+    ];
+  }
+
   try {
     const assignments: OpportunityAssignment[] = [];
 
