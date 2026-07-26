@@ -224,8 +224,8 @@ const StudentDashboard = () => {
 
       if (sent) {
         toast({
-          title: "Message Sent",
-          description: "Your question has been sent. We'll get back to you soon!",
+          title: "Email has been received!",
+          description: "The NextStep team will reach out to you very shortly.",
           variant: "default",
         });
         setQuestionForm({
