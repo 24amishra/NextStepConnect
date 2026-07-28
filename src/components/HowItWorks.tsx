@@ -42,22 +42,6 @@ const studentSteps = [
   },
 ];
 
-// Placeholder testimonials — replace quotes, names, and roles with real ones.
-const testimonials = [
-  {
-    quote:
-      "Working with a real client changed how I think about my major. I have actual results to talk about in interviews now.",
-    name: "Student Name",
-    role: "Student · Placeholder University",
-  },
-  {
-    quote:
-      "The students cleared a backlog we'd been putting off for over a year. Fresh eyes, real energy, real results.",
-    name: "Owner Name",
-    role: "Owner · Placeholder Business",
-  },
-];
-
 const StepList = ({ steps }: { steps: typeof businessPhases }) => (
   <div className={`grid gap-4 sm:gap-5 sm:grid-cols-2 ${steps.length > 3 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
     {steps.map((step) => (
@@ -112,22 +96,6 @@ const HowItWorks = () => {
               <StepList steps={studentSteps} />
             </TabsContent>
           </Tabs>
-        </Reveal>
-
-        <Reveal delay={0.15} className="mt-14 sm:mt-16 max-w-4xl mx-auto">
-          <div className="grid sm:grid-cols-2 gap-8 sm:gap-10">
-            {testimonials.map((testimonial) => (
-              <div key={testimonial.quote} className="border-l-2 border-primary/30 pl-4 sm:pl-5">
-                <p className="text-sm sm:text-base text-foreground leading-relaxed mb-3">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
-                <p className="text-sm font-semibold text-foreground">{testimonial.name}</p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground mt-0.5">
-                  {testimonial.role}
-                </p>
-              </div>
-            ))}
-          </div>
         </Reveal>
       </div>
     </section>
