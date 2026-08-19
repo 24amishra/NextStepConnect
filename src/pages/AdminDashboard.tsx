@@ -29,7 +29,13 @@ import {
   deletePost,
   Post,
   setMidpointMeeting,
+  updateBusinessData,
+  updateStudentProfile,
 } from "@/lib/firestore";
+import { StatusBoard, PartnershipStatus, partnershipStatusMeta } from "@/components/admin/StatusBoard";
+import BusinessDetailModal from "@/components/admin/BusinessDetailModal";
+import StudentDetailModal from "@/components/admin/StudentDetailModal";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendApprovalEmail, sendRejectionEmail, sendMatchEmail } from "@/lib/emailNotifications";
@@ -67,6 +73,8 @@ import {
   Search,
   CalendarClock,
   AlarmClock,
+  LayoutGrid,
+  List as ListIcon,
 } from "lucide-react";
 import {
   Select,
@@ -128,6 +136,39 @@ const formatMidpointDate = (value: Date | any): string => {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 };
 
+const toMillis = (value: Date | any): number => {
+  if (!value) return 0;
+  const date = value?.toDate ? value.toDate() : new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
+const formatRelativeDate = (value: Date | any): string => {
+  const millis = toMillis(value);
+  if (!millis) return "";
+  const days = Math.floor((Date.now() - millis) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "Today";
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
+  const years = Math.floor(months / 12);
+  return `${years} year${years > 1 ? "s" : ""} ago`;
+};
+
+const getBusinessStatus = (business: BusinessData, assignments: OpportunityAssignment[]): PartnershipStatus => {
+  const isAssigned = assignments.some((a) => a.businessId === business.userId);
+  if (isAssigned) return "assigned";
+  if (business.onHold) return "on_hold";
+  return "unassigned";
+};
+
+const getStudentStatus = (student: StudentProfile, assignments: OpportunityAssignment[]): PartnershipStatus => {
+  const isAssigned = assignments.some((a) => a.studentId === student.userId);
+  if (isAssigned) return "assigned";
+  if (student.onHold) return "on_hold";
+  return "unassigned";
+};
+
 const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -160,6 +201,14 @@ const AdminDashboard = () => {
   const [savingMidpointFor, setSavingMidpointFor] = useState<string | null>(null);
   const [businessSearch, setBusinessSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
+  const [businessViewMode, setBusinessViewMode] = useState<"list" | "board">("list");
+  const [studentViewMode, setStudentViewMode] = useState<"list" | "board">("list");
+  const [businessSort, setBusinessSort] = useState<"newest" | "oldest" | "name" | "industry">("newest");
+  const [studentSort, setStudentSort] = useState<"newest" | "oldest" | "name" | "skills">("newest");
+  const [studentSkillFilter, setStudentSkillFilter] = useState<string[]>([]);
+  const [selectedBusinessProfile, setSelectedBusinessProfile] = useState<BusinessData | null>(null);
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState<StudentProfile | null>(null);
+  const [togglingOnHoldId, setTogglingOnHoldId] = useState<string | null>(null);
 
   const fetchPendingBusinesses = async () => {
     try {
