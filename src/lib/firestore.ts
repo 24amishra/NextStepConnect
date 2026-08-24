@@ -46,6 +46,7 @@ export interface BusinessData extends PublicBusinessData {
   createdAt: Date | any;
   updatedAt?: Date | any;
   approvalStatus?: "pending" | "approved" | "rejected";
+  onHold?: boolean;
 }
 
 // ============================================
@@ -205,6 +206,7 @@ export interface StudentProfile {
   matchingRequestedAt?: Date | any; // When the student last asked to be matched
   createdAt: Date | any;
   updatedAt?: Date | any;
+  onHold?: boolean;
 }
 
 export const saveStudentProfile = async (profile: StudentProfile): Promise<void> => {
