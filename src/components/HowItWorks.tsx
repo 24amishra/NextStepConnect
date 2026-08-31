@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Reveal from "@/components/Reveal";
+import { Quote } from "lucide-react";
 
 const businessPhases = [
   {
@@ -94,6 +95,18 @@ const HowItWorks = () => {
 
             <TabsContent value="student" className="mt-0">
               <StepList steps={studentSteps} />
+              <div className="mt-8 sm:mt-10 border-t border-border pt-8 sm:pt-10 max-w-xl mx-auto text-center">
+                <Quote className="w-6 h-6 text-primary/30 mx-auto mb-4" strokeWidth={1.5} />
+                <p className="text-lg sm:text-xl font-medium font-heading text-foreground leading-snug tracking-tight text-balance">
+                  Partnering with NextStep was a positive experience from start to finish. The team was very
+                  responsive and clearly invested in making this collaboration a success. I would definitely love
+                  to work with them again!
+                </p>
+                <p className="font-medium text-foreground mt-5">Veda Rameswarapu</p>
+                <p className="font-mono text-xs uppercase tracking-[0.15em] text-primary mt-1">
+                  Summer &apos;26
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
         </Reveal>
