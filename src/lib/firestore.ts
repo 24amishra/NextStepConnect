@@ -28,6 +28,8 @@ export interface PublicBusinessData {
   customQuestions?: CustomQuestion[];
   categories?: string[]; // Array of category tags
   approvalStatus?: "pending" | "approved" | "rejected"; // Public so students can filter
+  everPartnered?: boolean; // True once they've ever had a student assignment — persists after the assignment is removed
+  lastPartneredAt?: Date | any; // Most recent time they were assigned a student — powers recency sort/filter
 }
 
 // Private data structure (only business owner sees)
@@ -46,6 +48,7 @@ export interface BusinessData extends PublicBusinessData {
   createdAt: Date | any;
   updatedAt?: Date | any;
   approvalStatus?: "pending" | "approved" | "rejected";
+  onHold?: boolean;
 }
 
 // ============================================
@@ -205,6 +208,7 @@ export interface StudentProfile {
   matchingRequestedAt?: Date | any; // When the student last asked to be matched
   createdAt: Date | any;
   updatedAt?: Date | any;
+  onHold?: boolean;
 }
 
 export const saveStudentProfile = async (profile: StudentProfile): Promise<void> => {
@@ -1007,6 +1011,24 @@ export const getAllBusinessesWithBadges = async (): Promise<(PublicBusinessData 
 /**
  * Assign a student to a specific opportunity (NEW - replaces business-level assignments)
  */
+/**
+ * Stamp a business as a partner (past or current) the moment they get their
+ * first — or another — student assignment. This never gets cleared when an
+ * assignment is later removed, so it doubles as partnership history: it's
+ * what lets the admin Contacts board tell "new" / "past partner" / "current
+ * partner" apart, and `lastPartneredAt` powers the recency filter/sort.
+ */
+const markBusinessAsPartnered = async (businessId: string): Promise<void> => {
+  try {
+    await updateDoc(doc(db, "businesses", businessId), {
+      everPartnered: true,
+      lastPartneredAt: new Date(),
+    });
+  } catch (error) {
+    console.error("Failed to stamp business as partnered:", error);
+  }
+};
+
 export const assignStudentToOpportunity = async (
   opportunityId: string,
   studentId: string,
@@ -1044,6 +1066,7 @@ export const assignStudentToOpportunity = async (
 
     // They've been paired — take them off the "seeking match" list.
     await cancelMatchingRequest(studentId).catch(console.error);
+    await markBusinessAsPartnered(opportunity.businessId);
   } catch (error) {
     console.error("❌ Error in assignStudentToOpportunity:", error);
     throw error;
@@ -1291,6 +1314,66 @@ export const removeStudentFromOpportunity = async (opportunityId: string, studen
   }
 };
 
+/**
+ * Edit an existing assignment: update its notes in place, and/or move it to
+ * a different business/opportunity. A "move" isn't a plain field update —
+ * the assignment's Firestore path is derived from the business/opportunity
+ * it belongs to — so this copies the doc (contract PDF, midpoint fields,
+ * assignedAt, etc. all carry over) to the new location and deletes the old
+ * one. Returns the id (opportunityId, or `business-{id}` for a general
+ * assignment) the assignment now lives under.
+ */
+export const updateAssignment = async (
+  currentOpportunityId: string,
+  studentId: string,
+  updates: { newOpportunityId?: string; notes?: string }
+): Promise<string> => {
+  const isCurrentBusinessLevel = currentOpportunityId.startsWith("business-");
+  const currentRef = isCurrentBusinessLevel
+    ? doc(db, "businesses", currentOpportunityId.replace("business-", ""), "assignedStudents", studentId)
+    : doc(db, "opportunities", currentOpportunityId, "assignedStudents", studentId);
+
+  const isMoving = !!updates.newOpportunityId && updates.newOpportunityId !== currentOpportunityId;
+
+  if (!isMoving) {
+    if (updates.notes !== undefined) {
+      await updateDoc(currentRef, { notes: updates.notes });
+    }
+    return currentOpportunityId;
+  }
+
+  const currentSnap = await getDoc(currentRef);
+  if (!currentSnap.exists()) {
+    throw new Error("Assignment not found");
+  }
+  const currentData = currentSnap.data();
+
+  const newOpportunityId = updates.newOpportunityId!;
+  const isNewBusinessLevel = newOpportunityId.startsWith("business-");
+  const newBusinessId = isNewBusinessLevel
+    ? newOpportunityId.replace("business-", "")
+    : (await getOpportunity(newOpportunityId))?.businessId;
+  if (!newBusinessId) {
+    throw new Error("Target business/opportunity not found");
+  }
+
+  const newRef = isNewBusinessLevel
+    ? doc(db, "businesses", newBusinessId, "assignedStudents", studentId)
+    : doc(db, "opportunities", newOpportunityId, "assignedStudents", studentId);
+
+  await setDoc(newRef, {
+    ...currentData,
+    studentId,
+    businessId: newBusinessId,
+    opportunityId: isNewBusinessLevel ? undefined : newOpportunityId,
+    notes: updates.notes !== undefined ? updates.notes : currentData.notes,
+  });
+  await deleteDoc(currentRef);
+  await markBusinessAsPartnered(newBusinessId);
+
+  return newOpportunityId;
+};
+
 // ============================================
 // STUDENT-BUSINESS ASSIGNMENTS (DEPRECATED - USE OPPORTUNITY-LEVEL INSTEAD)
 // ============================================
@@ -1344,6 +1427,7 @@ export const assignStudentToBusiness = async (
 
     // They've been paired — take them off the "seeking match" list.
     await cancelMatchingRequest(studentId).catch(console.error);
+    await markBusinessAsPartnered(businessId);
   } catch (error) {
     console.error("❌ Error in assignStudentToBusiness:", error);
     if (error instanceof Error) {
@@ -1631,6 +1715,8 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
         categories: ["Web Design", "UX Research"],
         approvalStatus: "approved",
         createdAt: new Date("2025-09-12"),
+        everPartnered: true,
+        lastPartneredAt: new Date("2026-06-20"),
       },
       {
         userId: "dev-biz-past",
@@ -1646,6 +1732,8 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
         categories: ["Data Analysis"],
         approvalStatus: "approved",
         createdAt: new Date("2025-11-02"),
+        everPartnered: true,
+        lastPartneredAt: new Date("2026-01-05"),
       },
       {
         userId: "dev-biz-4",
@@ -1661,6 +1749,23 @@ export const getApprovedBusinesses = async (): Promise<BusinessData[]> => {
         categories: ["Web Design"],
         approvalStatus: "approved",
         createdAt: new Date("2026-02-20"),
+        everPartnered: true,
+        lastPartneredAt: new Date("2025-10-14"),
+      },
+      {
+        userId: "dev-biz-5",
+        businessId: "dev-biz-5",
+        companyName: "Sunset Yoga Studio",
+        location: "Columbus, OH",
+        industry: "Wellness studio",
+        contactPersonName: "Priya Anand",
+        email: "priya@sunsetyoga.example",
+        phone: "(614) 555-0177",
+        preferredContactMethod: "Phone",
+        potentialProblems: "We'd like help setting up online class booking.",
+        categories: ["Web Design"],
+        approvalStatus: "approved",
+        createdAt: new Date("2026-07-30"),
       },
     ];
   }

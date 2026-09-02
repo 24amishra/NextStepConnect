@@ -4,10 +4,14 @@
  * Uses EmailJS for client-side email sending.
  * Configure your EmailJS account at https://www.emailjs.com/
  *
+ * Free-tier EmailJS accounts are capped at 2 templates, so the student and
+ * business welcome emails share one template (VITE_EMAILJS_WELCOME_TEMPLATE_ID).
+ * Business-approval and student-matched emails have no template yet and will
+ * just log a warning and no-op until a template ID is configured for them.
+ *
  * Required env vars:
  *   VITE_EMAILJS_SERVICE_ID
  *   VITE_EMAILJS_WELCOME_TEMPLATE_ID
- *   VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID
  *   VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID
  *   VITE_EMAILJS_CONTACT_TEMPLATE_ID
  *   VITE_EMAILJS_PUBLIC_KEY
@@ -17,7 +21,6 @@ import emailjs from "@emailjs/browser";
 
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE_ID;
-const EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID;
 const EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_BUSINESS_APPROVED_TEMPLATE_ID;
 const EMAILJS_STUDENT_MATCHED_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_STUDENT_MATCHED_TEMPLATE_ID;
 const EMAILJS_CONTACT_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_CONTACT_TEMPLATE_ID;
@@ -57,16 +60,21 @@ export interface BusinessWelcomeEmailData {
 /**
  * Send welcome email to a business after signup.
  * Tells them their account is pending approval.
+ *
+ * Shares a template with sendWelcomeEmail (see file header) since the free
+ * EmailJS tier only allows 2 templates. company_name is passed through in
+ * case the shared template references it, but is optional for the template
+ * to use.
  */
 export const sendBusinessWelcomeEmail = async (data: BusinessWelcomeEmailData): Promise<void> => {
-  if (!EMAILJS_SERVICE_ID || !EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_WELCOME_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
     console.warn("EmailJS is not configured. Skipping business welcome email.");
     return;
   }
 
   await emailjs.send(
     EMAILJS_SERVICE_ID,
-    EMAILJS_BUSINESS_WELCOME_TEMPLATE_ID,
+    EMAILJS_WELCOME_TEMPLATE_ID,
     {
       to_email: data.to_email,
       to_name: data.to_name,
