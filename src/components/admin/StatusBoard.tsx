@@ -1,18 +1,19 @@
 import { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 
-export type PartnershipStatus = "on_hold" | "unassigned" | "assigned";
+export type PartnershipStatus = "on_hold" | "unassigned" | "past" | "assigned";
 
 export const partnershipStatusMeta: Record<
   PartnershipStatus,
   { label: string; dot: string; badge: string }
 > = {
+  unassigned: { label: "New", dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 border-slate-200" },
+  past: { label: "Past Partner", dot: "bg-indigo-500", badge: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  assigned: { label: "Current Partner", dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   on_hold: { label: "On Hold", dot: "bg-amber-500", badge: "bg-amber-50 text-amber-700 border-amber-200" },
-  unassigned: { label: "Unassigned", dot: "bg-slate-400", badge: "bg-slate-100 text-slate-600 border-slate-200" },
-  assigned: { label: "Assigned", dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
 
-const COLUMN_ORDER: PartnershipStatus[] = ["on_hold", "unassigned", "assigned"];
+const COLUMN_ORDER: PartnershipStatus[] = ["unassigned", "past", "assigned", "on_hold"];
 
 interface StatusBoardProps<T> {
   items: T[];
@@ -30,7 +31,7 @@ export function StatusBoard<T>({ items, getStatus, getKey, renderCard, onCardCli
   }));
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {columns.map((column) => {
         const meta = partnershipStatusMeta[column.status];
         return (

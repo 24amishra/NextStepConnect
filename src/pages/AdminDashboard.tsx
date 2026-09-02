@@ -31,6 +31,8 @@ import {
   setMidpointMeeting,
   updateBusinessData,
   updateStudentProfile,
+  updateAssignment,
+  CATEGORIES,
 } from "@/lib/firestore";
 import { StatusBoard, PartnershipStatus, partnershipStatusMeta } from "@/components/admin/StatusBoard";
 import BusinessDetailModal from "@/components/admin/BusinessDetailModal";
@@ -75,6 +77,13 @@ import {
   AlarmClock,
   LayoutGrid,
   List as ListIcon,
+  Contact,
+  PauseCircle,
+  PlayCircle,
+  Pencil,
+  CheckSquare,
+  Square,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   Select,
@@ -88,6 +97,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type MidpointStatus = "overdue" | "soon" | "unscheduled" | "scheduled" | "completed";
 
@@ -159,6 +169,7 @@ const getBusinessStatus = (business: BusinessData, assignments: OpportunityAssig
   const isAssigned = assignments.some((a) => a.businessId === business.userId);
   if (isAssigned) return "assigned";
   if (business.onHold) return "on_hold";
+  if (business.everPartnered) return "past";
   return "unassigned";
 };
 
@@ -169,6 +180,32 @@ const getStudentStatus = (student: StudentProfile, assignments: OpportunityAssig
   return "unassigned";
 };
 
+// Students don't have a structured category field the way businesses do (just
+// free-text skills/desired roles), so we bucket them into the same CATEGORIES
+// list businesses use by keyword-matching their skills/roles/bio. A student
+// can land in more than one bucket — that's expected (e.g. someone doing both
+// social media and copywriting shows up under both).
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  Marketing: ["marketing", "seo", "advertis", "campaign", "brand", "growth"],
+  Photography: ["photography", "photograph", "camera"],
+  "Computer Science": ["computer science", "software", "programming", "coding", "developer", "engineer", "python", "javascript", "algorithm"],
+  "Web Development": ["web dev", "website", "html", "css", "react", "frontend", "front-end", "backend", "back-end", "full stack", "wordpress"],
+  "Graphic Design": ["graphic design", "photoshop", "illustrator", "canva", "figma", "ui/ux", " ui ", " ux ", "logo design", "branding"],
+  "Content Writing": ["writing", "copywriting", "content writing", "blog", "journalism", "editor"],
+  "Social Media": ["social media", "instagram", "tiktok", "influencer"],
+  "Video Production": ["video", "editing", "premiere", "videography", "filmmaking"],
+  "Data Analysis": ["data analysis", "data visualization", "excel", "sql", "tableau", "statistics", "analytics"],
+  "Business Strategy": ["business strategy", "consulting", "finance", "operations", "strategy", "entrepreneurship"],
+};
+
+const inferStudentCategories = (student: StudentProfile): string[] => {
+  const text = ` ${[...(student.skills || []), ...(student.desiredRoles || []), student.bio || ""].join(" ").toLowerCase()} `;
+  const matches = Object.entries(CATEGORY_KEYWORDS)
+    .filter(([, keywords]) => keywords.some((keyword) => text.includes(keyword)))
+    .map(([category]) => category);
+  return matches.length > 0 ? matches : ["Other"];
+};
+
 const AdminDashboard = () => {
   const { currentUser, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -177,7 +214,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"approvals" | "interests" | "matchRequests" | "partnerships" | "feed">("partnerships");
+  const [activeTab, setActiveTab] = useState<"approvals" | "interests" | "matchRequests" | "partnerships" | "contacts" | "feed">("partnerships");
   const [interests, setInterests] = useState<Application[]>([]);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [matchRequests, setMatchRequests] = useState<StudentProfile[]>([]);
@@ -201,14 +238,27 @@ const AdminDashboard = () => {
   const [savingMidpointFor, setSavingMidpointFor] = useState<string | null>(null);
   const [businessSearch, setBusinessSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
-  const [businessViewMode, setBusinessViewMode] = useState<"list" | "board">("list");
+  const [businessViewMode, setBusinessViewMode] = useState<"list" | "board">("board");
   const [studentViewMode, setStudentViewMode] = useState<"list" | "board">("list");
-  const [businessSort, setBusinessSort] = useState<"newest" | "oldest" | "name" | "industry">("newest");
+  const [businessSort, setBusinessSort] = useState<"recentPartner" | "newest" | "oldest" | "name" | "industry">("recentPartner");
   const [studentSort, setStudentSort] = useState<"newest" | "oldest" | "name" | "skills">("newest");
   const [studentSkillFilter, setStudentSkillFilter] = useState<string[]>([]);
+  const [businessCategoryFilter, setBusinessCategoryFilter] = useState<string[]>([]);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState<BusinessData | null>(null);
   const [selectedStudentProfile, setSelectedStudentProfile] = useState<StudentProfile | null>(null);
   const [togglingOnHoldId, setTogglingOnHoldId] = useState<string | null>(null);
+
+  // Bulk selection for Midpoint Check-ins and Assignments
+  const [selectedMidpointKeys, setSelectedMidpointKeys] = useState<Set<string>>(new Set());
+  const [bulkMidpointSaving, setBulkMidpointSaving] = useState(false);
+  const [selectedAssignmentKeys, setSelectedAssignmentKeys] = useState<Set<string>>(new Set());
+  const [bulkAssignmentRemoving, setBulkAssignmentRemoving] = useState(false);
+
+  // Edit assignment dialog
+  const [editingAssignment, setEditingAssignment] = useState<OpportunityAssignment | null>(null);
+  const [editAssignmentTarget, setEditAssignmentTarget] = useState<string>("");
+  const [editAssignmentNotes, setEditAssignmentNotes] = useState<string>("");
+  const [savingEditAssignment, setSavingEditAssignment] = useState(false);
 
   const fetchPendingBusinesses = async () => {
     try {
@@ -430,6 +480,9 @@ const AdminDashboard = () => {
     }
   };
 
+  // Helper to build the same "opportunityId-studentId" key used everywhere for selection/loading state.
+  const assignmentKey = (a: OpportunityAssignment) => `${a.opportunityId}-${a.studentId}`;
+
   const handleRemoveAssignment = async (opportunityId: string, studentId: string) => {
     if (!confirm("Are you sure you want to remove this assignment?")) {
       return;
@@ -438,12 +491,48 @@ const AdminDashboard = () => {
     try {
       setError("");
       await removeStudentFromOpportunity(opportunityId, studentId);
-      // Refresh assignments
-      await fetchStudentsBusinessesAndOpportunities();
+      // Optimistic local update — no need to refetch every business/student/opportunity again.
+      setAssignments((prev) => prev.filter((a) => !(a.opportunityId === opportunityId && a.studentId === studentId)));
+      setSelectedAssignmentKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(`${opportunityId}-${studentId}`);
+        return next;
+      });
     } catch (err) {
       console.error("Error removing assignment:", err);
       setError("Failed to remove assignment");
     }
+  };
+
+  const handleBulkRemoveAssignments = async () => {
+    if (selectedAssignmentKeys.size === 0) return;
+    if (!confirm(`Remove ${selectedAssignmentKeys.size} selected assignment${selectedAssignmentKeys.size > 1 ? "s" : ""}?`)) {
+      return;
+    }
+
+    const targets = assignments.filter((a) => selectedAssignmentKeys.has(assignmentKey(a)));
+    try {
+      setBulkAssignmentRemoving(true);
+      setError("");
+      await Promise.all(targets.map((a) => removeStudentFromOpportunity(a.opportunityId, a.studentId)));
+      const removedKeys = new Set(targets.map(assignmentKey));
+      setAssignments((prev) => prev.filter((a) => !removedKeys.has(assignmentKey(a))));
+      setSelectedAssignmentKeys(new Set());
+    } catch (err) {
+      console.error("Error bulk removing assignments:", err);
+      setError("Failed to remove one or more assignments");
+    } finally {
+      setBulkAssignmentRemoving(false);
+    }
+  };
+
+  const toggleAssignmentSelected = (key: string) => {
+    setSelectedAssignmentKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const handlePdfUpload = async (opportunityId: string, studentId: string, file: File) => {
@@ -451,9 +540,12 @@ const AdminDashboard = () => {
     try {
       setUploadingPdfFor(key);
       setError("");
-      await uploadContractPdf(opportunityId, studentId, file);
-      // Refresh assignments to show the uploaded PDF
-      await fetchStudentsBusinessesAndOpportunities();
+      const url = await uploadContractPdf(opportunityId, studentId, file);
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.opportunityId === opportunityId && a.studentId === studentId ? { ...a, contractPdfUrl: url } : a
+        )
+      );
     } catch (err) {
       console.error("Error uploading contract PDF:", err);
       setError("Failed to upload contract PDF. Make sure it's a valid PDF file.");
@@ -469,7 +561,11 @@ const AdminDashboard = () => {
       setError("");
       const date = value ? new Date(`${value}T12:00:00`) : null;
       await setMidpointMeeting(opportunityId, studentId, { date });
-      await fetchStudentsBusinessesAndOpportunities();
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.opportunityId === opportunityId && a.studentId === studentId ? { ...a, midpointMeetingDate: date } : a
+        )
+      );
     } catch (err) {
       console.error("Error setting midpoint meeting date:", err);
       setError("Failed to save the midpoint meeting date");
@@ -484,12 +580,135 @@ const AdminDashboard = () => {
       setSavingMidpointFor(key);
       setError("");
       await setMidpointMeeting(opportunityId, studentId, { completed });
-      await fetchStudentsBusinessesAndOpportunities();
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.opportunityId === opportunityId && a.studentId === studentId
+            ? { ...a, midpointMeetingCompleted: completed }
+            : a
+        )
+      );
     } catch (err) {
       console.error("Error updating midpoint meeting status:", err);
       setError("Failed to update the midpoint meeting");
     } finally {
       setSavingMidpointFor(null);
+    }
+  };
+
+  const toggleMidpointSelected = (key: string) => {
+    setSelectedMidpointKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const handleBulkMarkMidpointDone = async () => {
+    if (selectedMidpointKeys.size === 0) return;
+    const targets = assignments.filter((a) => selectedMidpointKeys.has(assignmentKey(a)));
+    try {
+      setBulkMidpointSaving(true);
+      setError("");
+      await Promise.all(targets.map((a) => setMidpointMeeting(a.opportunityId, a.studentId, { completed: true })));
+      const doneKeys = new Set(targets.map(assignmentKey));
+      setAssignments((prev) =>
+        prev.map((a) => (doneKeys.has(assignmentKey(a)) ? { ...a, midpointMeetingCompleted: true } : a))
+      );
+      setSelectedMidpointKeys(new Set());
+    } catch (err) {
+      console.error("Error bulk-marking midpoints done:", err);
+      setError("Failed to mark the selected midpoint meetings done");
+    } finally {
+      setBulkMidpointSaving(false);
+    }
+  };
+
+  const handleBulkClearMidpointDate = async () => {
+    if (selectedMidpointKeys.size === 0) return;
+    const targets = assignments.filter((a) => selectedMidpointKeys.has(assignmentKey(a)));
+    try {
+      setBulkMidpointSaving(true);
+      setError("");
+      await Promise.all(targets.map((a) => setMidpointMeeting(a.opportunityId, a.studentId, { date: null })));
+      const clearedKeys = new Set(targets.map(assignmentKey));
+      setAssignments((prev) =>
+        prev.map((a) => (clearedKeys.has(assignmentKey(a)) ? { ...a, midpointMeetingDate: null } : a))
+      );
+      setSelectedMidpointKeys(new Set());
+    } catch (err) {
+      console.error("Error bulk-clearing midpoint dates:", err);
+      setError("Failed to clear the selected midpoint dates");
+    } finally {
+      setBulkMidpointSaving(false);
+    }
+  };
+
+  const openEditAssignment = (assignment: OpportunityAssignment) => {
+    setEditingAssignment(assignment);
+    setEditAssignmentTarget(assignment.opportunityId);
+    setEditAssignmentNotes(assignment.notes || "");
+  };
+
+  const handleSaveEditAssignment = async () => {
+    if (!editingAssignment) return;
+    try {
+      setSavingEditAssignment(true);
+      setError("");
+      const newOpportunityId = await updateAssignment(editingAssignment.opportunityId, editingAssignment.studentId, {
+        newOpportunityId: editAssignmentTarget,
+        notes: editAssignmentNotes,
+      });
+      // Moved to a different business/opportunity — the denormalized business/opportunity
+      // info on the old row is now stale, so refetch just this once rather than trying
+      // to hand-patch every joined field.
+      if (newOpportunityId !== editingAssignment.opportunityId) {
+        await fetchStudentsBusinessesAndOpportunities();
+      } else {
+        setAssignments((prev) =>
+          prev.map((a) =>
+            a.opportunityId === editingAssignment.opportunityId && a.studentId === editingAssignment.studentId
+              ? { ...a, notes: editAssignmentNotes }
+              : a
+          )
+        );
+      }
+      setEditingAssignment(null);
+    } catch (err) {
+      console.error("Error editing assignment:", err);
+      setError("Failed to save changes to the assignment");
+    } finally {
+      setSavingEditAssignment(false);
+    }
+  };
+
+  const handleToggleBusinessOnHold = async (business: BusinessData) => {
+    try {
+      setTogglingOnHoldId(business.userId);
+      const onHold = !business.onHold;
+      await updateBusinessData(business.userId, { onHold });
+      setBusinesses((prev) => prev.map((b) => (b.userId === business.userId ? { ...b, onHold } : b)));
+      setSelectedBusinessProfile((prev) => (prev && prev.userId === business.userId ? { ...prev, onHold } : prev));
+    } catch (err) {
+      console.error("Error toggling business hold status:", err);
+      setError("Failed to update hold status");
+    } finally {
+      setTogglingOnHoldId(null);
+    }
+  };
+
+  const handleToggleStudentOnHold = async (student: StudentProfile) => {
+    try {
+      setTogglingOnHoldId(student.userId);
+      const onHold = !student.onHold;
+      await updateStudentProfile(student.userId, { onHold });
+      setStudents((prev) => prev.map((s) => (s.userId === student.userId ? { ...s, onHold } : s)));
+      setSelectedStudentProfile((prev) => (prev && prev.userId === student.userId ? { ...prev, onHold } : prev));
+    } catch (err) {
+      console.error("Error toggling student hold status:", err);
+      setError("Failed to update hold status");
+    } finally {
+      setTogglingOnHoldId(null);
     }
   };
 
@@ -639,6 +858,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { key: "partnerships" as const, label: "Partnerships", icon: Users },
+    { key: "contacts" as const, label: "Contacts", icon: Contact },
     { key: "matchRequests" as const, label: "Match Requests", icon: Handshake, badge: matchRequests.length },
     { key: "interests" as const, label: "Interest Requests", icon: Heart },
     { key: "approvals" as const, label: "Pending Approvals", icon: AlertCircle },
@@ -1578,108 +1798,24 @@ const AdminDashboard = () => {
                 </button>
               </div>
 
-              {/* Businesses & Students directories */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card className="border-primary/20 shadow-lg">
-                  <CardHeader className="border-b border-primary/10">
-                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      Businesses
-                      <Badge variant="secondary" className="ml-auto font-normal">
-                        {businesses.length}
-                      </Badge>
-                    </CardTitle>
-                    <div className="relative pt-2">
-                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={businessSearch}
-                        onChange={(e) => setBusinessSearch(e.target.value)}
-                        placeholder="Search businesses..."
-                        className="pl-9"
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
-                    {businesses
-                      .filter((b) =>
-                        `${b.companyName} ${b.location} ${b.industry}`
-                          .toLowerCase()
-                          .includes(businessSearch.toLowerCase())
-                      )
-                      .map((business) => (
-                        <div
-                          key={business.userId}
-                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {business.companyName?.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate">
-                              {business.companyName}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {business.location} &middot; {business.industry}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    {businesses.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">No approved businesses yet</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-primary/20 shadow-lg">
-                  <CardHeader className="border-b border-primary/10">
-                    <CardTitle className="flex items-center gap-2 text-foreground text-base">
-                      <Users className="h-4 w-4 text-primary" />
-                      Students
-                      <Badge variant="secondary" className="ml-auto font-normal">
-                        {students.length}
-                      </Badge>
-                    </CardTitle>
-                    <div className="relative pt-2">
-                      <Search className="absolute left-3 top-1/2 mt-1 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={studentSearch}
-                        onChange={(e) => setStudentSearch(e.target.value)}
-                        placeholder="Search students..."
-                        className="pl-9"
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0 max-h-[360px] overflow-y-auto">
-                    {students
-                      .filter((s) =>
-                        `${s.name} ${s.email} ${(s.skills || []).join(" ")}`
-                          .toLowerCase()
-                          .includes(studentSearch.toLowerCase())
-                      )
-                      .map((student) => (
-                        <div
-                          key={student.userId}
-                          className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0"
-                        >
-                          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {student.name?.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {student.skills && student.skills.length > 0
-                                ? student.skills.slice(0, 3).join(", ")
-                                : student.email}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    {students.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-8">No students yet</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Pointer to the richer Contacts view (Kanban, filters, sort) */}
+              <button
+                onClick={() => setActiveTab("contacts")}
+                className="w-full flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left hover:border-primary/40 hover:shadow-sm transition-all"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Contact className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Browse businesses &amp; students</p>
+                  <p className="text-xs text-muted-foreground">
+                    Filter by category, sort by recency, and see who's a new signup vs. a past partner.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="flex-shrink-0">
+                  {businesses.length + students.length} contacts
+                </Badge>
+              </button>
 
               {/* Midpoint Check-ins */}
               {(() => {
@@ -1733,62 +1869,112 @@ const AdminDashboard = () => {
                           Create a partnership below to start tracking midpoint meetings.
                         </p>
                       ) : (
-                        <div className="divide-y divide-border">
-                          {sortedAssignments.map((assignment) => {
-                            const status = getMidpointStatus(assignment);
-                            const meta = midpointStatusMeta[status];
-                            const key = `${assignment.opportunityId}-${assignment.studentId}`;
-                            const isSaving = savingMidpointFor === key;
-                            return (
-                              <div key={key} className="flex flex-wrap items-center gap-3 sm:gap-4 px-5 py-4">
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${meta.dot}`} />
-                                <div className="min-w-[160px] flex-1">
-                                  <p className="text-sm font-semibold text-foreground truncate">
-                                    {assignment.business?.companyName || "Unknown Business"}
-                                    <span className="text-muted-foreground font-normal"> &times; </span>
-                                    {assignment.student?.name || "Unknown Student"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {assignment.opportunityId.startsWith("business-")
-                                      ? "General assignment"
-                                      : assignment.opportunity?.title || "Opportunity"}
-                                  </p>
-                                </div>
-                                <Badge variant="outline" className={`${meta.badge} flex-shrink-0 whitespace-nowrap`}>
-                                  {meta.label}
-                                  {assignment.midpointMeetingDate && (
-                                    <span className="ml-1 opacity-70">
-                                      &middot; {formatMidpointDate(assignment.midpointMeetingDate)}
-                                    </span>
+                        <>
+                          <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border bg-muted/20">
+                            <Checkbox
+                              checked={
+                                selectedMidpointKeys.size > 0 && selectedMidpointKeys.size === sortedAssignments.length
+                              }
+                              onCheckedChange={(checked) =>
+                                setSelectedMidpointKeys(
+                                  checked === true ? new Set(sortedAssignments.map(assignmentKey)) : new Set()
+                                )
+                              }
+                              aria-label="Select all midpoint meetings"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {selectedMidpointKeys.size > 0 ? `${selectedMidpointKeys.size} selected` : "Select all"}
+                            </span>
+                            {selectedMidpointKeys.size > 0 && (
+                              <div className="ml-auto flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  disabled={bulkMidpointSaving}
+                                  onClick={handleBulkMarkMidpointDone}
+                                >
+                                  {bulkMidpointSaving ? (
+                                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="h-3 w-3 mr-1.5" />
                                   )}
-                                </Badge>
-                                <Input
-                                  type="date"
-                                  value={toDateInputValue(assignment.midpointMeetingDate)}
-                                  onChange={(e) =>
-                                    handleSetMidpointDate(assignment.opportunityId, assignment.studentId, e.target.value)
-                                  }
-                                  disabled={isSaving}
-                                  className="w-[150px] flex-shrink-0 h-9 text-sm"
-                                />
-                                <label className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0 cursor-pointer">
-                                  <Checkbox
-                                    checked={!!assignment.midpointMeetingCompleted}
-                                    disabled={isSaving}
-                                    onCheckedChange={(checked) =>
-                                      handleToggleMidpointCompleted(
-                                        assignment.opportunityId,
-                                        assignment.studentId,
-                                        checked === true
-                                      )
-                                    }
-                                  />
-                                  Done
-                                </label>
+                                  Mark Done
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs"
+                                  disabled={bulkMidpointSaving}
+                                  onClick={handleBulkClearMidpointDate}
+                                >
+                                  Clear date
+                                </Button>
                               </div>
-                            );
-                          })}
-                        </div>
+                            )}
+                          </div>
+                          <div className="divide-y divide-border">
+                            {sortedAssignments.map((assignment) => {
+                              const status = getMidpointStatus(assignment);
+                              const meta = midpointStatusMeta[status];
+                              const key = assignmentKey(assignment);
+                              const isSaving = savingMidpointFor === key;
+                              return (
+                                <div key={key} className="flex flex-wrap items-center gap-3 sm:gap-4 px-5 py-4">
+                                  <Checkbox
+                                    checked={selectedMidpointKeys.has(key)}
+                                    onCheckedChange={() => toggleMidpointSelected(key)}
+                                    aria-label="Select this midpoint meeting"
+                                  />
+                                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${meta.dot}`} />
+                                  <div className="min-w-[160px] flex-1">
+                                    <p className="text-sm font-semibold text-foreground truncate">
+                                      {assignment.business?.companyName || "Unknown Business"}
+                                      <span className="text-muted-foreground font-normal"> &times; </span>
+                                      {assignment.student?.name || "Unknown Student"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {assignment.opportunityId.startsWith("business-")
+                                        ? "General assignment"
+                                        : assignment.opportunity?.title || "Opportunity"}
+                                    </p>
+                                  </div>
+                                  <Badge variant="outline" className={`${meta.badge} flex-shrink-0 whitespace-nowrap`}>
+                                    {meta.label}
+                                    {assignment.midpointMeetingDate && (
+                                      <span className="ml-1 opacity-70">
+                                        &middot; {formatMidpointDate(assignment.midpointMeetingDate)}
+                                      </span>
+                                    )}
+                                  </Badge>
+                                  <Input
+                                    type="date"
+                                    value={toDateInputValue(assignment.midpointMeetingDate)}
+                                    onChange={(e) =>
+                                      handleSetMidpointDate(assignment.opportunityId, assignment.studentId, e.target.value)
+                                    }
+                                    disabled={isSaving}
+                                    className="w-[150px] flex-shrink-0 h-9 text-sm"
+                                  />
+                                  <label className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0 cursor-pointer">
+                                    <Checkbox
+                                      checked={!!assignment.midpointMeetingCompleted}
+                                      disabled={isSaving}
+                                      onCheckedChange={(checked) =>
+                                        handleToggleMidpointCompleted(
+                                          assignment.opportunityId,
+                                          assignment.studentId,
+                                          checked === true
+                                        )
+                                      }
+                                    />
+                                    Done
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </>
                       )}
                     </CardContent>
                   </Card>
@@ -1815,21 +2001,59 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-2.5">
+                    <Checkbox
+                      checked={selectedAssignmentKeys.size > 0 && selectedAssignmentKeys.size === assignments.length}
+                      onCheckedChange={(checked) =>
+                        setSelectedAssignmentKeys(checked === true ? new Set(assignments.map(assignmentKey)) : new Set())
+                      }
+                      aria-label="Select all assignments"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {selectedAssignmentKeys.size > 0 ? `${selectedAssignmentKeys.size} selected` : "Select all"}
+                    </span>
+                    {selectedAssignmentKeys.size > 0 && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="ml-auto h-7 text-xs"
+                        disabled={bulkAssignmentRemoving}
+                        onClick={handleBulkRemoveAssignments}
+                      >
+                        {bulkAssignmentRemoving ? (
+                          <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1.5" />
+                        )}
+                        Remove Selected
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {assignments.map((assignment, index) => (
                     <Card key={`${assignment.opportunityId}-${assignment.studentId}-${index}`} className="border-primary/20 shadow-lg hover:shadow-xl transition-shadow">
                       <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/2 border-b border-primary/10">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground mb-2">
-                              <Link2 className="h-5 w-5 text-primary" />
-                              Assignment
-                            </CardTitle>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {assignment.assignedAt?.toDate
-                                ? new Date(assignment.assignedAt.toDate()).toLocaleDateString()
-                                : new Date(assignment.assignedAt).toLocaleDateString()}
+                          <div className="flex items-start gap-3 flex-1">
+                            <Checkbox
+                              className="mt-1"
+                              checked={selectedAssignmentKeys.has(assignmentKey(assignment))}
+                              onCheckedChange={() => toggleAssignmentSelected(assignmentKey(assignment))}
+                              aria-label="Select this assignment"
+                            />
+                            <div className="flex-1">
+                              <CardTitle className="text-lg flex items-center gap-2 text-foreground mb-2">
+                                <Link2 className="h-5 w-5 text-primary" />
+                                Assignment
+                              </CardTitle>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {assignment.assignedAt?.toDate
+                                  ? new Date(assignment.assignedAt.toDate()).toLocaleDateString()
+                                  : new Date(assignment.assignedAt).toLocaleDateString()}
+                              </div>
                             </div>
                           </div>
                           <Badge variant="default" className="bg-green-600">
@@ -2023,25 +2247,374 @@ const AdminDashboard = () => {
                           )}
                         </div>
 
-                        {/* Remove Assignment Button */}
-                        <div className="pt-4 border-t border-primary/10">
+                        {/* Edit / Remove Assignment Buttons */}
+                        <div className="pt-4 border-t border-primary/10 flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => openEditAssignment(assignment)}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="w-full"
+                            className="flex-1"
                             onClick={() => handleRemoveAssignment(assignment.opportunityId, assignment.studentId)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Remove Assignment
+                            Remove
                           </Button>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
+                  </div>
                 </div>
               )}
             </>
           )}
+
+          {/* Contacts Tab */}
+          {activeTab === "contacts" && (() => {
+            const toggleBusinessCategory = (category: string) =>
+              setBusinessCategoryFilter((prev) =>
+                prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+              );
+            const toggleStudentCategory = (category: string) =>
+              setStudentSkillFilter((prev) =>
+                prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+              );
+
+            let filteredBusinesses = businesses.filter((b) =>
+              `${b.companyName} ${b.location} ${b.industry}`.toLowerCase().includes(businessSearch.toLowerCase())
+            );
+            if (businessCategoryFilter.length > 0) {
+              filteredBusinesses = filteredBusinesses.filter((b) =>
+                (b.categories || []).some((c) => businessCategoryFilter.includes(c))
+              );
+            }
+            filteredBusinesses = [...filteredBusinesses].sort((a, b) => {
+              switch (businessSort) {
+                case "recentPartner":
+                  return toMillis(b.lastPartneredAt) - toMillis(a.lastPartneredAt);
+                case "newest":
+                  return toMillis(b.createdAt) - toMillis(a.createdAt);
+                case "oldest":
+                  return toMillis(a.createdAt) - toMillis(b.createdAt);
+                case "name":
+                  return (a.companyName || "").localeCompare(b.companyName || "");
+                case "industry":
+                  return (a.industry || "").localeCompare(b.industry || "");
+                default:
+                  return 0;
+              }
+            });
+
+            let filteredStudents = students.filter((s) =>
+              `${s.name} ${s.email} ${(s.skills || []).join(" ")}`.toLowerCase().includes(studentSearch.toLowerCase())
+            );
+            if (studentSkillFilter.length > 0) {
+              filteredStudents = filteredStudents.filter((s) =>
+                inferStudentCategories(s).some((c) => studentSkillFilter.includes(c))
+              );
+            }
+            filteredStudents = [...filteredStudents].sort((a, b) => {
+              switch (studentSort) {
+                case "newest":
+                  return toMillis(b.createdAt) - toMillis(a.createdAt);
+                case "oldest":
+                  return toMillis(a.createdAt) - toMillis(b.createdAt);
+                case "name":
+                  return (a.name || "").localeCompare(b.name || "");
+                case "skills":
+                  return (a.skills?.[0] || "").localeCompare(b.skills?.[0] || "");
+                default:
+                  return 0;
+              }
+            });
+
+            return (
+              <div className="space-y-10">
+                {/* Businesses */}
+                <div>
+                  <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        Businesses
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Who we work with, grouped by relationship stage.
+                      </p>
+                    </div>
+                    <ToggleGroup
+                      type="single"
+                      value={businessViewMode}
+                      onValueChange={(value) => value && setBusinessViewMode(value as "list" | "board")}
+                    >
+                      <ToggleGroupItem value="board" aria-label="Board view">
+                        <LayoutGrid className="h-4 w-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="list" aria-label="List view">
+                        <ListIcon className="h-4 w-4" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <div className="relative flex-1 min-w-[220px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={businessSearch}
+                        onChange={(e) => setBusinessSearch(e.target.value)}
+                        placeholder="Search businesses..."
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select
+                      value={businessSort}
+                      onValueChange={(value: "recentPartner" | "newest" | "oldest" | "name" | "industry") =>
+                        setBusinessSort(value)
+                      }
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <ArrowUpDown className="h-3.5 w-3.5 mr-2 text-muted-foreground flex-shrink-0" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="recentPartner">Recently worked with</SelectItem>
+                        <SelectItem value="newest">Newest signups</SelectItem>
+                        <SelectItem value="oldest">Oldest signups</SelectItem>
+                        <SelectItem value="name">Name (A–Z)</SelectItem>
+                        <SelectItem value="industry">Industry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                    {CATEGORIES.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => toggleBusinessCategory(category)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          businessCategoryFilter.includes(category)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                    {businessCategoryFilter.length > 0 && (
+                      <button
+                        onClick={() => setBusinessCategoryFilter([])}
+                        className="text-xs text-muted-foreground underline underline-offset-2 ml-1"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {businessViewMode === "board" ? (
+                    <StatusBoard
+                      items={filteredBusinesses}
+                      getStatus={(b) => getBusinessStatus(b, assignments)}
+                      getKey={(b) => b.userId}
+                      onCardClick={(b) => setSelectedBusinessProfile(b)}
+                      emptyLabel="No businesses here"
+                      renderCard={(business) => (
+                        <>
+                          <p className="text-sm font-semibold text-foreground truncate">{business.companyName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{business.industry || "—"}</p>
+                          <p className="text-[11px] text-muted-foreground mt-1.5">
+                            {business.lastPartneredAt
+                              ? `Worked together ${formatRelativeDate(business.lastPartneredAt)}`
+                              : `Joined ${formatRelativeDate(business.createdAt)}`}
+                          </p>
+                        </>
+                      )}
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
+                      {filteredBusinesses.map((business) => {
+                        const status = getBusinessStatus(business, assignments);
+                        const meta = partnershipStatusMeta[status];
+                        return (
+                          <button
+                            key={business.userId}
+                            onClick={() => setSelectedBusinessProfile(business)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {business.companyName?.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground truncate">{business.companyName}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {business.industry || "—"} &middot; {business.location || "—"}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className={`${meta.badge} flex-shrink-0 text-xs whitespace-nowrap`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot} mr-1`} />
+                              {meta.label}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex-shrink-0 w-32 text-right">
+                              {business.lastPartneredAt
+                                ? formatRelativeDate(business.lastPartneredAt)
+                                : formatRelativeDate(business.createdAt)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {filteredBusinesses.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          No businesses match your filters
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Students */}
+                <div>
+                  <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
+                        Students
+                      </h2>
+                      <p className="text-sm text-muted-foreground">Newest signups first, filterable by category.</p>
+                    </div>
+                    <ToggleGroup
+                      type="single"
+                      value={studentViewMode}
+                      onValueChange={(value) => value && setStudentViewMode(value as "list" | "board")}
+                    >
+                      <ToggleGroupItem value="board" aria-label="Board view">
+                        <LayoutGrid className="h-4 w-4" />
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="list" aria-label="List view">
+                        <ListIcon className="h-4 w-4" />
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <div className="relative flex-1 min-w-[220px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        placeholder="Search students..."
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select
+                      value={studentSort}
+                      onValueChange={(value: "newest" | "oldest" | "name" | "skills") => setStudentSort(value)}
+                    >
+                      <SelectTrigger className="w-[200px]">
+                        <ArrowUpDown className="h-3.5 w-3.5 mr-2 text-muted-foreground flex-shrink-0" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest accounts</SelectItem>
+                        <SelectItem value="oldest">Oldest accounts</SelectItem>
+                        <SelectItem value="name">Name (A–Z)</SelectItem>
+                        <SelectItem value="skills">Top skill (A–Z)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                    {CATEGORIES.filter((c) => c !== "Other").map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => toggleStudentCategory(category)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          studentSkillFilter.includes(category)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-muted-foreground border-border hover:border-primary/40"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                    {studentSkillFilter.length > 0 && (
+                      <button
+                        onClick={() => setStudentSkillFilter([])}
+                        className="text-xs text-muted-foreground underline underline-offset-2 ml-1"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {studentViewMode === "board" ? (
+                    <StatusBoard
+                      items={filteredStudents}
+                      getStatus={(s) => getStudentStatus(s, assignments)}
+                      getKey={(s) => s.userId}
+                      onCardClick={(s) => setSelectedStudentProfile(s)}
+                      emptyLabel="No students here"
+                      renderCard={(student) => (
+                        <>
+                          <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {inferStudentCategories(student).slice(0, 2).join(", ")}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-1.5">
+                            Joined {formatRelativeDate(student.createdAt)}
+                          </p>
+                        </>
+                      )}
+                    />
+                  ) : (
+                    <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
+                      {filteredStudents.map((student) => {
+                        const status = getStudentStatus(student, assignments);
+                        const meta = partnershipStatusMeta[status];
+                        return (
+                          <button
+                            key={student.userId}
+                            onClick={() => setSelectedStudentProfile(student)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              {student.name?.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground truncate">{student.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {inferStudentCategories(student).slice(0, 2).join(", ")}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className={`${meta.badge} flex-shrink-0 text-xs whitespace-nowrap`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot} mr-1`} />
+                              {meta.label}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex-shrink-0 w-28 text-right">
+                              Joined {formatRelativeDate(student.createdAt)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {filteredStudents.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          No students match your filters
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Feed Tab */}
           {activeTab === "feed" && (
@@ -2176,6 +2749,101 @@ const AdminDashboard = () => {
         </div>
         </main>
       </div>
+
+      {/* Edit Assignment Dialog */}
+      <Dialog open={!!editingAssignment} onOpenChange={(open) => !open && setEditingAssignment(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit assignment</DialogTitle>
+            <DialogDescription>
+              {editingAssignment?.student?.name || "This student"} &middot;{" "}
+              {editingAssignment?.business?.companyName || "Unknown business"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Business / Opportunity</label>
+              <Select value={editAssignmentTarget} onValueChange={setEditAssignmentTarget}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an opportunity or business..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {businesses.map((business) => {
+                    const businessOpps = opportunities.filter(
+                      (opp) => opp.businessId === business.userId && opp.status === "active"
+                    );
+                    return (
+                      <SelectGroup key={business.userId}>
+                        <SelectLabel className="text-primary font-semibold">{business.companyName}</SelectLabel>
+                        <SelectItem
+                          key={`business-${business.userId}`}
+                          value={`business-${business.userId}`}
+                          className="italic text-muted-foreground"
+                        >
+                          → General Assignment (Business-wide)
+                        </SelectItem>
+                        {businessOpps.map((opp) => (
+                          <SelectItem key={opp.id} value={opp.id!}>
+                            → {opp.title}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {editingAssignment && editAssignmentTarget !== editingAssignment.opportunityId && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                  This moves the assignment to a different business/opportunity — the contract PDF and midpoint
+                  meeting info carry over.
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Notes</label>
+              <Textarea
+                value={editAssignmentNotes}
+                onChange={(e) => setEditAssignmentNotes(e.target.value)}
+                rows={4}
+                placeholder="Add any notes about this assignment..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAssignment(null)} disabled={savingEditAssignment}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEditAssignment} disabled={savingEditAssignment || !editAssignmentTarget}>
+              {savingEditAssignment ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <BusinessDetailModal
+        business={selectedBusinessProfile}
+        status={selectedBusinessProfile ? getBusinessStatus(selectedBusinessProfile, assignments) : "unassigned"}
+        open={!!selectedBusinessProfile}
+        onOpenChange={(open) => !open && setSelectedBusinessProfile(null)}
+        onToggleOnHold={handleToggleBusinessOnHold}
+        togglingOnHold={!!selectedBusinessProfile && togglingOnHoldId === selectedBusinessProfile.userId}
+      />
+      <StudentDetailModal
+        student={selectedStudentProfile}
+        status={selectedStudentProfile ? getStudentStatus(selectedStudentProfile, assignments) : "unassigned"}
+        assignment={assignments.find((a) => a.studentId === selectedStudentProfile?.userId)}
+        open={!!selectedStudentProfile}
+        onOpenChange={(open) => !open && setSelectedStudentProfile(null)}
+        onToggleOnHold={handleToggleStudentOnHold}
+        togglingOnHold={!!selectedStudentProfile && togglingOnHoldId === selectedStudentProfile.userId}
+      />
     </div>
   );
 };
